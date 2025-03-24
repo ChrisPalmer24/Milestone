@@ -73,7 +73,7 @@ export default function PortfolioChart({
   className 
 }: PortfolioChartProps) {
   const [dateRange, setDateRange] = useState<DateRangeOption>("6months");
-  const [chartVisible, setChartVisible] = useState(true);
+  const [chartVisible, setChartVisible] = useState(false);
   
   // Calculate date range for API request
   const { start, end } = getDateRange(dateRange);
