@@ -98,7 +98,8 @@ export default function Fire() {
     
     try {
       await updateFireSettings({
-        monthlyInvestment: newMonthlyInvestment
+        // Convert to string as expected by the API
+        monthlyInvestment: newMonthlyInvestment.toString()
       });
       
       setFormState({
@@ -116,9 +117,10 @@ export default function Fire() {
     
     try {
       await updateFireSettings({
-        annualIncomeGoal: formState.annualIncome,
-        expectedAnnualReturn: formState.expectedReturn,
-        safeWithdrawalRate: formState.withdrawalRate
+        // Convert to strings as expected by the API
+        annualIncomeGoal: formState.annualIncome.toString(),
+        expectedAnnualReturn: formState.expectedReturn.toString(),
+        safeWithdrawalRate: formState.withdrawalRate.toString()
       });
     } catch (error) {
       console.error("Error updating FIRE settings:", error);

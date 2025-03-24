@@ -38,10 +38,10 @@ interface Milestone {
 
 interface FireSettings {
   targetRetirementAge: number;
-  annualIncomeGoal: number;
-  expectedAnnualReturn: number;
-  safeWithdrawalRate: number;
-  monthlyInvestment: number;
+  annualIncomeGoal: string; // Changed to string to match API expectations
+  expectedAnnualReturn: string; // Changed to string to match API expectations
+  safeWithdrawalRate: string; // Changed to string to match API expectations
+  monthlyInvestment: string; // Changed to string to match API expectations
   currentAge: number;
 }
 
