@@ -11,6 +11,9 @@ import Goals from "@/pages/goals";
 import Record from "@/pages/record";
 import Track from "@/pages/track";
 import Fire from "@/pages/fire";
+import Profile from "@/pages/profile";
+import Settings from "@/pages/settings";
+import ApiConnections from "@/pages/api-connections";
 
 function RouteWithLayout({ component: Component, ...rest }: { component: React.ComponentType }) {
   return (
