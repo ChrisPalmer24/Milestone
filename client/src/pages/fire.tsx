@@ -28,7 +28,7 @@ export default function Fire() {
     annualIncomeGoal: 48000,
     expectedAnnualReturn: 7,
     safeWithdrawalRate: 4,
-    monthlyInvestment: 1500,
+    monthlyInvestment: 300, // Updated to £300 as requested
     currentAge: 35
   };
 

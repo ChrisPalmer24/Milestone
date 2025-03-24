@@ -80,7 +80,7 @@ export const fireSettings = pgTable("fire_settings", {
   annualIncomeGoal: numeric("annual_income_goal").default(48000).notNull(),
   expectedAnnualReturn: numeric("expected_annual_return").default(7).notNull(), // Percentage
   safeWithdrawalRate: numeric("safe_withdrawal_rate").default(4).notNull(), // Percentage
-  monthlyInvestment: numeric("monthly_investment").default(1500).notNull(),
+  monthlyInvestment: numeric("monthly_investment").default(300).notNull(),
   currentAge: integer("current_age").default(35).notNull(),
 });
 
