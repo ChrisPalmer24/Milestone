@@ -7,23 +7,42 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { 
+  TrendingUp, 
+  TrendingDown,
+  Link as LinkIcon,
+  Check, 
+  Lock
+} from "lucide-react";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { SiTradingview, SiCoinbase } from "react-icons/si";
 import { BsPiggyBank } from "react-icons/bs";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
 
 export default function Record() {
   const { 
     accounts, 
     updateAccountValue,
+    connectAccountApi,
     isLoading 
   } = usePortfolio();
   const { toast } = useToast();
   
   // State to track new values
   const [newValues, setNewValues] = useState<Record<number, number>>({});
+  // State for API connection dialog
+  const [apiDialogOpen, setApiDialogOpen] = useState(false);
+  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
+  const [apiKey, setApiKey] = useState("");
   
   // Helper to get logo for provider
   const getProviderLogo = (provider: string) => {
@@ -65,6 +84,38 @@ export default function Record() {
       percentChange,
       isPositive: difference >= 0
     };
+  };
+  
+  // Check if account is Trading212
+  const isTrading212 = (provider: string) => {
+    return provider.toLowerCase() === "trading212" || provider.toLowerCase() === "trading 212";
+  };
+  
+  // Open API connect dialog
+  const openApiDialog = (accountId: number) => {
+    setSelectedAccountId(accountId);
+    setApiKey("");
+    setApiDialogOpen(true);
+  };
+  
+  // Handle API connection
+  const handleConnectApi = async () => {
+    if (!selectedAccountId || !apiKey.trim()) return;
+    
+    try {
+      await connectAccountApi(selectedAccountId, apiKey);
+      setApiDialogOpen(false);
+      toast({
+        title: "API Connected",
+        description: "Your Trading212 account has been connected successfully. Values will now update automatically.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error connecting API",
+        description: "There was a problem connecting to the Trading212 API. Please check your API key and try again.",
+        variant: "destructive",
+      });
+    }
   };
   
   // Handle save records
@@ -135,6 +186,7 @@ export default function Record() {
               <>
                 {accounts.map((account) => {
                   const difference = calculateDifference(account.id, Number(account.currentValue));
+                  const isTrading212Account = isTrading212(account.provider);
                   
                   return (
                     <div key={account.id} className="border border-gray-200 rounded-lg p-4">
@@ -146,6 +198,28 @@ export default function Record() {
                           <div>
                             <h3 className="font-medium">{account.provider}</h3>
                             <span className="text-sm text-gray-500">{account.accountType}</span>
+                            
+                            {/* API connection status for Trading212 */}
+                            {isTrading212Account && (
+                              <div className="flex items-center mt-1">
+                                {account.isApiConnected ? (
+                                  <div className="flex items-center text-green-600 text-xs">
+                                    <Check className="w-3 h-3 mr-1" />
+                                    <span>API Connected</span>
+                                  </div>
+                                ) : (
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="text-xs p-0 h-auto text-primary font-normal hover:underline"
+                                    onClick={() => openApiDialog(account.id)}
+                                  >
+                                    <LinkIcon className="w-3 h-3 mr-1" />
+                                    <span>Connect API</span>
+                                  </Button>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                         
@@ -163,8 +237,19 @@ export default function Record() {
                               className="pl-7"
                               defaultValue={Number(account.currentValue)}
                               onChange={(e) => handleValueChange(account.id, e.target.value)}
+                              readOnly={isTrading212Account && account.isApiConnected}
                             />
+                            {isTrading212Account && account.isApiConnected && (
+                              <div className="absolute inset-y-0 right-3 flex items-center">
+                                <Lock className="h-3 w-3 text-gray-400" />
+                              </div>
+                            )}
                           </div>
+                          {isTrading212Account && account.isApiConnected && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Values updated automatically via API
+                            </p>
+                          )}
                         </div>
                       </div>
 
@@ -173,7 +258,7 @@ export default function Record() {
                           Previous Value: £{Number(account.currentValue).toLocaleString()}
                         </Label>
                         {difference && (
-                          <div className={`flex items-center text-sm ${difference.isPositive ? 'text-secondary' : 'text-error'}`}>
+                          <div className={`flex items-center text-sm ${difference.isPositive ? 'text-green-600' : 'text-red-600'}`}>
                             {difference.isPositive ? (
                               <TrendingUp className="w-4 h-4 mr-1" />
                             ) : (
@@ -222,6 +307,51 @@ export default function Record() {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Trading212 API Connection Dialog */}
+      <Dialog open={apiDialogOpen} onOpenChange={setApiDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Connect Trading212 API</DialogTitle>
+            <DialogDescription>
+              Enter your Trading212 API key to automatically sync your account values.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="api-key" className="text-sm">
+                API Key
+              </Label>
+              <div className="relative">
+                <Input
+                  id="api-key"
+                  type="password"
+                  placeholder="Enter your Trading212 API key"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  className="pr-10"
+                />
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                  <Lock className="h-4 w-4 text-gray-400" />
+                </div>
+              </div>
+              <p className="text-xs text-gray-500">
+                Your API key is stored securely and only used to fetch your account values.
+              </p>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setApiDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleConnectApi} disabled={!apiKey.trim()}>
+              Connect
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

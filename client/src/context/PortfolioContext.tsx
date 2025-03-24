@@ -189,6 +189,10 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
       });
     },
   });
+  
+  const connectAccountApi = async (id: number, apiKey: string) => {
+    await connectAccountApiMutation.mutateAsync({ id, apiKey });
+  };
 
   const addMilestoneMutation = useMutation({
     mutationFn: (newMilestone: Omit<Milestone, "id" | "isCompleted">) => {
@@ -328,6 +332,7 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     addAccount,
     updateAccountValue,
     deleteAccount,
+    connectAccountApi,
     addMilestone,
     deleteMilestone,
     updateFireSettings,
