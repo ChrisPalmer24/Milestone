@@ -85,14 +85,41 @@ export default function PortfolioChart({
     ],
   });
   
-  const data: ChartData[] = historyData ? 
+  // Generate dummy data if no data is available
+  const generateDummyData = (): ChartData[] => {
+    const dummyData: ChartData[] = [];
+    const now = new Date();
+    let baseValue = 15000;
+    
+    // Generate data for the past 6 months
+    for (let i = 180; i >= 0; i -= 7) {
+      const date = new Date();
+      date.setDate(now.getDate() - i);
+      
+      // Create some random variation
+      const randomChange = Math.random() * 800 - 400;
+      baseValue = Math.max(1000, baseValue + randomChange);
+      
+      dummyData.push({
+        date: date.toLocaleDateString('en-GB', { 
+          month: 'short',
+          day: '2-digit' 
+        }),
+        value: baseValue
+      });
+    }
+    
+    return dummyData;
+  };
+  
+  const data: ChartData[] = historyData && historyData.length > 0 ? 
     historyData.map((item: any) => ({
       date: new Date(item.date).toLocaleDateString('en-GB', { 
         month: 'short',
         day: '2-digit' 
       }),
       value: Number(item.value)
-    })) : [];
+    })) : generateDummyData();
 
   // Add milestone data if enabled
   const chartData = [...data];
@@ -107,12 +134,12 @@ export default function PortfolioChart({
     });
   }
 
-  if (isLoading || data.length === 0) {
+  if (isLoading) {
     return (
       <Card className={cn("w-full", className)}>
         <CardContent className="p-4 h-[300px] flex items-center justify-center">
           <p className="text-muted-foreground">
-            {isLoading ? "Loading chart data..." : "No portfolio data available. Add accounts to see your chart."}
+            Loading chart data...
           </p>
         </CardContent>
       </Card>

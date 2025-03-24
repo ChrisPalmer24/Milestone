@@ -194,9 +194,16 @@ export default function Record() {
                   );
                 })}
 
-                <div className="mt-8">
+                <div className="mt-8 flex space-x-4">
                   <Button 
-                    className="w-full bg-primary text-white py-3 rounded-lg font-medium"
+                    variant="outline"
+                    className="w-1/2"
+                    onClick={() => setNewValues({})}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    className="w-1/2 bg-primary text-white"
                     onClick={handleSaveRecords}
                     disabled={Object.keys(newValues).length === 0}
                   >

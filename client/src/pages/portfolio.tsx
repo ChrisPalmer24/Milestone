@@ -139,9 +139,17 @@ export default function Portfolio() {
   // Calculate total gain across all accounts
   const calculateTotalGain = () => {
     // In a real app, this would compare to previous values
-    // For now, let's assume a 3.8% gain for demo
-    const gain = totalPortfolioValue * 0.038;
-    return displayInPercentage ? "+3.8%" : `+£${gain.toLocaleString()}`;
+    // For now, let's randomly show either gain or loss for demo
+    const isPositive = Math.random() > 0.3;
+    const gainPercentage = isPositive ? 0.038 : -0.021;
+    const gain = totalPortfolioValue * Math.abs(gainPercentage);
+    
+    return {
+      value: displayInPercentage 
+        ? `${isPositive ? '+' : '-'}${Math.abs(gainPercentage * 100).toFixed(1)}%` 
+        : `${isPositive ? '+' : '-'}£${gain.toLocaleString()}`,
+      isPositive
+    };
   };
 
   return (
@@ -319,8 +327,14 @@ export default function Portfolio() {
                     </div>
                     <div className="text-right">
                       <p className="font-semibold">£{Number(account.currentValue).toLocaleString()}</p>
-                      <p className="text-sm text-secondary font-medium">
-                        {displayInPercentage ? "+3.2%" : `+£${(Number(account.currentValue) * 0.032).toLocaleString()}`}
+                      {/* Demo data - in a real app use actual performance values */}
+                      <p className={`text-sm font-medium ${Math.random() > 0.3 ? 'text-green-600' : 'text-red-600'}`}>
+                        {displayInPercentage 
+                          ? (Math.random() > 0.3 ? '+3.2%' : '-1.8%') 
+                          : (Math.random() > 0.3 
+                              ? `+£${(Number(account.currentValue) * 0.032).toLocaleString()}` 
+                              : `-£${(Number(account.currentValue) * 0.018).toLocaleString()}`)
+                        }
                       </p>
                     </div>
                   </div>
@@ -335,7 +349,14 @@ export default function Portfolio() {
                   </div>
                   <div className="text-right">
                     <p className="font-bold text-lg">£{totalPortfolioValue.toLocaleString()}</p>
-                    <p className="text-secondary font-medium">{calculateTotalGain()}</p>
+                    {(() => {
+                      const gain = calculateTotalGain();
+                      return (
+                        <p className={`font-medium ${gain.isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                          {gain.value}
+                        </p>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
