@@ -86,7 +86,7 @@ export default function Goals() {
       await addMilestone({
         name: values.name,
         accountType: values.accountType === "ALL" ? null : values.accountType as any,
-        targetValue: Number(values.targetValue)
+        targetValue: values.targetValue // Keep as string since the API expects a string
       });
       setIsAddMilestoneOpen(false);
       form.reset();
