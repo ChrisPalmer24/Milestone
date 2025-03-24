@@ -17,6 +17,8 @@ interface Account {
   provider: string;
   accountType: AccountType;
   currentValue: number;
+  isApiConnected: boolean;
+  apiKey?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -55,6 +57,7 @@ interface PortfolioContextType {
   addAccount: (account: {provider: string, accountType: AccountType, currentValue: string}) => Promise<void>;
   updateAccountValue: (id: number, value: number) => Promise<void>;
   deleteAccount: (id: number) => Promise<void>;
+  connectAccountApi: (id: number, apiKey: string) => Promise<void>;
   addMilestone: (milestone: Omit<Milestone, "id" | "isCompleted">) => Promise<void>;
   deleteMilestone: (id: number) => Promise<void>;
   updateFireSettings: (settings: Partial<FireSettings>) => Promise<void>;
@@ -162,6 +165,25 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     onError: (error) => {
       toast({
         title: "Error deleting account",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const connectAccountApiMutation = useMutation({
+    mutationFn: ({ id, apiKey }: { id: number, apiKey: string }) => 
+      apiRequest('PATCH', `/api/accounts/${id}/connect-api`, { apiKey }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/accounts'] });
+      toast({
+        title: "API connected",
+        description: "Your account has been connected to the Trading212 API successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error connecting API",
         description: error instanceof Error ? error.message : "An unknown error occurred",
         variant: "destructive",
       });

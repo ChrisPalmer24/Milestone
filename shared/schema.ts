@@ -24,6 +24,8 @@ export const accounts = pgTable("accounts", {
   provider: text("provider").notNull(),
   accountType: text("account_type").notNull(), // ISA, SIPP, LISA, GIA
   currentValue: numeric("current_value").notNull(),
+  isApiConnected: boolean("is_api_connected").default(false).notNull(),
+  apiKey: text("api_key"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
