@@ -1,0 +1,58 @@
+Investment Tracker MVP – Project Prompt
+Project Overview
+Build an Investment Tracker App.
+There should be 5 buttons across the bottom:
+ Portfolio     Goals     Record      Track    FIRE  (Could include projections)   
+Portfolio / (this will act as the home screen)
+This should prompt the user to add create a “portfolio” if none exists. There should be a plus icon for this where they can add a new “investment account” - selecting investment provider name, account type, and value. 
+Display chart with toggle on/off option (on by default).
+There should also be an option to toggle chart on and off, and a history button. 
+If the history button is pressed it willl display as a row of individual entries into the portfolio is most recent order to oldest. In here - each row should be editable, the date should also be editable in here. 
+The chart should show points of the “total portfolio value” which is calculated by adding each individual portfolio together.
+There should be an option to toggle milestones on and off (off by default). If toggled on it’ll display the next goal milestone on the chart, with a dotted line between the two points i.e if the total portfolio was currently £154,000 and the next milestone was £160,000 - it’d show as £6,000. 
+Below the chart, option to change the date range by:
+Week (displayed as W)
+Month (1M)
+3 Months (3M)
+6 Months (6M)
+1 Year (Year)
+Year to date (YTD)
+All time (All)
+Below the chart, should be a list of portfolios added by the user displayed in rows. 
+Above this Should be an option to toggle the display below by £ or % (showing the gain column at the end in either pound gain/loss or percentage gain or loss. 
+Each portfolio should be an individual row which shows:
+Provider logo:
+Trading212
+Invest Engine
+Vanguard 
+Account type:
+ISA
+SIPP
+LISA
+GIA
+Account Value
+Gain or Loss (displayed as +£1,500 this should alter if toggled to %)
+The final row at the bottom should be a total row, which adds up all of the figures above to give a total portfolio value, and total gain or loss. 
+Below this have a “Last updated on [Date], Update Now”.  - the update now link to take people to the “record” screen. 
+
+Goals
+This section should be titled “Milestones” - which sets goals fo for the user to aim for.
+Milestones should be generated based on the users portfolios added.
+For example if a LISA total value is £5,700 - set a milestone of £6,000 and show their progress towards that goal. It should show this as a progress from the previous thousand, so for example this would be 70% complete.
+Up to 5 goals should be automatically generated, with an option for the user to “clear milestone” with a cross icon. A pop up should come “Are you sure?” “Yes, No”.
+The user should have the option to add their own milestone, for each type of account, and for a total balance.
+Colours should be set for each depending on the type of account, which could be a theme throughout the app. 
+
+Record
+This section should be for recording their data. Based on their current portfolio accounts set up. 
+It should be fun, interactive, and prompt them to enter their current values. “How’s the portfolio looking?” displayed at the top.
+If they don’t have portfolios set up, prompt them to add a new one
+
+Track    
+This section should do a reverse compound interest calculation. For example if the user has a goal “FIRE Number” of £1.2million by Age 60. It should work backwards and work out what stage they should be at by month or year.  So for example by Year I could need to be at £40,000 to eventually hit £1.2mill, and if I was at £34,000 it would show (£6,000 needed to be on track).
+The goal of this section is to inform the user if they over or under investing, and if they are on track to hit their goals.
+FIRE
+This section should allow the user to enter things like retirement age, desired income and % return, i.e 7% return on average of the stock market, to project how much they will need to retire early and projected income based on the 4% withdrawal rule.
+The chart should assume they need 25x their desired income as a total portfolio value goal.
+There should be a line progress chart which shows where they are at now, vs where they want to be in total.
+They should have the option here to click +£100 per month or -£100 per month to show how many years they could save (or retire early, or later) depending on how much more they were to invest.  
