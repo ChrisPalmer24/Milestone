@@ -31,7 +31,7 @@ interface AccountHistory {
 interface Milestone {
   id: number;
   name: string;
-  targetValue: number;
+  targetValue: string; // Changed to string to match API expectations
   accountType: AccountType | null;
   isCompleted: boolean;
 }
