@@ -34,6 +34,8 @@ export const insertAccountSchema = createInsertSchema(accounts).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  isApiConnected: true,
+  apiKey: true,
 });
 
 export type InsertAccount = z.infer<typeof insertAccountSchema>;

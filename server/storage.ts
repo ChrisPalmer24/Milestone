@@ -19,6 +19,7 @@ export interface IStorage {
   createAccount(account: InsertAccount): Promise<Account>;
   updateAccount(id: number, value: number): Promise<Account>;
   deleteAccount(id: number): Promise<boolean>;
+  connectAccountApi(id: number, apiKey: string): Promise<Account>;
 
   // Account History methods
   getAccountHistory(accountId: number): Promise<AccountHistory[]>;
@@ -108,7 +109,9 @@ export class MemStorage implements IStorage {
       ...insertAccount, 
       id, 
       createdAt: now, 
-      updatedAt: now 
+      updatedAt: now,
+      isApiConnected: false,
+      apiKey: null
     };
     this.accounts.set(id, account);
     
@@ -148,6 +151,23 @@ export class MemStorage implements IStorage {
 
   async deleteAccount(id: number): Promise<boolean> {
     return this.accounts.delete(id);
+  }
+  
+  async connectAccountApi(id: number, apiKey: string): Promise<Account> {
+    const account = this.accounts.get(id);
+    if (!account) {
+      throw new Error("Account not found");
+    }
+    
+    const updatedAccount: Account = {
+      ...account,
+      apiKey,
+      isApiConnected: true,
+      updatedAt: new Date()
+    };
+    
+    this.accounts.set(id, updatedAccount);
+    return updatedAccount;
   }
 
   // Account History methods

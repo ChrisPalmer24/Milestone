@@ -99,6 +99,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to delete account" });
     }
   });
+  
+  // Connect API key to an account (for Trading212)
+  app.patch("/api/accounts/:id/connect-api", async (req, res) => {
+    try {
+      const accountId = parseInt(req.params.id);
+      const { apiKey } = req.body;
+      
+      if (!apiKey) {
+        return res.status(400).json({ message: "API key is required" });
+      }
+      
+      // Get account to verify it exists
+      const account = await storage.getAccount(accountId);
+      if (!account) {
+        return res.status(404).json({ message: "Account not found" });
+      }
+      
+      // In a production app, we would validate the API key with Trading212 first
+      // For demo purposes, we just mark it as connected
+      
+      const updatedAccount = await storage.connectAccountApi(accountId, apiKey);
+      res.json(updatedAccount);
+    } catch (error) {
+      console.error("Failed to connect API:", error);
+      res.status(500).json({ message: "Failed to connect API" });
+    }
+  });
 
   // ================== Account History Routes ==================
   
