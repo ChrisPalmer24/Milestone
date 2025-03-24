@@ -109,18 +109,8 @@ export default function Portfolio() {
   
   // Get color for account type
   const getAccountTypeColor = (type: string) => {
-    switch (type) {
-      case "ISA":
-        return "text-blue-400";
-      case "SIPP":
-        return "text-secondary";
-      case "LISA":
-        return "text-accent";
-      case "GIA":
-        return "text-purple-500";
-      default:
-        return "text-gray-500";
-    }
+    // Return black for all account types
+    return "text-black font-semibold";
   };
   
   // Find next milestone for the portfolio if any

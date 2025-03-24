@@ -1,7 +1,7 @@
 import { 
   TrendingUp, 
   Flag, 
-  PlusCircle, 
+  ClipboardEdit, 
   LineChart, 
   Flame 
 } from "lucide-react";
@@ -28,7 +28,7 @@ const navItems: NavItem[] = [
   { 
     id: "record", 
     label: "Record", 
-    icon: <PlusCircle className="w-6 h-6" /> 
+    icon: <ClipboardEdit className="w-6 h-6" /> 
   },
   { 
     id: "track", 
