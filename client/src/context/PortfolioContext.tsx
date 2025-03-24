@@ -169,8 +169,10 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const addMilestoneMutation = useMutation({
-    mutationFn: (newMilestone: Omit<Milestone, "id" | "isCompleted">) => 
-      apiRequest('POST', '/api/milestones', newMilestone),
+    mutationFn: (newMilestone: Omit<Milestone, "id" | "isCompleted">) => {
+      console.log("Sending milestone data:", JSON.stringify(newMilestone));
+      return apiRequest('POST', '/api/milestones', newMilestone);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/milestones'] });
       toast({
@@ -179,6 +181,7 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
       });
     },
     onError: (error) => {
+      console.log("Error response:", error);
       toast({
         title: "Error adding milestone",
         description: error instanceof Error ? error.message : "An unknown error occurred",
