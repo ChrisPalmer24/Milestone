@@ -12,6 +12,7 @@ import { usePortfolio } from "@/context/PortfolioContext";
 import { SiTradingview, SiCoinbase } from "react-icons/si";
 import { BsPiggyBank } from "react-icons/bs";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
 
 export default function Record() {
   const { 
@@ -104,14 +105,19 @@ export default function Record() {
               // Skeleton loading state
               Array(3).fill(0).map((_, i) => (
                 <div key={i} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center mb-4">
-                    <Skeleton className="w-10 h-10 rounded-md mr-3" />
-                    <div>
-                      <Skeleton className="h-5 w-24 mb-1" />
-                      <Skeleton className="h-4 w-12" />
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center">
+                      <Skeleton className="w-10 h-10 rounded-md mr-3" />
+                      <div>
+                        <Skeleton className="h-5 w-24 mb-1" />
+                        <Skeleton className="h-4 w-12" />
+                      </div>
+                    </div>
+                    <div className="flex-1 max-w-[220px] ml-4">
+                      <Skeleton className="h-4 w-24 mb-2" />
+                      <Skeleton className="h-10 w-full" />
                     </div>
                   </div>
-                  <Skeleton className="h-10 w-full mb-4" />
                   <Skeleton className="h-5 w-40 mb-2" />
                   <Skeleton className="h-4 w-24" />
                 </div>
@@ -119,12 +125,11 @@ export default function Record() {
             ) : accounts.length === 0 ? (
               <div className="py-8 text-center">
                 <p className="text-gray-500 mb-4">No investment accounts to update.</p>
-                <Button 
-                  variant="outline"
-                  onClick={() => window.location.href = '/'}
-                >
-                  Add Accounts First
-                </Button>
+                <Link href="/">
+                  <Button variant="outline">
+                    Add Accounts First
+                  </Button>
+                </Link>
               </div>
             ) : (
               <>
@@ -133,31 +138,33 @@ export default function Record() {
                   
                   return (
                     <div key={account.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center mb-4">
-                        <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center mr-3">
-                          {getProviderLogo(account.provider)}
-                        </div>
-                        <div>
-                          <h3 className="font-medium">{account.provider}</h3>
-                          <span className="text-sm text-gray-500">{account.accountType}</span>
-                        </div>
-                      </div>
-
-                      <div className="mb-4">
-                        <Label htmlFor={`value-${account.id}`} className="block text-sm font-medium text-gray-700 mb-1">
-                          Current Value
-                        </Label>
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span className="text-gray-500">£</span>
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center mr-3">
+                            {getProviderLogo(account.provider)}
                           </div>
-                          <Input
-                            id={`value-${account.id}`}
-                            type="number"
-                            className="pl-7"
-                            defaultValue={Number(account.currentValue)}
-                            onChange={(e) => handleValueChange(account.id, e.target.value)}
-                          />
+                          <div>
+                            <h3 className="font-medium">{account.provider}</h3>
+                            <span className="text-sm text-gray-500">{account.accountType}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex-1 max-w-[220px] ml-4">
+                          <Label htmlFor={`value-${account.id}`} className="block text-sm font-medium text-gray-700 mb-1">
+                            Current Value
+                          </Label>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <span className="text-gray-500">£</span>
+                            </div>
+                            <Input
+                              id={`value-${account.id}`}
+                              type="number"
+                              className="pl-7"
+                              defaultValue={Number(account.currentValue)}
+                              onChange={(e) => handleValueChange(account.id, e.target.value)}
+                            />
+                          </div>
                         </div>
                       </div>
 
