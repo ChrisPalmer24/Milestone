@@ -52,7 +52,7 @@ interface PortfolioContextType {
   totalPortfolioValue: number;
   activeSection: string;
   setActiveSection: (section: string) => void;
-  addAccount: (account: Omit<Account, "id" | "createdAt" | "updatedAt">) => Promise<void>;
+  addAccount: (account: {provider: string, accountType: AccountType, currentValue: string}) => Promise<void>;
   updateAccountValue: (id: number, value: number) => Promise<void>;
   deleteAccount: (id: number) => Promise<void>;
   addMilestone: (milestone: Omit<Milestone, "id" | "isCompleted">) => Promise<void>;
@@ -109,7 +109,7 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
 
   // Mutations
   const addAccountMutation = useMutation({
-    mutationFn: (newAccount: Omit<Account, "id" | "createdAt" | "updatedAt">) => 
+    mutationFn: (newAccount: {provider: string, accountType: AccountType, currentValue: string, userId: number}) => 
       apiRequest('POST', '/api/accounts', newAccount),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/accounts'] });
@@ -226,8 +226,13 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
   });
 
   // Wrapper functions for mutations
-  const addAccount = async (account: Omit<Account, "id" | "createdAt" | "updatedAt">) => {
-    await addAccountMutation.mutateAsync(account);
+  const addAccount = async (account: {provider: string, accountType: AccountType, currentValue: string}) => {
+    await addAccountMutation.mutateAsync({
+      provider: account.provider,
+      accountType: account.accountType,
+      currentValue: account.currentValue,
+      userId: 1 // Demo user
+    });
   };
 
   const updateAccountValue = async (id: number, value: number) => {

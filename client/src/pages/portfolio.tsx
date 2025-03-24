@@ -78,10 +78,11 @@ export default function Portfolio() {
   // Handle form submission
   const onSubmit = async (values: z.infer<typeof accountSchema>) => {
     try {
+      // Send the currentValue as a string to match the server's expectation
       await addAccount({
         provider: values.provider,
         accountType: values.accountType as any,
-        currentValue: Number(values.currentValue)
+        currentValue: values.currentValue // Keep as string for numeric type
       });
       setIsAddAccountOpen(false);
       form.reset();
