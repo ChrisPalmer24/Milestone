@@ -7,6 +7,7 @@ import {
   insertMilestoneSchema,
   insertFireSettingsSchema
 } from "@shared/schema";
+import { Trading212Service } from "./apiServices";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -360,6 +361,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  // Start Trading212 API auto-update service
+  Trading212Service.startAutoUpdates();
 
   return httpServer;
 }
