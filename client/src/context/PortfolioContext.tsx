@@ -244,7 +244,12 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addMilestone = async (milestone: Omit<Milestone, "id" | "isCompleted">) => {
-    await addMilestoneMutation.mutateAsync(milestone);
+    // Convert "ALL" accountType to null which is what the backend expects
+    const processedMilestone = {
+      ...milestone,
+      accountType: milestone.accountType === "ALL" ? null : milestone.accountType
+    };
+    await addMilestoneMutation.mutateAsync(processedMilestone);
   };
 
   const deleteMilestone = async (id: number) => {
