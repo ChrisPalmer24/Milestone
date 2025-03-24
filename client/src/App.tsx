@@ -42,6 +42,15 @@ function Router() {
       <Route path="/fire">
         {() => <RouteWithLayout component={Fire} />}
       </Route>
+      <Route path="/profile">
+        {() => <RouteWithLayout component={Profile} />}
+      </Route>
+      <Route path="/settings">
+        {() => <RouteWithLayout component={Settings} />}
+      </Route>
+      <Route path="/api-connections">
+        {() => <RouteWithLayout component={ApiConnections} />}
+      </Route>
       <Route>
         {() => <RouteWithLayout component={NotFound} />}
       </Route>
