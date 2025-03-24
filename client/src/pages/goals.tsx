@@ -75,7 +75,7 @@ export default function Goals() {
     resolver: zodResolver(milestoneSchema),
     defaultValues: {
       name: "",
-      accountType: undefined,
+      accountType: "ALL",
       targetValue: "",
     },
   });
@@ -85,7 +85,7 @@ export default function Goals() {
     try {
       await addMilestone({
         name: values.name,
-        accountType: values.accountType as any || null,
+        accountType: values.accountType === "ALL" ? null : values.accountType as any,
         targetValue: Number(values.targetValue)
       });
       setIsAddMilestoneOpen(false);
@@ -225,7 +225,7 @@ export default function Goals() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">All accounts (portfolio)</SelectItem>
+                              <SelectItem value="ALL">All accounts (portfolio)</SelectItem>
                               <SelectItem value="ISA">ISA</SelectItem>
                               <SelectItem value="SIPP">SIPP</SelectItem>
                               <SelectItem value="LISA">LISA</SelectItem>
