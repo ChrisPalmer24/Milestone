@@ -1,11 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-// @ts-ignore - Ignore type issues with canvas-confetti for now
-import confetti from 'canvas-confetti';
-import { Check, Trophy, ArrowBigUp, Sparkles, Star, PartyPopper } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { X, Trophy, TrendingUp } from "lucide-react";
+import confetti from "canvas-confetti";
 
-// Animation types for variety
 type AnimationType = "confetti" | "trophy" | "growth" | "stars" | "celebration";
 
 interface MilestoneAnimationProps {
@@ -23,291 +22,251 @@ interface MilestoneAnimationProps {
 export function MilestoneAnimation({ 
   milestone, 
   isVisible, 
-  onClose, 
-  type = "celebration" 
+  onClose,
+  type = "confetti" 
 }: MilestoneAnimationProps) {
-  const [animationComplete, setAnimationComplete] = useState(false);
   
-  // Trigger confetti when animation is shown
   useEffect(() => {
-    if (isVisible) {
-      // Create a longer celebratory confetti effect
-      const duration = 3000;
-      const end = Date.now() + duration;
+    // If animation is shown, trigger the confetti
+    if (isVisible && type === "confetti") {
+      // Configure the confetti animation
+      const duration = 3 * 1000;
+      const animationEnd = Date.now() + duration;
       
-      // Different effects based on animation type
-      if (type === "confetti") {
-        const interval = setInterval(() => {
-          if (Date.now() > end) {
-            clearInterval(interval);
-            return;
-          }
-          
-          confetti({
-            particleCount: 30,
-            spread: 70,
-            origin: { y: 0.6 }
-          });
-        }, 250);
+      // Function to create confetti bursts
+      const randomInRange = (min: number, max: number) => {
+        return Math.random() * (max - min) + min;
+      };
+      
+      // Create realistic confetti effect
+      const createConfettiBurst = () => {
+        const timeLeft = animationEnd - Date.now();
         
-        return () => clearInterval(interval);
-      } else if (type === "celebration") {
-        // School colors
-        const colors = ['#26a69a', '#ffd54f', '#42a5f5', '#ef5350'];
+        // Stop the animation when time is up
+        if (timeLeft <= 0) return;
         
-        const interval = setInterval(() => {
-          if (Date.now() > end) {
-            clearInterval(interval);
-            return;
-          }
-          
-          confetti({
-            particleCount: 40,
-            angle: 60,
-            spread: 55,
-            origin: { x: 0.25, y: 0.6 },
-            colors: colors
-          });
-          
-          confetti({
-            particleCount: 40,
-            angle: 120,
-            spread: 55,
-            origin: { x: 0.75, y: 0.6 },
-            colors: colors
-          });
-        }, 300);
+        // Configure and launch confetti
+        confetti({
+          particleCount: 3,
+          angle: randomInRange(55, 125),
+          spread: randomInRange(50, 70),
+          origin: { x: randomInRange(0.2, 0.8), y: randomInRange(0.2, 0.4) },
+          colors: ['#FFD700', '#FFA500', '#00BFFF', '#32CD32'],
+          shapes: ['circle', 'square', 'star'],
+          gravity: 0.8,
+          decay: 0.95,
+          ticks: 200
+        });
         
-        return () => clearInterval(interval);
-      } else if (type === "stars") {
-        // Gold star shower
-        const interval = setInterval(() => {
-          if (Date.now() > end) {
-            clearInterval(interval);
-            return;
-          }
-          
-          // @ts-ignore - canvas-confetti types don't include shapes property
-          confetti({
-            particleCount: 20,
-            spread: 90,
-            shapes: ['star'],
-            colors: ['#FFD700', '#FFC107'],
-            scalar: 1.2
-          });
-        }, 400);
-        
-        return () => clearInterval(interval);
-      }
+        // Continue the animation
+        if (timeLeft > 0) {
+          requestAnimationFrame(createConfettiBurst);
+        }
+      };
+      
+      // Start the confetti animation
+      createConfettiBurst();
+      
+      // Create a big burst at the beginning
+      confetti({
+        particleCount: 150,
+        spread: 100,
+        origin: { y: 0.6 }
+      });
     }
   }, [isVisible, type]);
   
-  // Automatically hide the animation after a delay
-  useEffect(() => {
-    if (isVisible) {
-      const timer = setTimeout(() => {
-        setAnimationComplete(true);
-        setTimeout(() => onClose(), 500); // Allow exit animation to play
-      }, 4000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [isVisible, onClose]);
-  
-  // Different animation content based on type
-  const getAnimationContent = () => {
-    switch(type) {
-      case "trophy":
-        return (
-          <div className="text-center">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1, rotate: [0, 10, -10, 0] }}
-              transition={{ duration: 0.8, type: "spring" }}
-              className="inline-block mb-4"
-            >
-              <Trophy className="w-20 h-20 text-yellow-400" />
-            </motion.div>
-            <h2 className="text-2xl font-bold mb-2">Achievement Unlocked!</h2>
-          </div>
-        );
-        
-      case "growth":
-        return (
-          <div className="text-center">
-            <motion.div
-              initial={{ y: 40, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.5 }}
-              className="inline-block mb-4"
-            >
-              <ArrowBigUp className="w-16 h-16 text-green-500" />
-              <motion.div
-                initial={{ scale: 0.2, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.3, duration: 0.5 }}
-                className="w-8 h-8 bg-green-500 rounded-full absolute -top-2 -right-2 flex items-center justify-center"
-              >
-                <Check className="w-5 h-5 text-white" />
-              </motion.div>
-            </motion.div>
-            <h2 className="text-2xl font-bold mb-2">Growth Target Reached!</h2>
-          </div>
-        );
-        
-      case "stars":
-        return (
-          <div className="text-center">
-            <div className="relative inline-block mb-4">
-              <motion.div className="absolute top-0 left-0" animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }}>
-                <Star className="w-8 h-8 text-amber-300 absolute -top-4 -left-8" />
-                <Star className="w-6 h-6 text-amber-400 absolute top-2 -left-12" />
-                <Star className="w-5 h-5 text-amber-500 absolute top-8 -left-6" />
-              </motion.div>
-              <motion.div className="absolute top-0 right-0" animate={{ rotate: -360 }} transition={{ duration: 15, repeat: Infinity, ease: "linear" }}>
-                <Star className="w-7 h-7 text-amber-300 absolute -top-8 -right-4" />
-                <Star className="w-5 h-5 text-amber-400 absolute -top-2 -right-10" />
-                <Star className="w-4 h-4 text-amber-500 absolute top-6 -right-8" />
-              </motion.div>
-              <Sparkles className="w-20 h-20 text-amber-400 relative z-10" />
-            </div>
-            <h2 className="text-2xl font-bold mb-2">Outstanding Achievement!</h2>
-          </div>
-        );
-        
-      case "celebration":
-      default:
-        return (
-          <div className="text-center">
-            <motion.div
-              initial={{ scale: 0, rotate: -20 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ duration: 0.5, type: "spring" }}
-              className="inline-block mb-4"
-            >
-              <PartyPopper className="w-16 h-16 text-primary" />
-            </motion.div>
-            <motion.h2
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-              className="text-2xl font-bold mb-2"
-            >
-              Milestone Achieved!
-            </motion.h2>
-          </div>
-        );
-    }
-  };
-  
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence>
       {isVisible && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.8 }}
-          transition={{ duration: 0.3 }}
-          className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 p-4"
-        >
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm overflow-hidden">
           <motion.div
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 50, opacity: 0 }}
-            className="bg-white rounded-xl p-6 max-w-md w-full shadow-xl"
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+            transition={{ 
+              type: "spring", 
+              damping: 15, 
+              stiffness: 300 
+            }}
+            className="max-w-md w-full mx-4"
           >
-            {getAnimationContent()}
-            
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              className="mb-4 text-center"
-            >
-              <p className="text-xl font-semibold text-primary">{milestone.name}</p>
-              <p className="text-gray-600">
-                {milestone.accountType ? 
-                  `You've reached your target of £${Number(milestone.targetValue).toLocaleString()} in your ${milestone.accountType} account!` : 
-                  `You've reached your target of £${Number(milestone.targetValue).toLocaleString()} across your portfolio!`
-                }
-              </p>
-            </motion.div>
-            
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8 }}
-              className="text-center"
-            >
-              <Button 
-                onClick={onClose} 
-                className="bg-primary text-white hover:bg-primary/90"
+            <Card className="border-4 border-primary overflow-hidden">
+              <div className="absolute top-2 right-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={onClose} 
+                  className="h-8 w-8 rounded-full bg-white/20 hover:bg-white/40 text-white"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <motion.div 
+                className="bg-gradient-to-br from-primary/80 to-primary p-6 text-center text-white"
+                initial={{ y: -20 }}
+                animate={{ y: 0 }}
+                transition={{ delay: 0.2 }}
               >
-                Continue
-              </Button>
-            </motion.div>
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1, rotate: [0, 10, -10, 0] }}
+                  transition={{ delay: 0.4, duration: 0.8 }}
+                  className="mx-auto mb-3 bg-white/20 w-20 h-20 rounded-full flex items-center justify-center"
+                >
+                  {type === "trophy" ? (
+                    <Trophy className="h-10 w-10 text-yellow-200" />
+                  ) : (
+                    <TrendingUp className="h-10 w-10 text-white" />
+                  )}
+                </motion.div>
+                
+                <motion.h2 
+                  className="text-2xl font-bold mb-2"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                >
+                  Milestone Achieved!
+                </motion.h2>
+                
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.8 }}
+                >
+                  <h3 className="text-xl font-semibold mb-1">{milestone.name}</h3>
+                  {milestone.accountType && (
+                    <p className="text-sm opacity-80 mb-1">
+                      {milestone.accountType === "ISA" ? "ISA Account" :
+                       milestone.accountType === "LISA" ? "Lifetime ISA" :
+                       milestone.accountType === "SIPP" ? "Pension (SIPP)" :
+                       milestone.accountType === "GIA" ? "General Account" :
+                       milestone.accountType}
+                    </p>
+                  )}
+                  <p className="text-xl font-bold">
+                    £{Number(milestone.targetValue).toLocaleString()}
+                  </p>
+                </motion.div>
+              </motion.div>
+              
+              <CardContent className="p-6 text-center">
+                <motion.p 
+                  className="text-gray-700 mb-6"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 1 }}
+                >
+                  Congratulations! You've hit an important milestone in your financial journey. 
+                  Keep up the great work!
+                </motion.p>
+                
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 1.2 }}
+                >
+                  <Button
+                    onClick={onClose}
+                    className="w-full"
+                  >
+                    Continue
+                  </Button>
+                </motion.div>
+              </CardContent>
+            </Card>
           </motion.div>
-        </motion.div>
+        </div>
       )}
     </AnimatePresence>
   );
 }
 
-// Component that manages showing milestone animations as they are completed
+interface MilestoneAnimationManagerProps {
+  milestones: Array<{
+    id: number;
+    name: string;
+    targetValue: string;
+    accountType: string | null;
+    isCompleted: boolean;
+  }>;
+  currentValues: {
+    total: number;
+    ISA: number;
+    SIPP: number;
+    LISA: number;
+    GIA: number;
+  };
+  onMilestoneComplete: (milestone: any) => Promise<void>;
+}
+
 export function MilestoneAnimationManager({ 
-  milestones, 
-  currentValues, 
-  onMilestoneComplete 
-}: { 
-  milestones: any[], 
-  currentValues: {[key: string]: number},
-  onMilestoneComplete?: (milestone: any) => void
-}) {
-  const [completedMilestone, setCompletedMilestone] = useState<any | null>(null);
-  const [animationType, setAnimationType] = useState<AnimationType>("celebration");
-  
-  // Check for newly completed milestones
+  milestones,
+  currentValues,
+  onMilestoneComplete
+}: MilestoneAnimationManagerProps) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [showAnimation, setShowAnimation] = useState(false);
+  const [completedMilestones, setCompletedMilestones] = useState<Array<any>>([]);
+
+  // Find milestones that have just been achieved
   useEffect(() => {
-    if (!milestones || milestones.length === 0) return;
-    
-    // Find milestones that have just been completed
-    const justCompleted = milestones.find(milestone => {
-      // Skip already marked complete
-      if (milestone.isCompleted) return false;
-      
-      const targetValue = Number(milestone.targetValue);
-      let currentValue = 0;
-      
-      if (milestone.accountType) {
-        currentValue = currentValues[milestone.accountType] || 0;
-      } else {
-        currentValue = currentValues['total'] || 0;
+    const newlyCompleted = milestones.filter(milestone => {
+      // Don't show if already marked as completed
+      if (milestone.isCompleted) {
+        return false;
       }
       
+      // Check if the milestone is now achieved
+      const targetValue = Number(milestone.targetValue);
+      const currentValue = milestone.accountType ? 
+        currentValues[milestone.accountType as keyof typeof currentValues] : 
+        currentValues.total;
+        
       return currentValue >= targetValue;
     });
     
-    if (justCompleted && !completedMilestone) {
-      // Randomly select an animation type for variety
-      const animationTypes: AnimationType[] = ["confetti", "trophy", "growth", "stars", "celebration"];
-      const randomType = animationTypes[Math.floor(Math.random() * animationTypes.length)];
+    if (newlyCompleted.length > 0) {
+      setCompletedMilestones(newlyCompleted);
+      setShowAnimation(true);
       
-      setAnimationType(randomType);
-      setCompletedMilestone(justCompleted);
-      
-      // Notify parent component (optional)
-      if (onMilestoneComplete) {
-        onMilestoneComplete(justCompleted);
-      }
+      // Mark these milestones as completed in the backend
+      newlyCompleted.forEach(milestone => {
+        onMilestoneComplete(milestone);
+      });
     }
-  }, [milestones, currentValues, completedMilestone, onMilestoneComplete]);
+  }, [milestones, currentValues, onMilestoneComplete]);
+  
+  const handleClose = () => {
+    setShowAnimation(false);
+    
+    // Check if there are more milestones to show
+    if (currentIndex < completedMilestones.length - 1) {
+      // Wait a bit before showing the next animation
+      setTimeout(() => {
+        setCurrentIndex(currentIndex + 1);
+        setShowAnimation(true);
+      }, 500);
+    } else {
+      // Reset to the beginning for the next batch of milestones
+      setCurrentIndex(0);
+      setCompletedMilestones([]);
+    }
+  };
+  
+  // If no milestones or no current milestone, don't render
+  if (completedMilestones.length === 0 || !completedMilestones[currentIndex]) {
+    return null;
+  }
   
   return (
     <MilestoneAnimation
-      milestone={completedMilestone || {id: 0, name: "", targetValue: "0", accountType: null}}
-      isVisible={!!completedMilestone}
-      onClose={() => setCompletedMilestone(null)}
-      type={animationType}
+      milestone={completedMilestones[currentIndex]}
+      isVisible={showAnimation}
+      onClose={handleClose}
+      type={currentIndex % 2 === 0 ? "confetti" : "trophy"}
     />
   );
 }

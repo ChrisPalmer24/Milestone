@@ -37,8 +37,10 @@ export async function generateMilestoneSuggestions(
       response_format: { type: "json_object" }
     });
 
-    // Parse and validate the response
-    const result = JSON.parse(response.choices[0].message.content);
+    // Get the response content and ensure it's a string before parsing
+    const messageContent = response.choices[0].message.content;
+    const content = typeof messageContent === 'string' ? messageContent : "{}";
+    const result = JSON.parse(content);
     
     if (!result.suggestions || !Array.isArray(result.suggestions)) {
       console.error("Invalid response format from Grok API:", result);
@@ -66,9 +68,10 @@ function buildMilestonePrompt(
   )).join('\n');
 
   // Format existing milestones to avoid duplication
-  const milestonesText = existingMilestones.map(milestone => (
-    `- ${milestone.name}: £${milestone.targetValue}${milestone.accountType ? ` (${milestone.accountType})` : ''}`
-  )).join('\n');
+  const milestonesText = existingMilestones.map(milestone => {
+    const accountTypeStr = milestone.accountType !== null ? ` (${milestone.accountType})` : '';
+    return `- ${milestone.name}: £${milestone.targetValue}${accountTypeStr}`;
+  }).join('\n');
 
   // Build the prompt
   return `
