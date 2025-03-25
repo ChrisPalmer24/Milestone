@@ -1,33 +1,48 @@
 import OpenAI from "openai";
 import { Account, Milestone } from "@shared/schema";
 
+// Initialize the xAI client only if API key is available
+let xai: OpenAI | null = null;
+
+// Only create client when API key is available
+if (process.env.XAI_API_KEY) {
+  xai = new OpenAI({ 
+    baseURL: "https://api.x.ai/v1",
+    apiKey: process.env.XAI_API_KEY 
+  });
+}
+
 /**
  * Generate intelligent milestone suggestions using xAI's Grok API
  */
 export async function generateMilestoneSuggestions(
   accounts: Account[],
-  totalValue: number,
+  totalPortfolioValue: number,
   existingMilestones: Milestone[]
-): Promise<any[]> {
+): Promise<Array<{
+  name: string;
+  accountType: string | null;
+  targetValue: string;
+  description: string;
+  icon?: string;
+}>> {
   try {
-    if (!process.env.XAI_API_KEY) {
-      throw new Error("XAI_API_KEY environment variable is required");
+    // Only proceed if API key is available and client exists
+    if (!process.env.XAI_API_KEY || !xai) {
+      console.warn("No xAI API key provided, falling back to local generation");
+      return [];
     }
 
-    const openai = new OpenAI({ 
-      baseURL: "https://api.x.ai/v1", 
-      apiKey: process.env.XAI_API_KEY 
-    });
+    // Build a detailed prompt for the AI
+    const prompt = buildMilestonePrompt(accounts, totalPortfolioValue, existingMilestones);
 
-    // Build a detailed prompt based on portfolio data
-    const prompt = buildMilestonePrompt(accounts, totalValue, existingMilestones);
-
-    const response = await openai.chat.completions.create({
+    // Make the API call (we've already checked that xai is not null above)
+    const response = await xai!.chat.completions.create({
       model: "grok-2-1212",
       messages: [
         {
           role: "system",
-          content: "You are a financial advisor specialized in helping people set and track investment goals."
+          content: "You are a financial advisor specializing in investment goals and milestone planning. Generate thoughtful and personalized investment milestones based on the user's portfolio."
         },
         {
           role: "user",
@@ -37,20 +52,19 @@ export async function generateMilestoneSuggestions(
       response_format: { type: "json_object" }
     });
 
-    // Get the response content and ensure it's a string before parsing
-    const messageContent = response.choices[0].message.content;
-    const content = typeof messageContent === 'string' ? messageContent : "{}";
-    const result = JSON.parse(content);
-    
-    if (!result.suggestions || !Array.isArray(result.suggestions)) {
-      console.error("Invalid response format from Grok API:", result);
-      return [];
+    // Parse the response
+    const messageContent = response.choices[0].message.content || "{}";
+    const result = JSON.parse(messageContent);
+
+    // Validate and format the result
+    if (Array.isArray(result.suggestions)) {
+      return result.suggestions.slice(0, 5); // Limit to top 5 suggestions
     }
 
-    return result.suggestions;
+    return [];
   } catch (error) {
-    console.error("Error generating milestone suggestions with Grok:", error);
-    throw error;
+    console.error("Error generating AI milestone suggestions:", error);
+    return [];
   }
 }
 
@@ -59,50 +73,51 @@ export async function generateMilestoneSuggestions(
  */
 function buildMilestonePrompt(
   accounts: Account[],
-  totalValue: number,
+  totalPortfolioValue: number,
   existingMilestones: Milestone[]
 ): string {
-  // Format account data
-  const accountsText = accounts.map(account => (
-    `- ${account.provider} ${account.accountType} account: £${account.currentValue}`
-  )).join('\n');
+  let accountsSummary = accounts.map(acc => {
+    return `- ${acc.provider} ${acc.accountType} account: £${Number(acc.currentValue).toLocaleString()}`;
+  }).join("\n");
 
-  // Format existing milestones to avoid duplication
-  const milestonesText = existingMilestones.map(milestone => {
-    const accountTypeStr = milestone.accountType !== null ? ` (${milestone.accountType})` : '';
-    return `- ${milestone.name}: £${milestone.targetValue}${accountTypeStr}`;
-  }).join('\n');
+  if (accountsSummary.length === 0) {
+    accountsSummary = "No investment accounts yet.";
+  }
 
-  // Build the prompt
+  let milestonesSummary = existingMilestones.map(m => {
+    return `- ${m.name}: £${m.targetValue} ${m.accountType ? `(${m.accountType})` : '(Overall portfolio)'}`;
+  }).join("\n");
+
+  if (milestonesSummary.length === 0) {
+    milestonesSummary = "No milestones set yet.";
+  }
+
   return `
-I need personalized investment milestone suggestions for my portfolio.
+Please analyze this investment portfolio and suggest 5 personalized milestones:
 
-Current Portfolio:
-${accountsText}
-Total portfolio value: £${totalValue}
+PORTFOLIO SUMMARY:
+Total portfolio value: £${totalPortfolioValue.toLocaleString()}
+Number of accounts: ${accounts.length}
 
-Existing Milestones (don't suggest duplicates):
-${milestonesText || "None"}
+ACCOUNTS:
+${accountsSummary}
 
-Please suggest 3-5 realistic and achievable milestone goals for my investments. 
-For each suggestion, provide:
-1. A concise milestone name
-2. The account type it applies to (ISA, SIPP, LISA, GIA, or null for the entire portfolio)
-3. A target value that is ambitious but attainable based on my current portfolio
-4. A short description explaining the benefit or significance of reaching this milestone
-5. An optional emoji icon that represents the milestone
+EXISTING MILESTONES:
+${milestonesSummary}
 
-Return the response in JSON format with this structure:
+Please generate exactly 5 new milestone suggestions as a JSON object with an array of 'suggestions' following this format:
 {
   "suggestions": [
     {
-      "name": "string",
-      "accountType": "string or null",
-      "targetValue": "string (numeric value without currency symbol)",
-      "description": "string",
-      "icon": "string (emoji)"
+      "name": "Brief milestone name",
+      "accountType": "ISA or SIPP or LISA or GIA or null for overall portfolio",
+      "targetValue": "numeric target as string",
+      "description": "Brief description of why this milestone matters",
+      "icon": "Single emoji representing this milestone"
     }
   ]
 }
+
+Each suggestion should be achievable, specific, motivating, and appropriate for the portfolio composition. Don't repeat existing milestones.
 `;
 }

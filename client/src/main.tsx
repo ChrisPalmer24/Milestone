@@ -1,13 +1,35 @@
-import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
+import { initializeCapacitor } from "./capacitor";
+import { registerServiceWorker, initPwaInstallListener } from "./lib/service-worker";
+import { isNativePlatform } from "./capacitor";
 
-// Direct render with no extra features that could cause issues
-const rootElement = document.getElementById("root");
-if (rootElement) {
-  console.log('Mounting app with basic class-based component');
-  createRoot(rootElement).render(<App />);
-} else {
-  console.error('Root element not found!');
-}
+// Initialize Capacitor for mobile platforms and register service worker
+document.addEventListener('DOMContentLoaded', () => {
+  // Initialize Capacitor for native mobile platforms
+  initializeCapacitor();
+  
+  // Only register service worker on web (not needed for native mobile apps)
+  if (!isNativePlatform()) {
+    // Register service worker for PWA support
+    registerServiceWorker();
+    
+    // Initialize PWA install prompt listener
+    initPwaInstallListener();
+    
+    // Add manifest link in the head
+    const manifestLink = document.createElement('link');
+    manifestLink.rel = 'manifest';
+    manifestLink.href = '/manifest.json';
+    document.head.appendChild(manifestLink);
+    
+    // Add theme-color meta tag
+    const themeColorMeta = document.createElement('meta');
+    themeColorMeta.name = 'theme-color';
+    themeColorMeta.content = '#3B82F6';
+    document.head.appendChild(themeColorMeta);
+  }
+});
+
+createRoot(document.getElementById("root")!).render(<App />);

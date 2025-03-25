@@ -5,7 +5,7 @@ import {
   LineChart, 
   Flame 
 } from "lucide-react";
-import { useLocation } from "wouter";
+import { useLocation, useRoute } from "wouter";
 import { cn } from "@/lib/utils";
 
 type NavItem = {
@@ -66,17 +66,15 @@ export default function BottomNav({ activeSection, onChange }: BottomNavProps) {
       <div className="max-w-5xl mx-auto">
         <ul className="flex justify-between">
           {navItems.map((item) => {
-            // Simplify the active state check to reduce hook issues
-            const isActive = location === item.path || 
-                            (location === "/" && item.id === "portfolio") || 
-                            activeSection === item.id;
+            const [isActive] = useRoute(item.path);
+            const isActiveHome = location === "/" && item.id === "portfolio";
             
             return (
               <li key={item.id} className="flex-1">
                 <button 
                   className={cn(
                     "nav-item flex flex-col items-center pt-2 pb-1 w-full",
-                    isActive && "text-primary border-t-2 border-primary"
+                    (isActive || isActiveHome || activeSection === item.id) && "text-primary border-t-2 border-primary"
                   )}
                   onClick={() => handleNavigation(item)}
                   aria-label={item.label}
