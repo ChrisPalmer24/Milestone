@@ -53,7 +53,8 @@ export async function generateMilestoneSuggestions(
     });
 
     // Parse the response
-    const result = JSON.parse(response.choices[0].message.content);
+    const messageContent = response.choices[0].message.content || "{}";
+    const result = JSON.parse(messageContent);
 
     // Validate and format the result
     if (Array.isArray(result.suggestions)) {

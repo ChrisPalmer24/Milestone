@@ -34,9 +34,7 @@ export default function AISuggestedMilestones() {
     
     try {
       // Try to use the AI endpoint first
-      const response = await apiRequest("/api/milestones/suggestions/ai", {
-        method: "GET"
-      });
+      const response = await fetch("/api/milestones/suggestions/ai");
       
       if (response.status === 403) {
         // API key is missing

@@ -335,10 +335,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         settings = await storage.createFireSettings({
           userId,
           targetRetirementAge: 60,
-          annualIncomeGoal: 48000,
-          expectedAnnualReturn: 7,
-          safeWithdrawalRate: 4,
-          monthlyInvestment: 1500,
+          annualIncomeGoal: "48000",
+          expectedAnnualReturn: "7",
+          safeWithdrawalRate: "4",
+          monthlyInvestment: "1500",
           currentAge: 35
         });
       }
@@ -366,10 +366,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userId,
           ...validatedData,
           targetRetirementAge: validatedData.targetRetirementAge || 60,
-          annualIncomeGoal: validatedData.annualIncomeGoal || 48000,
-          expectedAnnualReturn: validatedData.expectedAnnualReturn || 7,
-          safeWithdrawalRate: validatedData.safeWithdrawalRate || 4,
-          monthlyInvestment: validatedData.monthlyInvestment || 1500,
+          annualIncomeGoal: validatedData.annualIncomeGoal || "48000",
+          expectedAnnualReturn: validatedData.expectedAnnualReturn || "7",
+          safeWithdrawalRate: validatedData.safeWithdrawalRate || "4",
+          monthlyInvestment: validatedData.monthlyInvestment || "1500",
           currentAge: validatedData.currentAge || 35
         });
       } else {
