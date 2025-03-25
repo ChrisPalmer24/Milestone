@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { 
   Card, 
-  CardContent 
+  CardContent, 
+  CardHeader,
+  CardTitle,
+  CardDescription
 } from "@/components/ui/card";
 import { 
   Dialog, 
@@ -12,6 +15,20 @@ import {
   DialogTrigger,
   DialogFooter
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import AISuggestedMilestones from "@/components/milestones/AISuggestedMilestones";
+// Removed MilestoneAnimationManager import
+
 import {
   Form,
   FormControl,
@@ -29,30 +46,17 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, X, Trophy } from "lucide-react";
+import { Trash2, Target, Plus, Sparkles } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { usePortfolio } from "@/context/PortfolioContext";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import AISuggestedMilestones from "@/components/milestones/AISuggestedMilestones";
-import { MilestoneAnimationManager } from "@/components/milestones/MilestoneAnimations";
+import { useToast } from "@/hooks/use-toast";
 
 // Form schema for adding a new milestone
 const milestoneSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  accountType: z.string().optional(),
+  name: z.string().min(1, "Milestone name is required"),
+  accountType: z.string(),
   targetValue: z.string().refine(
     (val) => !isNaN(Number(val)) && Number(val) > 0,
     { message: "Target value must be a positive number" }
@@ -62,15 +66,44 @@ const milestoneSchema = z.object({
 export default function Goals() {
   const { 
     accounts, 
-    milestones, 
+    milestones,
     totalPortfolioValue,
-    addMilestone, 
+    addMilestone,
     deleteMilestone,
     isLoading 
   } = usePortfolio();
+  const { toast } = useToast();
   
   const [isAddMilestoneOpen, setIsAddMilestoneOpen] = useState(false);
   const [milestoneToDelete, setMilestoneToDelete] = useState<number | null>(null);
+  
+  // Calculate the values for each account type to track progress
+  const [accountValues, setAccountValues] = useState({
+    total: 0,
+    ISA: 0,
+    SIPP: 0,
+    LISA: 0,
+    GIA: 0
+  });
+  
+  // Update account values when accounts change
+  useEffect(() => {
+    const newValues = {
+      total: totalPortfolioValue,
+      ISA: 0,
+      SIPP: 0,
+      LISA: 0,
+      GIA: 0
+    };
+    
+    accounts.forEach(account => {
+      if (account.accountType in newValues) {
+        newValues[account.accountType as keyof typeof newValues] += account.currentValue;
+      }
+    });
+    
+    setAccountValues(newValues);
+  }, [accounts, totalPortfolioValue]);
   
   // Form for adding a new milestone
   const form = useForm<z.infer<typeof milestoneSchema>>({
@@ -82,13 +115,13 @@ export default function Goals() {
     },
   });
   
-  // Handle form submission
+  // Handle form submission for adding a milestone
   const onSubmit = async (values: z.infer<typeof milestoneSchema>) => {
     try {
       await addMilestone({
         name: values.name,
-        accountType: values.accountType === "ALL" ? null : values.accountType as any,
-        targetValue: values.targetValue // Keep as string since the API expects a string
+        accountType: values.accountType as any,
+        targetValue: values.targetValue
       });
       setIsAddMilestoneOpen(false);
       form.reset();
@@ -97,137 +130,43 @@ export default function Goals() {
     }
   };
   
-  // Handle milestone deletion
-  const handleDeleteMilestone = async () => {
-    if (milestoneToDelete !== null) {
-      try {
-        await deleteMilestone(milestoneToDelete);
-        setMilestoneToDelete(null);
-      } catch (error) {
-        console.error("Error deleting milestone:", error);
-      }
-    }
+  // Helper function to get the appropriate color for progress bars
+  const getProgressBarColor = (progress: number) => {
+    if (progress >= 100) return "bg-green-500";
+    if (progress >= 75) return "bg-emerald-500";
+    if (progress >= 50) return "bg-blue-500";
+    if (progress >= 25) return "bg-amber-500";
+    return "bg-rose-500";
   };
   
-  // Get color based on account type
-  const getAccountTypeColor = (type: string | null) => {
-    switch (type) {
-      case "ISA":
-        return "text-blue-400 bg-blue-50";
-      case "SIPP":
-        return "text-secondary bg-green-50";
-      case "LISA":
-        return "text-accent bg-amber-50";
-      case "GIA":
-        return "text-purple-500 bg-purple-50";
-      default:
-        return "text-primary bg-blue-50";
-    }
+  // Helper function to get the current value for a milestone's account type
+  const getCurrentValueForMilestone = (milestone: any) => {
+    if (!milestone.accountType) return accountValues.total;
+    return accountValues[milestone.accountType as keyof typeof accountValues] || 0;
   };
   
-  // Get progress percentage for a milestone
-  const calculateProgress = (milestone: any) => {
-    let currentValue = 0;
-    
-    if (milestone.accountType) {
-      // Sum values of accounts with matching type
-      currentValue = accounts.reduce((sum, account) => 
-        account.accountType === milestone.accountType ? sum + Number(account.currentValue) : sum, 
-        0
-      );
-    } else {
-      // Use total portfolio value for general milestones
-      currentValue = totalPortfolioValue;
-    }
-    
-    const targetValue = Number(milestone.targetValue);
-    const percentage = (currentValue / targetValue) * 100;
-    
-    // Cap at 100%
-    return Math.min(percentage, 100);
-  };
-  
-  // Format display for progress
-  const formatProgressDisplay = (milestone: any) => {
-    let currentValue = 0;
-    
-    if (milestone.accountType) {
-      // Sum values of accounts with matching type
-      currentValue = accounts.reduce((sum, account) => 
-        account.accountType === milestone.accountType ? sum + Number(account.currentValue) : sum, 
-        0
-      );
-    } else {
-      // Use total portfolio value for general milestones
-      currentValue = totalPortfolioValue;
-    }
-    
-    const targetValue = Number(milestone.targetValue);
-    const percentage = (currentValue / targetValue) * 100;
-    
-    // Format the display based on progress
-    if (percentage >= 100) {
-      return "Completed!";
-    } else {
-      const remaining = targetValue - currentValue;
-      return `£${remaining.toLocaleString()} more needed`;
-    }
-  };
-  
-  // Track current values for all account types for milestone animations
-  const accountValues = {
-    total: totalPortfolioValue,
-    ISA: accounts.reduce((sum, account) => 
-      account.accountType === "ISA" ? sum + Number(account.currentValue) : sum, 0
-    ),
-    SIPP: accounts.reduce((sum, account) => 
-      account.accountType === "SIPP" ? sum + Number(account.currentValue) : sum, 0
-    ),
-    LISA: accounts.reduce((sum, account) => 
-      account.accountType === "LISA" ? sum + Number(account.currentValue) : sum, 0
-    ),
-    GIA: accounts.reduce((sum, account) => 
-      account.accountType === "GIA" ? sum + Number(account.currentValue) : sum, 0
-    )
-  };
-  
-  // Handler for milestone completion
-  const handleMilestoneComplete = async (milestone: any) => {
-    if (!milestone.isCompleted) {
-      try {
-        // Mark milestone as completed in the database
-        await fetch(`/api/milestones/${milestone.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ isCompleted: true })
-        });
-        
-        // Refresh milestone data
-        // This would typically be handled by the portfolio context invalidating the query
-      } catch (error) {
-        console.error("Error updating milestone completion status:", error);
-      }
-    }
-  };
-
   return (
-    <div className="goals-screen max-w-5xl mx-auto px-4 pb-20">
-      <Card className="mt-4">
-        <CardContent className="p-4">
-          <div className="flex justify-between items-center mb-5">
-            <h2 className="text-lg font-semibold">Milestones</h2>
+    <div className="goals-screen max-w-5xl mx-auto px-4 pb-20 mt-4">
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="text-xl">Milestones</CardTitle>
+              <CardDescription>Track your investment goals and celebrate your progress</CardDescription>
+            </div>
             
+            {/* Add Milestone Dialog */}
             <Dialog open={isAddMilestoneOpen} onOpenChange={setIsAddMilestoneOpen}>
               <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-primary">
-                  <Plus className="h-6 w-6" />
+                <Button className="bg-black text-white hover:bg-gray-800">
+                  <Plus className="mr-2 h-4 w-4" /> Add Milestone
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Add Milestone</DialogTitle>
+                  <DialogTitle>Add Investment Milestone</DialogTitle>
                   <DialogDescription>
-                    Create a new milestone to track your investment progress.
+                    Set a target value to reach in your investment journey.
                   </DialogDescription>
                 </DialogHeader>
                 
@@ -240,7 +179,7 @@ export default function Goals() {
                         <FormItem>
                           <FormLabel>Milestone Name</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g. First £100k" {...field} />
+                            <Input placeholder="e.g., First £10k, Emergency Fund" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -252,22 +191,22 @@ export default function Goals() {
                       name="accountType"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Account Type (Optional)</FormLabel>
+                          <FormLabel>Account Type</FormLabel>
                           <Select
                             onValueChange={field.onChange}
                             defaultValue={field.value}
                           >
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="All accounts (portfolio)" />
+                                <SelectValue placeholder="Select account type" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="ALL">All accounts (portfolio)</SelectItem>
-                              <SelectItem value="ISA">ISA</SelectItem>
-                              <SelectItem value="SIPP">SIPP</SelectItem>
-                              <SelectItem value="LISA">LISA</SelectItem>
-                              <SelectItem value="GIA">GIA</SelectItem>
+                              <SelectItem value="ALL">All Accounts (Total Portfolio)</SelectItem>
+                              <SelectItem value="ISA">ISA Only</SelectItem>
+                              <SelectItem value="SIPP">SIPP Only</SelectItem>
+                              <SelectItem value="LISA">Lifetime ISA Only</SelectItem>
+                              <SelectItem value="GIA">General Account Only</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -300,92 +239,102 @@ export default function Goals() {
                 </Form>
               </DialogContent>
             </Dialog>
+            
+            {/* Delete Milestone Alert Dialog */}
+            <AlertDialog open={!!milestoneToDelete} onOpenChange={(open) => !open && setMilestoneToDelete(null)}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Milestone</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete this milestone?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-red-600 hover:bg-red-700"
+                    onClick={async () => {
+                      if (milestoneToDelete) {
+                        await deleteMilestone(milestoneToDelete);
+                        setMilestoneToDelete(null);
+                      }
+                    }}
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
-
+        </CardHeader>
+        
+        <CardContent>
           {isLoading ? (
-            // Skeleton loading state for milestones
-            Array(3).fill(0).map((_, i) => (
-              <div key={i} className="bg-gray-50 rounded-lg p-4 mb-4">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <Skeleton className="h-5 w-32 mb-1" />
-                    <Skeleton className="h-4 w-48" />
-                  </div>
-                  <Skeleton className="h-6 w-6 rounded-full" />
-                </div>
-                <Skeleton className="h-2 w-full rounded-full mt-2" />
-                <div className="flex justify-end mt-1">
-                  <Skeleton className="h-4 w-24" />
-                </div>
-              </div>
-            ))
+            <div className="text-center p-6">
+              <p className="text-gray-500">Loading milestones...</p>
+            </div>
           ) : milestones.length === 0 ? (
-            <div className="py-8 text-center">
-              <p className="text-gray-500 mb-4">No milestones added yet.</p>
+            <div className="text-center p-8">
+              <Target className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No milestones set yet</h3>
+              <p className="text-gray-500 mb-6">
+                Set financial milestones to track your investment progress and celebrate your achievements.
+              </p>
               <Button 
                 onClick={() => setIsAddMilestoneOpen(true)}
-                className="bg-primary text-white"
+                className="bg-black text-white hover:bg-gray-800"
               >
-                Add Your First Milestone
+                <Plus className="mr-2 h-4 w-4" /> Create First Milestone
               </Button>
             </div>
           ) : (
-            // List of milestones
-            milestones.map((milestone) => {
-              const progress = calculateProgress(milestone);
-              const progressDisplay = formatProgressDisplay(milestone);
-              const progressBarColor = progress === 100 ? "bg-secondary" : 
-                milestone.accountType ? getAccountTypeColor(milestone.accountType).split(' ')[0] : "bg-primary";
+            milestones.map(milestone => {
+              const currentValue = getCurrentValueForMilestone(milestone);
+              const targetValue = Number(milestone.targetValue);
+              const progress = Math.min((currentValue / targetValue) * 100, 100);
+              const progressBarColor = getProgressBarColor(progress);
+              const isComplete = progress >= 100;
+              
+              // Format the progress display
+              const progressDisplay = isComplete 
+                ? "Completed!" 
+                : `£${currentValue.toLocaleString()} of £${targetValue.toLocaleString()}`;
               
               return (
-                <div key={milestone.id} className="bg-gray-50 rounded-lg p-4 mb-4">
-                  <div className="flex justify-between items-start mb-2">
+                <div key={milestone.id} className="border-b border-gray-200 py-4 last:border-0">
+                  <div className="flex justify-between items-start mb-1">
                     <div>
-                      <h3 className="font-medium">{milestone.name}</h3>
                       <div className="flex items-center">
-                        <span className={`text-sm font-medium mr-2 px-2 py-0.5 rounded-full ${getAccountTypeColor(milestone.accountType)}`}>
-                          {milestone.accountType || "Portfolio"}
-                        </span>
-                        <span className="text-sm text-gray-600">
-                          {milestone.accountType ? 
-                            `£${accounts.reduce((sum, account) => 
-                              account.accountType === milestone.accountType ? sum + Number(account.currentValue) : sum, 
-                              0
-                            ).toLocaleString()} of £${Number(milestone.targetValue).toLocaleString()}` :
-                            `£${totalPortfolioValue.toLocaleString()} of £${Number(milestone.targetValue).toLocaleString()}`
-                          }
-                        </span>
+                        <h3 className="font-medium text-lg">{milestone.name}</h3>
+                        {isComplete && (
+                          <div className="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-xs font-medium rounded-full flex items-center">
+                            <Sparkles className="h-3 w-3 mr-1" />
+                            Achieved
+                          </div>
+                        )}
                       </div>
+                      <p className="text-sm text-gray-500">
+                        {milestone.accountType === "ALL" ? "All Accounts" :
+                         milestone.accountType === "ISA" ? "ISA Only" :
+                         milestone.accountType === "SIPP" ? "SIPP Only" :
+                         milestone.accountType === "LISA" ? "Lifetime ISA Only" :
+                         milestone.accountType === "GIA" ? "General Account Only" :
+                         "All Accounts"}
+                      </p>
                     </div>
-                    
-                    <AlertDialog open={milestoneToDelete === milestone.id} onOpenChange={(open) => !open && setMilestoneToDelete(null)}>
-                      <AlertDialogTrigger asChild>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="text-gray-400 hover:text-gray-600"
-                          onClick={() => setMilestoneToDelete(milestone.id)}
-                        >
-                          <X className="h-5 w-5" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will permanently delete this milestone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel onClick={() => setMilestoneToDelete(null)}>
-                            No, cancel
-                          </AlertDialogCancel>
-                          <AlertDialogAction onClick={handleDeleteMilestone}>
-                            Yes, delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                    <div className="flex items-center">
+                      <p className="text-right font-bold mr-3">
+                        £{Number(milestone.targetValue).toLocaleString()}
+                      </p>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 text-gray-500 hover:text-red-600"
+                        onClick={() => setMilestoneToDelete(milestone.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                   
                   <div className="progress-bar mt-2">
@@ -410,14 +359,7 @@ export default function Goals() {
       {/* AI Suggested Milestones section */}
       <AISuggestedMilestones />
       
-      {/* Milestone celebration animation manager */}
-      {!isLoading && milestones.length > 0 && (
-        <MilestoneAnimationManager 
-          milestones={milestones}
-          currentValues={accountValues}
-          onMilestoneComplete={handleMilestoneComplete}
-        />
-      )}
+      {/* Removed the MilestoneAnimationManager component that was causing issues */}
     </div>
   );
 }
