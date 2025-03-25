@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useMobilePlatform } from "@/hooks/use-mobile-platform";
 import MobileSettings from "@/components/mobile/MobileSettings";
+import InstallPWA from "@/components/pwa/InstallPWA";
 import { 
   Bell, 
   Moon, 
@@ -215,6 +216,7 @@ export default function Settings() {
     return (
       <div className="settings-page max-w-4xl mx-auto px-4 pb-20 pt-6">
         <h1 className="text-2xl font-semibold mb-6">Settings</h1>
+        <InstallPWA />
         <MobileSettings />
       </div>
     );
@@ -223,6 +225,8 @@ export default function Settings() {
   return (
     <div className="settings-page max-w-4xl mx-auto px-4 pb-20 pt-6">
       <h1 className="text-2xl font-semibold mb-6">Settings</h1>
+      
+      <InstallPWA />
       
       <div className="grid gap-6">
         {/* Preferences Card */}
