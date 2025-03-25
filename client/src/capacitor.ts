@@ -22,8 +22,12 @@ export const initializeCapacitor = () => {
 
   // Set up status bar
   StatusBar.setBackgroundColor({ color: '#3B82F6' });
-  // Use string literals for style as the Style enum import is causing issues
-  StatusBar.setStyle({ style: Capacitor.getPlatform() === 'ios' ? 'DARK' : 'LIGHT' });
+  // Import Style enum was causing issues, so we're using a direct string approach
+  if (Capacitor.getPlatform() === 'ios') {
+    StatusBar.setStyle({ style: 'dark' });
+  } else {
+    StatusBar.setStyle({ style: 'light' });
+  }
 
   // Set up back button behavior for Android
   App.addListener('backButton', ({ canGoBack }) => {

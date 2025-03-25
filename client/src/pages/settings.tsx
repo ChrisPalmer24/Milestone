@@ -31,6 +31,7 @@ import {
 
 export default function Settings() {
   const { toast } = useToast();
+  const isMobile = useMobilePlatform();
   
   // Settings states
   const [darkMode, setDarkMode] = useState(false);
@@ -209,6 +210,15 @@ export default function Settings() {
       });
     }
   };
+  
+  if (isMobile) {
+    return (
+      <div className="settings-page max-w-4xl mx-auto px-4 pb-20 pt-6">
+        <h1 className="text-2xl font-semibold mb-6">Settings</h1>
+        <MobileSettings />
+      </div>
+    );
+  }
   
   return (
     <div className="settings-page max-w-4xl mx-auto px-4 pb-20 pt-6">
