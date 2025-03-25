@@ -1,76 +1,79 @@
-// This is a service worker file that allows the app to work offline
-// and load faster for repeat visits.
+// This is the service worker for the PWA
 
-const CACHE_NAME = 'milestone-cache-v1';
-const urlsToCache = [
+const CACHE_NAME = 'milestone-v1';
+const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
-  '/assets/index.css',
-  '/assets/index.js',
-  '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
+  '/manifest.json'
+  // The rest of the assets will be added by the workbox plugin
 ];
 
-// Install a service worker
+// Install event - cache assets
 self.addEventListener('install', (event) => {
-  // Perform the install steps
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
+        return cache.addAll(ASSETS_TO_CACHE);
+      })
+      .then(() => {
+        return self.skipWaiting();
       })
   );
 });
 
-// Cache and return requests
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
-        return fetch(event.request).then(
-          (response) => {
-            // Check if we received a valid response
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-
-            // Clone the response since it's a one time use stream
-            const responseToCache = response.clone();
-
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                // Only cache same-origin requests
-                if (event.request.url.startsWith(self.location.origin)) {
-                  cache.put(event.request, responseToCache);
-                }
-              });
-
-            return response;
-          }
-        );
-      })
-  );
-});
-
-// Update a service worker
+// Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
+          if (cacheName !== CACHE_NAME) {
             return caches.delete(cacheName);
           }
-          return null;
         })
       );
+    }).then(() => {
+      return self.clients.claim();
     })
+  );
+});
+
+// Fetch event - serve from cache, fallback to network
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request)
+      .then((response) => {
+        // Cache hit - return the response from the cached version
+        if (response) {
+          return response;
+        }
+        
+        // Not in cache - fetch from network
+        return fetch(event.request).then((networkResponse) => {
+          // Don't cache responses that aren't successful
+          if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+            return networkResponse;
+          }
+
+          // Clone the response since we need to use it twice
+          const responseToCache = networkResponse.clone();
+          
+          // Cache the fetched response
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+
+          return networkResponse;
+        });
+      })
+      .catch(() => {
+        // If both cache and network fail, show offline page
+        if (event.request.url.includes('api')) {
+          // Return an empty JSON for API calls
+          return new Response(JSON.stringify({ error: 'You are offline' }), {
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+      })
   );
 });
