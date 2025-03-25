@@ -13,6 +13,16 @@ import {
   DialogFooter
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Form,
   FormControl,
   FormField,
@@ -30,7 +40,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, History } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -56,14 +66,17 @@ export default function Portfolio() {
     milestones,
     totalPortfolioValue,
     addAccount,
+    deleteAccount,
     setActiveSection,
     isLoading
   } = usePortfolio();
   const { toast } = useToast();
   
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [showMilestones, setShowMilestones] = useState(false);
   const [displayInPercentage, setDisplayInPercentage] = useState(false);
+  const [accountToDelete, setAccountToDelete] = useState<number | null>(null);
   
   // Form for adding a new account
   const form = useForm<z.infer<typeof accountSchema>>({
@@ -172,6 +185,44 @@ export default function Portfolio() {
                 </button>
               </div>
               
+              {/* Delete Account Alert Dialog */}
+              <AlertDialog open={!!accountToDelete} onOpenChange={(open) => !open && setAccountToDelete(null)}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Account</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Deleting this account will delete all data from it. Are you sure?
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>No</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-red-600 hover:bg-red-700"
+                      onClick={async () => {
+                        if (accountToDelete) {
+                          await deleteAccount(accountToDelete);
+                          setAccountToDelete(null);
+                          setIsEditMode(false);
+                        }
+                      }}
+                    >
+                      Yes
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              
+              {/* Edit Mode Toggle Button */}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="text-primary"
+                onClick={() => setIsEditMode(!isEditMode)}
+              >
+                <Pencil className={`h-6 w-6 ${isEditMode ? 'text-blue-600' : ''}`} />
+              </Button>
+              
+              {/* Add Account Dialog */}
               <Dialog open={isAddAccountOpen} onOpenChange={setIsAddAccountOpen}>
                 <DialogTrigger asChild>
                   <Button variant="ghost" size="icon" className="text-primary">
@@ -315,17 +366,29 @@ export default function Portfolio() {
                         </span>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold">£{Number(account.currentValue).toLocaleString()}</p>
-                      {/* Demo data - in a real app use actual performance values */}
-                      <p className={`text-sm font-medium ${Math.random() > 0.3 ? 'text-green-600' : 'text-red-600'}`}>
-                        {displayInPercentage 
-                          ? (Math.random() > 0.3 ? '+3.2%' : '-1.8%') 
-                          : (Math.random() > 0.3 
-                              ? `+£${(Number(account.currentValue) * 0.032).toLocaleString()}` 
-                              : `-£${(Number(account.currentValue) * 0.018).toLocaleString()}`)
-                        }
-                      </p>
+                    <div className="flex items-center">
+                      {isEditMode && (
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="text-red-600 mr-2"
+                          onClick={() => setAccountToDelete(account.id)}
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </Button>
+                      )}
+                      <div className="text-right">
+                        <p className="font-semibold">£{Number(account.currentValue).toLocaleString()}</p>
+                        {/* Demo data - in a real app use actual performance values */}
+                        <p className={`text-sm font-medium ${Math.random() > 0.3 ? 'text-green-600' : 'text-red-600'}`}>
+                          {displayInPercentage 
+                            ? (Math.random() > 0.3 ? '+3.2%' : '-1.8%') 
+                            : (Math.random() > 0.3 
+                                ? `+£${(Number(account.currentValue) * 0.032).toLocaleString()}` 
+                                : `-£${(Number(account.currentValue) * 0.018).toLocaleString()}`)
+                          }
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
