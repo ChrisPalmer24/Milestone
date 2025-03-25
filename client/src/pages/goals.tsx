@@ -46,6 +46,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import AISuggestedMilestones from "@/components/milestones/AISuggestedMilestones";
 
 // Form schema for adding a new milestone
 const milestoneSchema = z.object({
@@ -368,6 +369,9 @@ export default function Goals() {
           )}
         </CardContent>
       </Card>
+      
+      {/* AI Suggested Milestones section */}
+      <AISuggestedMilestones />
     </div>
   );
 }
