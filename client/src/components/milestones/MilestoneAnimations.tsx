@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+// @ts-ignore - Ignore type issues with canvas-confetti for now
 import confetti from 'canvas-confetti';
 import { Check, Trophy, ArrowBigUp, Sparkles, Star, PartyPopper } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -86,6 +87,7 @@ export function MilestoneAnimation({
             return;
           }
           
+          // @ts-ignore - canvas-confetti types don't include shapes property
           confetti({
             particleCount: 20,
             spread: 90,

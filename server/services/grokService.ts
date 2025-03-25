@@ -1,48 +1,33 @@
 import OpenAI from "openai";
 import { Account, Milestone } from "@shared/schema";
 
-// Initialize the xAI client only if API key is available
-let xai: OpenAI | null = null;
-
-// Only create client when API key is available
-if (process.env.XAI_API_KEY) {
-  xai = new OpenAI({ 
-    baseURL: "https://api.x.ai/v1",
-    apiKey: process.env.XAI_API_KEY 
-  });
-}
-
 /**
  * Generate intelligent milestone suggestions using xAI's Grok API
  */
 export async function generateMilestoneSuggestions(
   accounts: Account[],
-  totalPortfolioValue: number,
+  totalValue: number,
   existingMilestones: Milestone[]
-): Promise<Array<{
-  name: string;
-  accountType: string | null;
-  targetValue: string;
-  description: string;
-  icon?: string;
-}>> {
+): Promise<any[]> {
   try {
-    // Only proceed if API key is available and client exists
-    if (!process.env.XAI_API_KEY || !xai) {
-      console.warn("No xAI API key provided, falling back to local generation");
-      return [];
+    if (!process.env.XAI_API_KEY) {
+      throw new Error("XAI_API_KEY environment variable is required");
     }
 
-    // Build a detailed prompt for the AI
-    const prompt = buildMilestonePrompt(accounts, totalPortfolioValue, existingMilestones);
+    const openai = new OpenAI({ 
+      baseURL: "https://api.x.ai/v1", 
+      apiKey: process.env.XAI_API_KEY 
+    });
 
-    // Make the API call (we've already checked that xai is not null above)
-    const response = await xai!.chat.completions.create({
+    // Build a detailed prompt based on portfolio data
+    const prompt = buildMilestonePrompt(accounts, totalValue, existingMilestones);
+
+    const response = await openai.chat.completions.create({
       model: "grok-2-1212",
       messages: [
         {
           role: "system",
-          content: "You are a financial advisor specializing in investment goals and milestone planning. Generate thoughtful and personalized investment milestones based on the user's portfolio."
+          content: "You are a financial advisor specialized in helping people set and track investment goals."
         },
         {
           role: "user",
@@ -52,19 +37,18 @@ export async function generateMilestoneSuggestions(
       response_format: { type: "json_object" }
     });
 
-    // Parse the response
-    const messageContent = response.choices[0].message.content || "{}";
-    const result = JSON.parse(messageContent);
-
-    // Validate and format the result
-    if (Array.isArray(result.suggestions)) {
-      return result.suggestions.slice(0, 5); // Limit to top 5 suggestions
+    // Parse and validate the response
+    const result = JSON.parse(response.choices[0].message.content);
+    
+    if (!result.suggestions || !Array.isArray(result.suggestions)) {
+      console.error("Invalid response format from Grok API:", result);
+      return [];
     }
 
-    return [];
+    return result.suggestions;
   } catch (error) {
-    console.error("Error generating AI milestone suggestions:", error);
-    return [];
+    console.error("Error generating milestone suggestions with Grok:", error);
+    throw error;
   }
 }
 
@@ -73,51 +57,49 @@ export async function generateMilestoneSuggestions(
  */
 function buildMilestonePrompt(
   accounts: Account[],
-  totalPortfolioValue: number,
+  totalValue: number,
   existingMilestones: Milestone[]
 ): string {
-  let accountsSummary = accounts.map(acc => {
-    return `- ${acc.provider} ${acc.accountType} account: £${Number(acc.currentValue).toLocaleString()}`;
-  }).join("\n");
+  // Format account data
+  const accountsText = accounts.map(account => (
+    `- ${account.provider} ${account.accountType} account: £${account.currentValue}`
+  )).join('\n');
 
-  if (accountsSummary.length === 0) {
-    accountsSummary = "No investment accounts yet.";
-  }
+  // Format existing milestones to avoid duplication
+  const milestonesText = existingMilestones.map(milestone => (
+    `- ${milestone.name}: £${milestone.targetValue}${milestone.accountType ? ` (${milestone.accountType})` : ''}`
+  )).join('\n');
 
-  let milestonesSummary = existingMilestones.map(m => {
-    return `- ${m.name}: £${m.targetValue} ${m.accountType ? `(${m.accountType})` : '(Overall portfolio)'}`;
-  }).join("\n");
-
-  if (milestonesSummary.length === 0) {
-    milestonesSummary = "No milestones set yet.";
-  }
-
+  // Build the prompt
   return `
-Please analyze this investment portfolio and suggest 5 personalized milestones:
+I need personalized investment milestone suggestions for my portfolio.
 
-PORTFOLIO SUMMARY:
-Total portfolio value: £${totalPortfolioValue.toLocaleString()}
-Number of accounts: ${accounts.length}
+Current Portfolio:
+${accountsText}
+Total portfolio value: £${totalValue}
 
-ACCOUNTS:
-${accountsSummary}
+Existing Milestones (don't suggest duplicates):
+${milestonesText || "None"}
 
-EXISTING MILESTONES:
-${milestonesSummary}
+Please suggest 3-5 realistic and achievable milestone goals for my investments. 
+For each suggestion, provide:
+1. A concise milestone name
+2. The account type it applies to (ISA, SIPP, LISA, GIA, or null for the entire portfolio)
+3. A target value that is ambitious but attainable based on my current portfolio
+4. A short description explaining the benefit or significance of reaching this milestone
+5. An optional emoji icon that represents the milestone
 
-Please generate exactly 5 new milestone suggestions as a JSON object with an array of 'suggestions' following this format:
+Return the response in JSON format with this structure:
 {
   "suggestions": [
     {
-      "name": "Brief milestone name",
-      "accountType": "ISA or SIPP or LISA or GIA or null for overall portfolio",
-      "targetValue": "numeric target as string",
-      "description": "Brief description of why this milestone matters",
-      "icon": "Single emoji representing this milestone"
+      "name": "string",
+      "accountType": "string or null",
+      "targetValue": "string (numeric value without currency symbol)",
+      "description": "string",
+      "icon": "string (emoji)"
     }
   ]
 }
-
-Each suggestion should be achievable, specific, motivating, and appropriate for the portfolio composition. Don't repeat existing milestones.
 `;
 }
