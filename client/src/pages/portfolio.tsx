@@ -185,15 +185,15 @@ export default function Portfolio() {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">Accounts</h2>
             <div className="flex items-center space-x-4">
-              <div className="flex bg-gray-200 rounded-lg">
+              <div className="flex bg-gray-200 rounded-lg shadow-md">
                 <button 
-                  className={`text-sm font-medium py-1 px-3 rounded-lg ${!displayInPercentage ? 'bg-white text-black' : ''}`}
+                  className={`text-sm font-medium py-1 px-3 rounded-lg transition-all ${!displayInPercentage ? 'bg-white text-black shadow-inner' : 'hover:bg-gray-300'}`}
                   onClick={() => setDisplayInPercentage(false)}
                 >
                   £
                 </button>
                 <button 
-                  className={`text-sm font-medium py-1 px-3 rounded-lg ${displayInPercentage ? 'bg-white text-black' : ''}`}
+                  className={`text-sm font-medium py-1 px-3 rounded-lg transition-all ${displayInPercentage ? 'bg-white text-black shadow-inner' : 'hover:bg-gray-300'}`}
                   onClick={() => setDisplayInPercentage(true)}
                 >
                   %
