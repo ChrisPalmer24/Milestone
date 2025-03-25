@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -16,11 +16,17 @@ import Settings from "@/pages/settings";
 import ApiConnections from "@/pages/api-connections";
 
 function RouteWithLayout({ component: Component, ...rest }: { component: React.ComponentType }) {
-  return (
-    <ResponsiveLayout>
-      <Component {...rest} />
-    </ResponsiveLayout>
-  );
+  try {
+    return (
+      <ResponsiveLayout>
+        <Component {...rest} />
+      </ResponsiveLayout>
+    );
+  } catch (error) {
+    console.error("Error rendering route with layout:", error);
+    // Fallback to direct component rendering if layout fails
+    return <Component {...rest} />;
+  }
 }
 
 function Router() {
@@ -61,14 +67,32 @@ function Router() {
 }
 
 function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <PortfolioProvider>
-        <Router />
-        <Toaster />
-      </PortfolioProvider>
-    </QueryClientProvider>
-  );
+  // Add error boundary for the main app
+  try {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <PortfolioProvider>
+          <Router />
+          <Toaster />
+        </PortfolioProvider>
+      </QueryClientProvider>
+    );
+  } catch (error) {
+    console.error("Critical application error:", error);
+    // Fallback UI in case of critical errors
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+        <h1 className="text-2xl font-bold text-red-600 mb-4">Application Error</h1>
+        <p className="text-gray-700 mb-6">We're sorry, something went wrong while loading the application.</p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+        >
+          Reload Application
+        </button>
+      </div>
+    );
+  }
 }
 
 export default App;
