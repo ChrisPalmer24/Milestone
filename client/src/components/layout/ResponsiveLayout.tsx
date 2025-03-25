@@ -3,6 +3,7 @@ import { useMobilePlatform } from '@/hooks/use-mobile-platform';
 import { useIsMobile } from '@/hooks/use-mobile';
 import MainLayout from './MainLayout';
 import MobileBottomNav from '../mobile/MobileBottomNav';
+import Header from './Header';
 
 interface ResponsiveLayoutProps {
   children: ReactNode;
@@ -21,6 +22,7 @@ export default function ResponsiveLayout({ children }: ResponsiveLayoutProps) {
   if (isMobilePlatform || isMobileViewport) {
     return (
       <div className="flex flex-col min-h-screen relative pb-16">
+        <Header />
         <main className="flex-1 px-4 py-4 overflow-auto">
           {children}
         </main>
