@@ -2,9 +2,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sparkles, PlusCircle } from "lucide-react";
+import { Sparkles, PlusCircle, Key } from "lucide-react";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { generateMilestoneSuggestions, SuggestedMilestone } from "@/lib/utils/milestones";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, getQueryFn } from "@/lib/queryClient";
 
 // Define AccountType directly here as well to avoid type issues
 type AccountType = "ISA" | "SIPP" | "LISA" | "GIA";
@@ -22,22 +24,76 @@ export default function AISuggestedMilestones() {
   const [suggestions, setSuggestions] = useState<SuggestedMilestone[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   
+  const { toast } = useToast();
+  const [needsApiKey, setNeedsApiKey] = useState(false);
+  
   // Generate new suggestions
-  const handleGenerateSuggestions = () => {
+  const handleGenerateSuggestions = async () => {
     setGeneratingSuggestions(true);
+    setNeedsApiKey(false);
     
-    // Simulate AI processing delay
-    setTimeout(() => {
-      const newSuggestions = generateMilestoneSuggestions(
+    try {
+      // Try to use the AI endpoint first
+      const response = await apiRequest("/api/milestones/suggestions/ai", {
+        method: "GET"
+      });
+      
+      if (response.status === 403) {
+        // API key is missing
+        setNeedsApiKey(true);
+        
+        // Fallback to local generation
+        const localSuggestions = generateMilestoneSuggestions(
+          accounts,
+          totalPortfolioValue,
+          milestones
+        );
+        
+        setSuggestions(localSuggestions);
+      } else if (response.ok) {
+        // We got AI-generated suggestions
+        const aiSuggestions = await response.json();
+        if (aiSuggestions && aiSuggestions.length > 0) {
+          setSuggestions(aiSuggestions);
+          toast({
+            title: "AI-Generated Milestones",
+            description: "Milestones were generated using Grok AI",
+            variant: "default"
+          });
+        } else {
+          // Fallback if AI returned empty results
+          const localSuggestions = generateMilestoneSuggestions(
+            accounts,
+            totalPortfolioValue,
+            milestones
+          );
+          setSuggestions(localSuggestions);
+        }
+      } else {
+        // Use local generation as fallback
+        const localSuggestions = generateMilestoneSuggestions(
+          accounts,
+          totalPortfolioValue,
+          milestones
+        );
+        setSuggestions(localSuggestions);
+      }
+      
+      setShowSuggestions(true);
+    } catch (error) {
+      console.error("Error generating suggestions:", error);
+      
+      // Use local generation as fallback on error
+      const localSuggestions = generateMilestoneSuggestions(
         accounts,
         totalPortfolioValue,
         milestones
       );
-      
-      setSuggestions(newSuggestions);
+      setSuggestions(localSuggestions);
       setShowSuggestions(true);
+    } finally {
       setGeneratingSuggestions(false);
-    }, 1000);
+    }
   };
   
   // Add a suggested milestone to actual milestones
@@ -99,6 +155,43 @@ export default function AISuggestedMilestones() {
             {showSuggestions ? "Refresh Suggestions" : "Generate Suggestions"}
           </Button>
         </div>
+        
+        {needsApiKey && (
+          // Show message about missing API key
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+            <div className="flex items-start">
+              <Key className="h-5 w-5 text-amber-500 mt-0.5 mr-2 flex-shrink-0" />
+              <div>
+                <h3 className="font-medium text-amber-800">API Key Required</h3>
+                <p className="text-sm text-amber-700 mt-1">
+                  To use AI-powered milestone suggestions, you need to add an xAI API key. 
+                  Without it, we'll use our local suggestion system.
+                </p>
+                <div className="mt-3">
+                  <a
+                    href="https://x.ai"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs underline text-amber-700 mr-3"
+                  >
+                    Get an API key
+                  </a>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-1 text-xs border-amber-500 text-amber-700 hover:bg-amber-100"
+                    onClick={() => {
+                      // Redirect to settings page where they can add the API key
+                      window.location.href = "/settings";
+                    }}
+                  >
+                    Go to Settings
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         
         {isLoading || generatingSuggestions ? (
           // Skeleton loading state

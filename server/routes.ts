@@ -8,6 +8,7 @@ import {
   insertFireSettingsSchema
 } from "@shared/schema";
 import { Trading212Service } from "./apiServices";
+import { generateMilestoneSuggestions } from "./services/grokService";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -294,6 +295,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Failed to delete milestone" });
+    }
+  });
+  
+  // Get AI-generated milestone suggestions
+  app.get("/api/milestones/suggestions/ai", async (req, res) => {
+    try {
+      const userId = 1; // Demo user
+      const accounts = await storage.getAccounts(userId);
+      const milestones = await storage.getMilestones(userId);
+      const totalValue = await storage.getPortfolioValue(userId);
+      
+      // Use xAI Grok API for intelligent suggestions if API key is available
+      if (process.env.XAI_API_KEY) {
+        const suggestions = await generateMilestoneSuggestions(accounts, totalValue, milestones);
+        return res.json(suggestions);
+      }
+      
+      // Fallback to local generation if no API key
+      res.status(403).json({ 
+        message: "API key for xAI not configured. Please add XAI_API_KEY to your environment variables." 
+      });
+    } catch (error) {
+      console.error("Error generating AI milestone suggestions:", error);
+      res.status(500).json({ message: "Failed to generate milestone suggestions" });
     }
   });
 
