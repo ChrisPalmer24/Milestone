@@ -3,7 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { PortfolioProvider } from "@/context/PortfolioContext";
-import MainLayout from "@/components/layout/MainLayout";
+import ResponsiveLayout from "@/components/layout/ResponsiveLayout";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Portfolio from "@/pages/portfolio";
@@ -17,16 +17,18 @@ import ApiConnections from "@/pages/api-connections";
 
 function RouteWithLayout({ component: Component, ...rest }: { component: React.ComponentType }) {
   return (
-    <MainLayout>
+    <ResponsiveLayout>
       <Component {...rest} />
-    </MainLayout>
+    </ResponsiveLayout>
   );
 }
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
+      <Route path="/">
+        {() => <RouteWithLayout component={Home} />}
+      </Route>
       <Route path="/portfolio">
         {() => <RouteWithLayout component={Portfolio} />}
       </Route>

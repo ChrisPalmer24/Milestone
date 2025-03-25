@@ -6,6 +6,8 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { useMobilePlatform } from "@/hooks/use-mobile-platform";
+import MobileSettings from "@/components/mobile/MobileSettings";
 import { 
   Bell, 
   Moon, 
