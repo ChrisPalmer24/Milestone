@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Card, 
   CardContent 
@@ -78,6 +78,9 @@ export default function Portfolio() {
   const [displayInPercentage, setDisplayInPercentage] = useState(false);
   const [accountToDelete, setAccountToDelete] = useState<number | null>(null);
   
+  // State to track the selected provider for conditional account type display
+  const [selectedProvider, setSelectedProvider] = useState<string>("");
+  
   // Form for adding a new account
   const form = useForm<z.infer<typeof accountSchema>>({
     resolver: zodResolver(accountSchema),
@@ -87,6 +90,14 @@ export default function Portfolio() {
       currentValue: "",
     },
   });
+  
+  // Watch for changes to the provider field
+  const watchProvider = form.watch("provider");
+  
+  // Update the selected provider when it changes
+  useEffect(() => {
+    setSelectedProvider(watchProvider);
+  }, [watchProvider]);
   
   // Handle form submission
   const onSubmit = async (values: z.infer<typeof accountSchema>) => {
@@ -114,6 +125,10 @@ export default function Portfolio() {
         return <BsPiggyBank className="w-6 h-6" />;
       case "invest engine":
       case "investengine":
+        return <SiCoinbase className="w-6 h-6" />;
+      case "hargreaves lansdown":
+        return <BsPiggyBank className="w-6 h-6" />;
+      case "aj bell":
         return <SiCoinbase className="w-6 h-6" />;
       default:
         return <SiTradingview className="w-6 h-6" />;
@@ -264,6 +279,8 @@ export default function Portfolio() {
                                 <SelectItem value="Trading 212">Trading 212</SelectItem>
                                 <SelectItem value="Vanguard">Vanguard</SelectItem>
                                 <SelectItem value="InvestEngine">InvestEngine</SelectItem>
+                                <SelectItem value="Hargreaves Lansdown">Hargreaves Lansdown</SelectItem>
+                                <SelectItem value="AJ Bell">AJ Bell</SelectItem>
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -289,7 +306,9 @@ export default function Portfolio() {
                               <SelectContent>
                                 <SelectItem value="ISA">ISA</SelectItem>
                                 <SelectItem value="SIPP">SIPP</SelectItem>
-                                <SelectItem value="LISA">LISA</SelectItem>
+                                {(selectedProvider === "Hargreaves Lansdown" || selectedProvider === "AJ Bell") && (
+                                  <SelectItem value="LISA">LISA</SelectItem>
+                                )}
                                 <SelectItem value="GIA">GIA</SelectItem>
                               </SelectContent>
                             </Select>
