@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Card, 
   CardContent 
@@ -30,7 +30,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Trophy } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -47,6 +47,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import AISuggestedMilestones from "@/components/milestones/AISuggestedMilestones";
+import { MilestoneAnimationManager } from "@/components/milestones/MilestoneAnimations";
 
 // Form schema for adding a new milestone
 const milestoneSchema = z.object({
@@ -170,6 +171,42 @@ export default function Goals() {
     } else {
       const remaining = targetValue - currentValue;
       return `£${remaining.toLocaleString()} more needed`;
+    }
+  };
+  
+  // Track current values for all account types for milestone animations
+  const accountValues = {
+    total: totalPortfolioValue,
+    ISA: accounts.reduce((sum, account) => 
+      account.accountType === "ISA" ? sum + Number(account.currentValue) : sum, 0
+    ),
+    SIPP: accounts.reduce((sum, account) => 
+      account.accountType === "SIPP" ? sum + Number(account.currentValue) : sum, 0
+    ),
+    LISA: accounts.reduce((sum, account) => 
+      account.accountType === "LISA" ? sum + Number(account.currentValue) : sum, 0
+    ),
+    GIA: accounts.reduce((sum, account) => 
+      account.accountType === "GIA" ? sum + Number(account.currentValue) : sum, 0
+    )
+  };
+  
+  // Handler for milestone completion
+  const handleMilestoneComplete = async (milestone: any) => {
+    if (!milestone.isCompleted) {
+      try {
+        // Mark milestone as completed in the database
+        await fetch(`/api/milestones/${milestone.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isCompleted: true })
+        });
+        
+        // Refresh milestone data
+        // This would typically be handled by the portfolio context invalidating the query
+      } catch (error) {
+        console.error("Error updating milestone completion status:", error);
+      }
     }
   };
 
@@ -372,6 +409,15 @@ export default function Goals() {
       
       {/* AI Suggested Milestones section */}
       <AISuggestedMilestones />
+      
+      {/* Milestone celebration animation manager */}
+      {!isLoading && milestones.length > 0 && (
+        <MilestoneAnimationManager 
+          milestones={milestones}
+          currentValues={accountValues}
+          onMilestoneComplete={handleMilestoneComplete}
+        />
+      )}
     </div>
   );
 }
