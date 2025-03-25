@@ -3,7 +3,11 @@
 export const registerServiceWorker = async (): Promise<void> => {
   if ('serviceWorker' in navigator) {
     try {
-      const registration = await navigator.serviceWorker.register('/sw.js', {
+      // Force fresh service worker by appending a timestamp
+      const swUrl = `/sw.js?v=${Date.now()}`;
+      console.log('Attempting to register service worker from:', swUrl);
+      
+      const registration = await navigator.serviceWorker.register(swUrl, {
         scope: '/',
       });
       
@@ -20,6 +24,7 @@ export const registerServiceWorker = async (): Promise<void> => {
         const newWorker = registration.installing;
         if (newWorker) {
           newWorker.addEventListener('statechange', () => {
+            console.log('Service worker state changed:', newWorker.state);
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
               // New content is available and will be used when all tabs are closed
               console.log('New content is available and will be used when all tabs are closed');
@@ -36,9 +41,20 @@ export const registerServiceWorker = async (): Promise<void> => {
         window.location.reload();
       });
       
+      console.log('Service worker registration successful:', registration);
+      return;
+      
     } catch (error) {
-      console.error('Service worker registration failed:', error);
+      console.error('Service worker registration failed with detailed info:', error);
+      // Additional debugging info
+      if (error instanceof TypeError) {
+        console.error('This might be a network error or CORS issue');
+      } else if (error instanceof DOMException) {
+        console.error('This might be a security policy issue or invalid scope');
+      }
     }
+  } else {
+    console.log('Service Worker API not supported in this browser');
   }
 };
 
