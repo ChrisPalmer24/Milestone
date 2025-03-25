@@ -307,9 +307,9 @@ export default function Portfolio() {
                                 <SelectItem value="ISA">ISA</SelectItem>
                                 <SelectItem value="SIPP">SIPP</SelectItem>
                                 {(selectedProvider === "Hargreaves Lansdown" || selectedProvider === "AJ Bell") && (
-                                  <SelectItem value="LISA">LISA</SelectItem>
+                                  <SelectItem value="LISA">Lifetime ISA</SelectItem>
                                 )}
-                                <SelectItem value="GIA">GIA</SelectItem>
+                                <SelectItem value="GIA">General Account</SelectItem>
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -387,7 +387,9 @@ export default function Portfolio() {
                       <div>
                         <h3 className="font-medium">{account.provider}</h3>
                         <span className={`text-sm ${getAccountTypeColor(account.accountType)}`}>
-                          {account.accountType}
+                          {account.accountType === 'LISA' ? 'Lifetime ISA' : 
+                           account.accountType === 'GIA' ? 'General Account' : 
+                           account.accountType}
                         </span>
                       </div>
                     </div>

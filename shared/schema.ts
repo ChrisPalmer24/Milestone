@@ -22,7 +22,7 @@ export const accounts = pgTable("accounts", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
   provider: text("provider").notNull(),
-  accountType: text("account_type").notNull(), // ISA, SIPP, LISA, GIA
+  accountType: text("account_type").notNull(), // ISA, SIPP, LISA (Lifetime ISA), GIA (General Account)
   currentValue: numeric("current_value").notNull(),
   isApiConnected: boolean("is_api_connected").default(false).notNull(),
   apiKey: text("api_key"),
@@ -62,7 +62,7 @@ export const milestones = pgTable("milestones", {
   userId: integer("user_id").notNull().references(() => users.id),
   name: text("name").notNull(),
   targetValue: numeric("target_value").notNull(),
-  accountType: text("account_type"), // Optional, can be specific to an account type or null for total portfolio
+  accountType: text("account_type"), // Optional, can be specific to an account type (ISA, SIPP, LISA, GIA) or null for total portfolio
   isCompleted: boolean("is_completed").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -81,10 +81,10 @@ export const fireSettings = pgTable("fire_settings", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id).unique(),
   targetRetirementAge: integer("target_retirement_age").default(60).notNull(),
-  annualIncomeGoal: numeric("annual_income_goal").default(48000).notNull(),
-  expectedAnnualReturn: numeric("expected_annual_return").default(7).notNull(), // Percentage
-  safeWithdrawalRate: numeric("safe_withdrawal_rate").default(4).notNull(), // Percentage
-  monthlyInvestment: numeric("monthly_investment").default(300).notNull(),
+  annualIncomeGoal: numeric("annual_income_goal").default("48000").notNull(),
+  expectedAnnualReturn: numeric("expected_annual_return").default("7").notNull(), // Percentage
+  safeWithdrawalRate: numeric("safe_withdrawal_rate").default("4").notNull(), // Percentage
+  monthlyInvestment: numeric("monthly_investment").default("300").notNull(),
   currentAge: integer("current_age").default(35).notNull(),
 });
 
