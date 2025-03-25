@@ -212,21 +212,27 @@ export default function Portfolio() {
                 </AlertDialogContent>
               </AlertDialog>
               
-              {/* Edit Mode Toggle Button */}
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="text-primary"
-                onClick={() => setIsEditMode(!isEditMode)}
-              >
-                <Pencil className={`h-6 w-6 ${isEditMode ? 'text-blue-600' : ''}`} />
-              </Button>
+              {/* Edit Mode Toggle Button - Only shown when accounts exist */}
+              {accounts.length > 0 && (
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className={`rounded-full w-10 h-10 flex items-center justify-center ${isEditMode ? 'bg-blue-100 border-blue-300 text-blue-600' : 'text-primary'}`}
+                  onClick={() => setIsEditMode(!isEditMode)}
+                >
+                  <Pencil className="h-5 w-5" />
+                </Button>
+              )}
               
               {/* Add Account Dialog */}
               <Dialog open={isAddAccountOpen} onOpenChange={setIsAddAccountOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="text-primary">
-                    <Plus className="h-6 w-6" />
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="rounded-full w-10 h-10 flex items-center justify-center text-primary"
+                  >
+                    <Plus className="h-5 w-5" />
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
@@ -369,12 +375,12 @@ export default function Portfolio() {
                     <div className="flex items-center">
                       {isEditMode && (
                         <Button 
-                          variant="ghost" 
+                          variant="outline" 
                           size="icon" 
-                          className="text-red-600 mr-2"
+                          className="rounded-full w-9 h-9 flex items-center justify-center text-red-600 hover:bg-red-50 hover:border-red-200 mr-3"
                           onClick={() => setAccountToDelete(account.id)}
                         >
-                          <Trash2 className="h-5 w-5" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       )}
                       <div className="text-right">
