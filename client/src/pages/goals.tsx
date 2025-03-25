@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Card, 
   CardContent 
@@ -47,6 +47,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import AISuggestedMilestones from "@/components/milestones/AISuggestedMilestones";
+import { MilestoneAnimationManager } from "@/components/milestones/MilestoneAnimations";
 
 // Form schema for adding a new milestone
 const milestoneSchema = z.object({
@@ -70,6 +71,28 @@ export default function Goals() {
   
   const [isAddMilestoneOpen, setIsAddMilestoneOpen] = useState(false);
   const [milestoneToDelete, setMilestoneToDelete] = useState<number | null>(null);
+  const [currentValues, setCurrentValues] = useState<{[key: string]: number}>({});
+  
+  // Update current values for animation tracking
+  useEffect(() => {
+    if (!isLoading && accounts.length > 0) {
+      // Prepare values by account type
+      const valuesByType: {[key: string]: number} = {
+        total: totalPortfolioValue
+      };
+      
+      // Calculate totals for each account type
+      accounts.forEach(account => {
+        const type = account.accountType;
+        if (!valuesByType[type]) {
+          valuesByType[type] = 0;
+        }
+        valuesByType[type] += Number(account.currentValue);
+      });
+      
+      setCurrentValues(valuesByType);
+    }
+  }, [isLoading, accounts, totalPortfolioValue]);
   
   // Form for adding a new milestone
   const form = useForm<z.infer<typeof milestoneSchema>>({
@@ -301,7 +324,9 @@ export default function Goals() {
                 milestone.accountType ? getAccountTypeColor(milestone.accountType).split(' ')[0] : "bg-primary";
               
               return (
-                <div key={milestone.id} className="bg-gray-50 rounded-lg p-4 mb-4">
+                <div 
+                  key={milestone.id} 
+                  className={`bg-gray-50 rounded-lg p-4 mb-4 ${progress === 100 ? 'milestone-card-complete' : ''}`}>
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <h3 className="font-medium">{milestone.name}</h3>
@@ -372,6 +397,15 @@ export default function Goals() {
       
       {/* AI Suggested Milestones section */}
       <AISuggestedMilestones />
+
+      {/* Milestone completion animations */}
+      <MilestoneAnimationManager 
+        milestones={milestones} 
+        currentValues={currentValues}
+        onMilestoneComplete={(milestone) => {
+          console.log("Milestone completed:", milestone.name);
+        }}
+      />
     </div>
   );
 }
