@@ -172,13 +172,13 @@ export default function Portfolio() {
             <div className="flex items-center space-x-4">
               <div className="flex bg-gray-200 rounded-lg">
                 <button 
-                  className={`text-sm font-medium py-1 px-3 rounded-lg ${!displayInPercentage ? 'bg-primary text-white' : ''}`}
+                  className={`text-sm font-medium py-1 px-3 rounded-lg ${!displayInPercentage ? 'bg-white text-black' : ''}`}
                   onClick={() => setDisplayInPercentage(false)}
                 >
                   £
                 </button>
                 <button 
-                  className={`text-sm font-medium py-1 px-3 rounded-lg ${displayInPercentage ? 'bg-primary text-white' : ''}`}
+                  className={`text-sm font-medium py-1 px-3 rounded-lg ${displayInPercentage ? 'bg-white text-black' : ''}`}
                   onClick={() => setDisplayInPercentage(true)}
                 >
                   %
@@ -230,7 +230,7 @@ export default function Portfolio() {
                   <Button 
                     variant="outline" 
                     size="icon" 
-                    className="rounded-full w-10 h-10 flex items-center justify-center text-primary"
+                    className="rounded-full w-10 h-10 flex items-center justify-center bg-black text-white border-black"
                   >
                     <Plus className="h-5 w-5" />
                   </Button>
@@ -350,7 +350,7 @@ export default function Portfolio() {
               <p className="text-gray-500 mb-4">No investment accounts added yet.</p>
               <Button 
                 onClick={() => setIsAddAccountOpen(true)}
-                className="bg-primary text-white"
+                className="bg-black text-white hover:bg-gray-800"
               >
                 Add Your First Account
               </Button>
