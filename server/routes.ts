@@ -384,6 +384,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to update FIRE settings" });
     }
   });
+  
+  // ================== API Integration Settings Routes ==================
+  
+  // Check if xAI API key exists
+  app.get("/api/settings/xai-key-status", (req, res) => {
+    const hasKey = Boolean(process.env.XAI_API_KEY);
+    res.json({ hasKey });
+  });
+  
+  // Verify an xAI API key
+  app.post("/api/settings/verify-xai-key", async (req, res) => {
+    try {
+      const { apiKey } = req.body;
+      
+      if (!apiKey) {
+        return res.status(400).json({ 
+          valid: false, 
+          message: "API key is required" 
+        });
+      }
+      
+      // Here we'd normally make a real request to the xAI API to verify the key
+      // For this demo, we'll simulate a verification
+      const isValid = apiKey.length >= 20; // Basic validation for demo
+      
+      res.json({ valid: isValid });
+    } catch (error) {
+      console.error("Error verifying xAI API key:", error);
+      res.status(500).json({ 
+        valid: false, 
+        message: "Failed to verify API key" 
+      });
+    }
+  });
+  
+  // Save xAI API key
+  app.post("/api/settings/xai-key", (req, res) => {
+    try {
+      const { apiKey } = req.body;
+      
+      if (!apiKey) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "API key is required" 
+        });
+      }
+      
+      // In a real app, we would encrypt and store this in a secure database
+      // For this demo, we'll set it as an environment variable
+      process.env.XAI_API_KEY = apiKey;
+      
+      res.json({ 
+        success: true, 
+        message: "API key saved successfully" 
+      });
+    } catch (error) {
+      console.error("Error saving xAI API key:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to save API key" 
+      });
+    }
+  });
+  
+  // Delete xAI API key
+  app.delete("/api/settings/xai-key", (req, res) => {
+    try {
+      // Delete the API key from the environment
+      delete process.env.XAI_API_KEY;
+      
+      res.json({ 
+        success: true, 
+        message: "API key deleted successfully" 
+      });
+    } catch (error) {
+      console.error("Error deleting xAI API key:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to delete API key" 
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   
