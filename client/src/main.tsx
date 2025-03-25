@@ -2,35 +2,14 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
-import { initializeCapacitor } from "./capacitor";
-import { registerServiceWorker, initPwaInstallListener } from "./lib/service-worker";
-import { isNativePlatform } from "./capacitor";
 
-// Initialize Capacitor for mobile platforms and register service worker
-document.addEventListener('DOMContentLoaded', () => {
-  // Initialize Capacitor for native mobile platforms
-  initializeCapacitor();
-  
-  // Only register service worker on web (not needed for native mobile apps)
-  if (!isNativePlatform()) {
-    // Register service worker for PWA support
-    registerServiceWorker();
-    
-    // Initialize PWA install prompt listener
-    initPwaInstallListener();
-    
-    // Add manifest link in the head
-    const manifestLink = document.createElement('link');
-    manifestLink.rel = 'manifest';
-    manifestLink.href = '/manifest.json';
-    document.head.appendChild(manifestLink);
-    
-    // Add theme-color meta tag
-    const themeColorMeta = document.createElement('meta');
-    themeColorMeta.name = 'theme-color';
-    themeColorMeta.content = '#3B82F6';
-    document.head.appendChild(themeColorMeta);
-  }
-});
+// Simplified for debugging - removed service worker and PWA-related code
+console.log('Mounting app in simplified mode for debugging');
 
-createRoot(document.getElementById("root")!).render(<App />);
+// Render the app directly
+const rootElement = document.getElementById("root");
+if (rootElement) {
+  createRoot(rootElement).render(<App />);
+} else {
+  console.error('Root element not found! Check the HTML for an element with id="root"');
+}
