@@ -107,11 +107,18 @@ export default function Goals() {
   // Handle form submission
   const onSubmit = async (values: z.infer<typeof milestoneSchema>) => {
     try {
-      await addMilestone({
+      console.log("Form submitted with values:", values);
+      
+      const milestone = {
         name: values.name,
         accountType: values.accountType === "ALL" ? null : values.accountType as any,
         targetValue: values.targetValue // Keep as string since the API expects a string
-      });
+      };
+      
+      console.log("Sending milestone data:", milestone);
+      await addMilestone(milestone);
+      
+      console.log("Milestone added successfully");
       setIsAddMilestoneOpen(false);
       form.reset();
     } catch (error) {
