@@ -1,69 +1,142 @@
-import React, { useState } from "react";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "./lib/queryClient";
+import React from "react";
 
-// Super simple app with basic navigation
-function App() {
-  const [tab, setTab] = useState(1);
-  
-  return (
-    <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen bg-gray-100">
+class App extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      activeTab: "portfolio"
+    };
+  }
+
+  changeTab = (tab) => {
+    this.setState({ activeTab: tab });
+  }
+
+  render() {
+    const { activeTab } = this.state;
+
+    return (
+      <div className="app-container" style={{ 
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+        backgroundColor: '#f5f5f5'
+      }}>
         {/* Header */}
-        <header className="bg-white p-4 shadow">
-          <h1 className="text-xl font-bold text-center">Investment Tracker</h1>
+        <header style={{ 
+          backgroundColor: 'white',
+          padding: '16px',
+          textAlign: 'center',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        }}>
+          <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 'bold' }}>Investment Tracker</h1>
         </header>
-        
-        {/* Content */}
-        <main className="p-4 pb-20">
-          {tab === 1 && (
-            <div className="bg-white rounded p-4 shadow mb-4">
-              <h2 className="text-lg font-bold mb-2">Portfolio Tab</h2>
-              <p>Your portfolio overview will appear here.</p>
+
+        {/* Main Content */}
+        <main style={{ 
+          flex: 1,
+          padding: '16px',
+          paddingBottom: '70px' // Make room for the nav bar
+        }}>
+          {activeTab === "portfolio" && (
+            <div style={{ 
+              backgroundColor: 'white',
+              borderRadius: '8px',
+              padding: '16px',
+              marginBottom: '16px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '8px' }}>Portfolio</h2>
+              <p style={{ color: '#666' }}>Your investment portfolio will appear here.</p>
             </div>
           )}
-          
-          {tab === 2 && (
-            <div className="bg-white rounded p-4 shadow mb-4">
-              <h2 className="text-lg font-bold mb-2">Goals Tab</h2>
-              <p>Your investment goals will appear here.</p>
+
+          {activeTab === "goals" && (
+            <div style={{ 
+              backgroundColor: 'white',
+              borderRadius: '8px',
+              padding: '16px',
+              marginBottom: '16px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '8px' }}>Goals</h2>
+              <p style={{ color: '#666' }}>Your investment goals will appear here.</p>
             </div>
           )}
-          
-          {tab === 3 && (
-            <div className="bg-white rounded p-4 shadow mb-4">
-              <h2 className="text-lg font-bold mb-2">Settings Tab</h2>
-              <p>App settings will appear here.</p>
+
+          {activeTab === "track" && (
+            <div style={{ 
+              backgroundColor: 'white',
+              borderRadius: '8px',
+              padding: '16px',
+              marginBottom: '16px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '8px' }}>Track</h2>
+              <p style={{ color: '#666' }}>Your portfolio tracking tools will appear here.</p>
             </div>
           )}
         </main>
-        
-        {/* Navigation */}
-        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg">
-          <div className="flex justify-around">
-            <button 
-              onClick={() => setTab(1)} 
-              className={`py-3 flex-1 text-center ${tab === 1 ? 'text-blue-500 font-bold' : 'text-gray-500'}`}
+
+        {/* Old-school Bottom Navigation with inline styles for maximum reliability */}
+        <nav style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: 'white',
+          borderTop: '1px solid #ddd',
+          boxShadow: '0 -2px 10px rgba(0,0,0,0.1)',
+          zIndex: 1000
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-around' }}>
+            <button
+              onClick={() => this.changeTab("portfolio")}
+              style={{
+                flex: 1,
+                padding: '12px 0',
+                backgroundColor: 'transparent',
+                border: 'none',
+                color: activeTab === "portfolio" ? '#3b82f6' : '#6b7280',
+                fontWeight: activeTab === "portfolio" ? 'bold' : 'normal',
+                cursor: 'pointer'
+              }}
             >
               Portfolio
             </button>
-            <button 
-              onClick={() => setTab(2)} 
-              className={`py-3 flex-1 text-center ${tab === 2 ? 'text-blue-500 font-bold' : 'text-gray-500'}`}
+            <button
+              onClick={() => this.changeTab("goals")}
+              style={{
+                flex: 1,
+                padding: '12px 0',
+                backgroundColor: 'transparent',
+                border: 'none',
+                color: activeTab === "goals" ? '#3b82f6' : '#6b7280',
+                fontWeight: activeTab === "goals" ? 'bold' : 'normal',
+                cursor: 'pointer'
+              }}
             >
               Goals
             </button>
-            <button 
-              onClick={() => setTab(3)} 
-              className={`py-3 flex-1 text-center ${tab === 3 ? 'text-blue-500 font-bold' : 'text-gray-500'}`}
+            <button
+              onClick={() => this.changeTab("track")}
+              style={{
+                flex: 1,
+                padding: '12px 0',
+                backgroundColor: 'transparent',
+                border: 'none',
+                color: activeTab === "track" ? '#3b82f6' : '#6b7280',
+                fontWeight: activeTab === "track" ? 'bold' : 'normal',
+                cursor: 'pointer'
+              }}
             >
-              Settings
+              Track
             </button>
           </div>
         </nav>
       </div>
-    </QueryClientProvider>
-  );
+    );
+  }
 }
 
 export default App;

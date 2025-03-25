@@ -3,13 +3,11 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
-// Simplified for debugging - removed service worker and PWA-related code
-console.log('Mounting app in simplified mode for debugging');
-
-// Render the app directly
+// Direct render with no extra features that could cause issues
 const rootElement = document.getElementById("root");
 if (rootElement) {
+  console.log('Mounting app with basic class-based component');
   createRoot(rootElement).render(<App />);
 } else {
-  console.error('Root element not found! Check the HTML for an element with id="root"');
+  console.error('Root element not found!');
 }
