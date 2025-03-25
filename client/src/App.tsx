@@ -102,75 +102,77 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <PortfolioProvider>
-        <div className="flex flex-col h-screen bg-gray-50">
+        <div className="flex flex-col min-h-screen bg-gray-50">
           {/* Header */}
-          <header className="bg-white shadow-sm p-4">
+          <header className="bg-white shadow-sm p-4 sticky top-0 z-10">
             <h1 className="text-xl font-bold text-center">Investment Tracker</h1>
           </header>
           
           {/* Main Content Area */}
-          <main className="flex-1 overflow-y-auto pb-16 p-4">
+          <main className="flex-1 p-4 pb-20">
             {renderPageContent()}
           </main>
           
-          {/* Navigation */}
-          <nav className="bg-white border-t border-gray-200 fixed bottom-0 w-full">
-            <ul className="flex justify-between px-2">
-              <li className="flex-1">
-                <button 
-                  className={`flex flex-col items-center pt-2 pb-1 w-full ${currentPage === "portfolio" ? "text-blue-600" : "text-gray-600"}`}
-                  onClick={() => setCurrentPage("portfolio")}
-                >
-                  <TrendingUp className="w-6 h-6" />
-                  <span className="text-xs">Portfolio</span>
-                </button>
-              </li>
-              <li className="flex-1">
-                <button 
-                  className={`flex flex-col items-center pt-2 pb-1 w-full ${currentPage === "goals" ? "text-blue-600" : "text-gray-600"}`}
-                  onClick={() => setCurrentPage("goals")}
-                >
-                  <Flag className="w-6 h-6" />
-                  <span className="text-xs">Goals</span>
-                </button>
-              </li>
-              <li className="flex-1">
-                <button 
-                  className={`flex flex-col items-center pt-2 pb-1 w-full ${currentPage === "record" ? "text-blue-600" : "text-gray-600"}`}
-                  onClick={() => setCurrentPage("record")}
-                >
-                  <ClipboardEdit className="w-6 h-6" />
-                  <span className="text-xs">Record</span>
-                </button>
-              </li>
-              <li className="flex-1">
-                <button 
-                  className={`flex flex-col items-center pt-2 pb-1 w-full ${currentPage === "track" ? "text-blue-600" : "text-gray-600"}`}
-                  onClick={() => setCurrentPage("track")}
-                >
-                  <LineChart className="w-6 h-6" />
-                  <span className="text-xs">Track</span>
-                </button>
-              </li>
-              <li className="flex-1">
-                <button 
-                  className={`flex flex-col items-center pt-2 pb-1 w-full ${currentPage === "fire" ? "text-blue-600" : "text-gray-600"}`}
-                  onClick={() => setCurrentPage("fire")}
-                >
-                  <Flame className="w-6 h-6" />
-                  <span className="text-xs">FIRE</span>
-                </button>
-              </li>
-              <li className="flex-1">
-                <button 
-                  className={`flex flex-col items-center pt-2 pb-1 w-full ${currentPage === "settings" ? "text-blue-600" : "text-gray-600"}`}
-                  onClick={() => setCurrentPage("settings")}
-                >
-                  <SettingsIcon className="w-6 h-6" />
-                  <span className="text-xs">Settings</span>
-                </button>
-              </li>
-            </ul>
+          {/* Navigation - With a higher z-index to ensure it's visible */}
+          <nav className="bg-white border-t border-gray-200 fixed bottom-0 w-full z-20 shadow-lg">
+            <div className="max-w-screen-lg mx-auto">
+              <ul className="flex justify-between px-2 py-1">
+                <li className="flex-1">
+                  <button 
+                    className={`flex flex-col items-center pt-2 pb-1 w-full ${currentPage === "portfolio" ? "text-blue-600" : "text-gray-600"}`}
+                    onClick={() => setCurrentPage("portfolio")}
+                  >
+                    <TrendingUp className="w-6 h-6" />
+                    <span className="text-xs">Portfolio</span>
+                  </button>
+                </li>
+                <li className="flex-1">
+                  <button 
+                    className={`flex flex-col items-center pt-2 pb-1 w-full ${currentPage === "goals" ? "text-blue-600" : "text-gray-600"}`}
+                    onClick={() => setCurrentPage("goals")}
+                  >
+                    <Flag className="w-6 h-6" />
+                    <span className="text-xs">Goals</span>
+                  </button>
+                </li>
+                <li className="flex-1">
+                  <button 
+                    className={`flex flex-col items-center pt-2 pb-1 w-full ${currentPage === "record" ? "text-blue-600" : "text-gray-600"}`}
+                    onClick={() => setCurrentPage("record")}
+                  >
+                    <ClipboardEdit className="w-6 h-6" />
+                    <span className="text-xs">Record</span>
+                  </button>
+                </li>
+                <li className="flex-1">
+                  <button 
+                    className={`flex flex-col items-center pt-2 pb-1 w-full ${currentPage === "track" ? "text-blue-600" : "text-gray-600"}`}
+                    onClick={() => setCurrentPage("track")}
+                  >
+                    <LineChart className="w-6 h-6" />
+                    <span className="text-xs">Track</span>
+                  </button>
+                </li>
+                <li className="flex-1">
+                  <button 
+                    className={`flex flex-col items-center pt-2 pb-1 w-full ${currentPage === "fire" ? "text-blue-600" : "text-gray-600"}`}
+                    onClick={() => setCurrentPage("fire")}
+                  >
+                    <Flame className="w-6 h-6" />
+                    <span className="text-xs">FIRE</span>
+                  </button>
+                </li>
+                <li className="flex-1">
+                  <button 
+                    className={`flex flex-col items-center pt-2 pb-1 w-full ${currentPage === "settings" ? "text-blue-600" : "text-gray-600"}`}
+                    onClick={() => setCurrentPage("settings")}
+                  >
+                    <SettingsIcon className="w-6 h-6" />
+                    <span className="text-xs">Settings</span>
+                  </button>
+                </li>
+              </ul>
+            </div>
           </nav>
         </div>
       </PortfolioProvider>
