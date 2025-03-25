@@ -18,6 +18,7 @@ const DATE_RANGES = [
 type ChartData = {
   date: string;
   value: number;
+  milestone?: number;
 };
 
 type DateRangeOption = "week" | "1month" | "3months" | "6months" | "1year" | "ytd" | "all";
@@ -73,13 +74,13 @@ export default function PortfolioChart({
   className 
 }: PortfolioChartProps) {
   const [dateRange, setDateRange] = useState<DateRangeOption>("6months");
-  const [chartVisible, setChartVisible] = useState(false);
+  const [chartVisible, setChartVisible] = useState(true);
   
   // Calculate date range for API request
   const { start, end } = getDateRange(dateRange);
   
   // Fetch portfolio history data
-  const { data: historyData, isLoading } = useQuery({
+  const { data: historyData, isLoading } = useQuery<any[]>({
     queryKey: [
       `/api/portfolio/history?start=${start.toISOString()}&end=${end.toISOString()}`
     ],
@@ -112,7 +113,7 @@ export default function PortfolioChart({
     return dummyData;
   };
   
-  const data: ChartData[] = historyData && historyData.length > 0 ? 
+  const data: ChartData[] = Array.isArray(historyData) && historyData.length > 0 ? 
     historyData.map((item: any) => ({
       date: new Date(item.date).toLocaleDateString('en-GB', { 
         month: 'short',
