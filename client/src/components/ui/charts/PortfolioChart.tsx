@@ -245,10 +245,10 @@ export default function PortfolioChart({
                 <button
                   key={range.value}
                   className={cn(
-                    "date-range-btn text-xs font-medium py-1 px-2 rounded-md",
+                    "date-range-btn text-xs font-medium py-1 px-2 rounded-md transition-all",
                     dateRange === range.value
-                      ? "bg-primary text-white"
-                      : "bg-gray-200 hover:bg-gray-300"
+                      ? "bg-primary text-white shadow-sm"
+                      : "bg-gray-200 hover:bg-gray-300 shadow-sm"
                   )}
                   onClick={() => setDateRange(range.value as DateRangeOption)}
                 >
