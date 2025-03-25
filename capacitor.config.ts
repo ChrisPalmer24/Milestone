@@ -7,7 +7,7 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'https',
     iosScheme: 'https',
-    hostname: 'milestone.app',
+    hostname: 'milestone.app'
   },
   plugins: {
     SplashScreen: {
@@ -16,18 +16,18 @@ const config: CapacitorConfig = {
       showSpinner: true,
       androidSpinnerStyle: 'large',
       iosSpinnerStyle: 'small',
-      spinnerColor: '#ffffff',
+      spinnerColor: '#ffffff'
     },
     StatusBar: {
       style: 'DARK',
-      backgroundColor: '#3B82F6',
+      backgroundColor: '#3B82F6'
     },
     Keyboard: {
       resize: 'body',
       style: 'dark',
-      resizeOnFullScreen: true,
-    },
-  },
+      resizeOnFullScreen: true
+    }
+  }
 };
 
 export default config;

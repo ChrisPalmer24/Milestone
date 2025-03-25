@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
-import { StatusBar, Style } from '@capacitor/status-bar';
+import { StatusBar } from '@capacitor/status-bar';
 import { Keyboard } from '@capacitor/keyboard';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Preferences } from '@capacitor/preferences';
@@ -22,7 +22,8 @@ export const initializeCapacitor = () => {
 
   // Set up status bar
   StatusBar.setBackgroundColor({ color: '#3B82F6' });
-  StatusBar.setStyle({ style: Capacitor.getPlatform() === 'ios' ? Style.Dark : Style.Light });
+  // Use string literals for style as the Style enum import is causing issues
+  StatusBar.setStyle({ style: Capacitor.getPlatform() === 'ios' ? 'DARK' : 'LIGHT' });
 
   // Set up back button behavior for Android
   App.addListener('backButton', ({ canGoBack }) => {
