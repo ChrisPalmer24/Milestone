@@ -22,12 +22,7 @@ export function log(message: string, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
-export async function setupVite(app: Express, server: Server) {
-  const serverOptions = {
-    middlewareMode: true,
-    hmr: { server },
-    allowedHosts: true,
-  };
+export async function setupVite(app: Express) {
 
   const vite = await createViteServer({
     ...viteConfig,
@@ -39,7 +34,18 @@ export async function setupVite(app: Express, server: Server) {
         process.exit(1);
       },
     },
-    server: serverOptions,
+    server: {
+      middlewareMode: true,
+      fs: {
+        strict: true,
+        allow: ['..'],
+      },
+      headers: {
+        'X-Content-Type-Options': 'nosniff',
+        'X-Frame-Options': 'DENY',
+        'Referrer-Policy': 'no-referrer-when-downgrade',
+      }
+    },
     appType: "custom",
   });
 

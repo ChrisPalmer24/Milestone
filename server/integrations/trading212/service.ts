@@ -1,4 +1,4 @@
-import { storage } from './storage';
+import { ServiceFactory } from '../../services/factory';
 import type { Account } from '@shared/schema';
 
 /**
@@ -6,6 +6,9 @@ import type { Account } from '@shared/schema';
  * In a real implementation, this would connect to Trading212's API
  */
 export class Trading212Service {
+  private static services = ServiceFactory.getInstance();
+  private static accountService = Trading212Service.services.getAccountService();
+  
   // Cache to store accounts that need updating
   private static apiConnectedAccounts: Map<number, number> = new Map();
   private static isRunning: boolean = false;
@@ -59,10 +62,10 @@ export class Trading212Service {
   private static async getAllApiConnectedAccounts(): Promise<Account[]> {
     // Get all users (in a real app with multiple users, we'd need more logic here)
     const userId = 1; // Demo user
-    const accounts = await storage.getAccounts(userId);
+    const accounts = await Trading212Service.accountService.getByUserId(userId);
     
     // Filter for accounts with Trading212 API connections
-    return accounts.filter(account => {
+    return accounts.filter((account: Account) => {
       return (account.isApiConnected && 
               account.apiKey && 
               isTrading212Account(account.provider));
@@ -72,7 +75,7 @@ export class Trading212Service {
   /**
    * Update a single account with simulated data from Trading212
    */
-  private static async updateAccountValue(account: Account) {
+  private static async updateAccountValue(account: Account): Promise<void> {
     // Get current value
     const currentValue = Number(account.currentValue);
     
@@ -87,7 +90,7 @@ export class Trading212Service {
       console.log(`📊 Account ${account.id} (${account.provider}): £${currentValue.toFixed(2)} → £${newValue.toFixed(2)} (${percentageChange > 0 ? '+' : ''}${percentageChange.toFixed(2)}%)`);
       
       // Update the account value
-      await storage.updateAccount(account.id, newValue);
+      await Trading212Service.accountService.updateValue(account.id, newValue);
     }
   }
 }

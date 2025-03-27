@@ -1,4 +1,12 @@
-import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from "recharts";
+import {
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+} from "recharts";
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -12,7 +20,7 @@ const DATE_RANGES = [
   { label: "6M", value: "6months" },
   { label: "1Y", value: "1year" },
   { label: "YTD", value: "ytd" },
-  { label: "All", value: "all" }
+  { label: "All", value: "all" },
 ];
 
 type ChartData = {
@@ -21,7 +29,14 @@ type ChartData = {
   milestone?: number;
 };
 
-type DateRangeOption = "week" | "1month" | "3months" | "6months" | "1year" | "ytd" | "all";
+type DateRangeOption =
+  | "week"
+  | "1month"
+  | "3months"
+  | "6months"
+  | "1year"
+  | "ytd"
+  | "all";
 
 // Helper to format currency values
 const formatCurrency = (value: number) => {
@@ -29,11 +44,11 @@ const formatCurrency = (value: number) => {
 };
 
 // Helper to calculate date range
-const getDateRange = (range: DateRangeOption): { start: Date, end: Date } => {
+const getDateRange = (range: DateRangeOption): { start: Date; end: Date } => {
   const end = new Date();
   let start = new Date();
-  
-  switch(range) {
+
+  switch (range) {
     case "week":
       start.setDate(end.getDate() - 7);
       break;
@@ -58,7 +73,7 @@ const getDateRange = (range: DateRangeOption): { start: Date, end: Date } => {
     default:
       start.setMonth(end.getMonth() - 6); // Default to 6 months
   }
-  
+
   return { start, end };
 };
 
@@ -68,70 +83,97 @@ type PortfolioChartProps = {
   className?: string;
 };
 
-export default function PortfolioChart({ 
-  showMilestones = false, 
-  nextMilestone, 
-  className 
+// Add interface for history data
+interface PortfolioHistoryData {
+  date: string;
+  value: number;
+}
+
+export default function PortfolioChart({
+  showMilestones = false,
+  nextMilestone,
+  className,
 }: PortfolioChartProps) {
   const [dateRange, setDateRange] = useState<DateRangeOption>("6months");
   const [chartVisible, setChartVisible] = useState(true);
-  
+  const [showMilestonesLocal, setShowMilestonesLocal] =
+    useState(showMilestones);
+
+  // Update local state when prop changes
+  useEffect(() => {
+    setShowMilestonesLocal(showMilestones);
+  }, [showMilestones]);
+
   // Calculate date range for API request
   const { start, end } = getDateRange(dateRange);
-  
+
   // Fetch portfolio history data
-  const { data: historyData, isLoading } = useQuery<any[]>({
-    queryKey: [
-      `/api/portfolio/history?start=${start.toISOString()}&end=${end.toISOString()}`
-    ],
+  const { data: historyData, isLoading } = useQuery<PortfolioHistoryData[]>({
+    queryKey: ["/api/portfolio/history", dateRange],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/portfolio/history?start=${start.toISOString()}&end=${end.toISOString()}`
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch portfolio history");
+      }
+      return response.json();
+    },
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    gcTime: 30 * 60 * 1000, // Keep data in cache for 30 minutes
+    refetchOnWindowFocus: false, // Don't refetch when window regains focus
+    refetchOnMount: false, // Don't refetch when component mounts
+    refetchOnReconnect: false, // Don't refetch when network reconnects
   });
-  
+
   // Generate dummy data if no data is available
   const generateDummyData = (): ChartData[] => {
     const dummyData: ChartData[] = [];
     const now = new Date();
     let baseValue = 15000;
-    
+
     // Generate data for the past 6 months
     for (let i = 180; i >= 0; i -= 7) {
       const date = new Date();
       date.setDate(now.getDate() - i);
-      
+
       // Create some random variation
       const randomChange = Math.random() * 800 - 400;
       baseValue = Math.max(1000, baseValue + randomChange);
-      
+
       dummyData.push({
-        date: date.toLocaleDateString('en-GB', { 
-          month: 'short',
-          day: '2-digit' 
+        date: date.toLocaleDateString("en-GB", {
+          month: "short",
+          day: "2-digit",
         }),
-        value: baseValue
+        value: baseValue,
       });
     }
-    
+
     return dummyData;
   };
-  
-  const data: ChartData[] = Array.isArray(historyData) && historyData.length > 0 ? 
-    historyData.map((item: any) => ({
-      date: new Date(item.date).toLocaleDateString('en-GB', { 
-        month: 'short',
-        day: '2-digit' 
-      }),
-      value: Number(item.value)
-    })) : generateDummyData();
+
+  const data: ChartData[] =
+    Array.isArray(historyData) && historyData.length > 0
+      ? historyData.map((item) => ({
+          date: new Date(item.date).toLocaleDateString("en-GB", {
+            month: "short",
+            day: "2-digit",
+          }),
+          value: Number(item.value),
+        }))
+      : generateDummyData();
 
   // Add milestone data if enabled
   const chartData = [...data];
-  if (showMilestones && nextMilestone && chartData.length > 0) {
+  if (showMilestonesLocal && nextMilestone && chartData.length > 0) {
     // Add the last actual value point
     const lastPoint = chartData[chartData.length - 1];
-    
+
     // Add the milestone target
     chartData.push({
       ...lastPoint,
-      milestone: nextMilestone
+      milestone: nextMilestone,
     });
   }
 
@@ -139,9 +181,7 @@ export default function PortfolioChart({
     return (
       <Card className={cn("w-full", className)}>
         <CardContent className="p-4 h-[300px] flex items-center justify-center">
-          <p className="text-muted-foreground">
-            Loading chart data...
-          </p>
+          <p className="text-muted-foreground">Loading chart data...</p>
         </CardContent>
       </Card>
     );
@@ -156,41 +196,46 @@ export default function PortfolioChart({
             <div className="flex items-center">
               <span className="text-sm text-neutral-700 mr-2">Chart</span>
               <div className="relative inline-block w-10 mr-2 align-middle select-none">
-                <input 
-                  type="checkbox" 
-                  id="toggle-chart" 
-                  checked={chartVisible} 
+                <input
+                  type="checkbox"
+                  id="toggle-chart"
+                  checked={chartVisible}
                   onChange={() => setChartVisible(!chartVisible)}
                   className="sr-only"
                 />
-                <label 
-                  htmlFor="toggle-chart" 
+                <label
+                  htmlFor="toggle-chart"
                   className="block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"
                 >
-                  <span className={cn(
-                    "block h-6 w-6 rounded-full bg-white shadow transform transition-transform duration-200 ease-in-out",
-                    chartVisible ? "translate-x-4" : ""
-                  )}></span>
+                  <span
+                    className={cn(
+                      "block h-6 w-6 rounded-full bg-white shadow transform transition-transform duration-200 ease-in-out",
+                      chartVisible ? "translate-x-4" : ""
+                    )}
+                  ></span>
                 </label>
               </div>
             </div>
             <div className="flex items-center">
               <span className="text-sm text-neutral-700 mr-2">Milestones</span>
               <div className="relative inline-block w-10 mr-2 align-middle select-none">
-                <input 
-                  type="checkbox" 
-                  id="toggle-milestones" 
-                  checked={showMilestones}
+                <input
+                  type="checkbox"
+                  id="toggle-milestones"
+                  checked={showMilestonesLocal}
+                  onChange={() => setShowMilestonesLocal(!showMilestonesLocal)}
                   className="sr-only"
                 />
-                <label 
-                  htmlFor="toggle-milestones" 
+                <label
+                  htmlFor="toggle-milestones"
                   className="block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"
                 >
-                  <span className={cn(
-                    "block h-6 w-6 rounded-full bg-white shadow transform transition-transform duration-200 ease-in-out",
-                    showMilestones ? "translate-x-4" : ""
-                  )}></span>
+                  <span
+                    className={cn(
+                      "block h-6 w-6 rounded-full bg-white shadow transform transition-transform duration-200 ease-in-out",
+                      showMilestonesLocal ? "translate-x-4" : ""
+                    )}
+                  ></span>
                 </label>
               </div>
             </div>
@@ -202,35 +247,42 @@ export default function PortfolioChart({
             <div className="chart-container h-[240px] w-full mb-5">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                  <XAxis 
-                    dataKey="date" 
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="#f0f0f0"
+                  />
+                  <XAxis
+                    dataKey="date"
                     axisLine={false}
                     tickLine={false}
                     tick={{ fontSize: 12 }}
                   />
-                  <YAxis 
+                  <YAxis
                     tickFormatter={(value) => `£${value.toLocaleString()}`}
                     axisLine={false}
                     tickLine={false}
                     tick={{ fontSize: 12 }}
                   />
-                  <Tooltip 
-                    formatter={(value: number) => [`£${value.toLocaleString()}`, 'Portfolio Value']}
+                  <Tooltip
+                    formatter={(value: number) => [
+                      `£${value.toLocaleString()}`,
+                      "Portfolio Value",
+                    ]}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="value" 
-                    stroke="#3B82F6" 
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#3B82F6"
                     strokeWidth={2}
                     dot={false}
                     activeDot={{ r: 5 }}
                   />
-                  {showMilestones && (
-                    <Line 
-                      type="monotone" 
-                      dataKey="milestone" 
-                      stroke="#F59E0B" 
+                  {showMilestonesLocal && (
+                    <Line
+                      type="monotone"
+                      dataKey="milestone"
+                      stroke="#F59E0B"
                       strokeWidth={2}
                       strokeDasharray="5 5"
                       dot={false}
