@@ -26,19 +26,22 @@ export const registerServiceWorker = async (): Promise<void> => {
           newWorker.addEventListener('statechange', () => {
             console.log('Service worker state changed:', newWorker.state);
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // New content is available and will be used when all tabs are closed
-              console.log('New content is available and will be used when all tabs are closed');
+              // New content is available, but don't force reload
+              console.log('New content is available');
             }
           });
         }
       });
 
-      let refreshing = false;
-      // When the user asks to refresh the UI, we'd want to reload automatically.
+      // Only reload if explicitly requested by the service worker
       navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (refreshing) return;
-        refreshing = true;
-        window.location.reload();
+        // Check if this is a new service worker taking control
+        if (navigator.serviceWorker.controller) {
+          // Only reload if the service worker explicitly requests it
+          if (navigator.serviceWorker.controller.postMessage) {
+            navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
+          }
+        }
       });
       
       console.log('Service worker registration successful:', registration);
