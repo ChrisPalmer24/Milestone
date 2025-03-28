@@ -90,7 +90,7 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     isLoading: isLoadingAccounts,
     isError: isAccountsError,
   } = useQuery({
-    queryKey: ["/api/accounts"],
+    queryKey: ["/api/accounts/user/1"],
   });
 
   // Fetch milestones
