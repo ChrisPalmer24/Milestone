@@ -139,7 +139,7 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
 
   const updateAccountValueMutation = useMutation({
     mutationFn: ({ id, value }: { id: number; value: number }) =>
-      apiRequest("PATCH", `/api/accounts/${id}`, { value }),
+      apiRequest("PATCH", `/api/accounts/${id}/value`, { value }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/accounts"] });
       queryClient.invalidateQueries({ queryKey: ["/api/portfolio/value"] });
