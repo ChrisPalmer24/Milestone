@@ -1,47 +1,50 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import sharp from "sharp";
+import path from "path";
+import { fileURLToPath } from "url";
 
 // Get the directory name in ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Create the icons directory if it doesn't exist
-const iconsDir = path.join(__dirname, '../public/icons');
-if (!fs.existsSync(iconsDir)) {
-  fs.mkdirSync(iconsDir, { recursive: true });
+const publicDir = path.join(__dirname, "../client/public");
+const iconsDir = path.join(publicDir, "icons");
+
+const iconSizes = [
+  { name: "pwa-192x192.png", size: 192 },
+  { name: "pwa-512x512.png", size: 512 },
+  { name: "apple-touch-icon.png", size: 180 },
+  { name: "favicon.ico", size: 32 },
+];
+
+async function generateIcons() {
+  try {
+    // Move the source SVG to icons directory first
+    await sharp(path.join(publicDir, "icon.svg")).toFile(
+      path.join(iconsDir, "icon.svg")
+    );
+    console.log("Moved icon.svg to icons directory");
+
+    const svgBuffer = await sharp(path.join(iconsDir, "icon.svg")).toBuffer();
+
+    for (const { name, size } of iconSizes) {
+      await sharp(svgBuffer)
+        .resize(size, size)
+        .toFile(path.join(iconsDir, name));
+      console.log(`Generated ${name}`);
+    }
+
+    // Create masked icon (monochrome version)
+    await sharp(svgBuffer)
+      .resize(512, 512)
+      .modulate({ brightness: 0, saturation: 0 })
+      .toFile(path.join(iconsDir, "masked-icon.svg"));
+    console.log("Generated masked-icon.svg");
+
+    console.log("All icons generated successfully!");
+  } catch (error) {
+    console.error("Error generating icons:", error);
+    process.exit(1);
+  }
 }
 
-// Define required icon sizes
-const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
-
-// Our app icon as an SVG string with placeholders for width and height
-const svgTemplate = `<svg width="{width}" height="{height}" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="512" height="512" rx="128" fill="#3B82F6"/>
-  <circle cx="256" cy="256" r="180" fill="white"/>
-  <path d="M256 96C167.634 96 96 167.634 96 256C96 344.366 167.634 416 256 416C344.366 416 416 344.366 416 256C416 167.634 344.366 96 256 96ZM256 376C189.766 376 136 322.234 136 256C136 189.766 189.766 136 256 136C322.234 136 376 189.766 376 256C376 322.234 322.234 376 256 376Z" fill="#3B82F6"/>
-  <path d="M328 216L256 288L184 216" stroke="#3B82F6" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M256 352V288" stroke="#3B82F6" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>`;
-
-// Function to convert SVG to PNG using canvas (in a browser environment)
-// For Node.js, we would typically use a library like sharp or svgexport
-// In this simplified example, we'll just save the SVGs and later convert them
-function generateIconSVG(size) {
-  const svg = svgTemplate
-    .replace('{width}', size)
-    .replace('{height}', size);
-  
-  const svgPath = path.join(iconsDir, `icon-${size}x${size}.svg`);
-  fs.writeFileSync(svgPath, svg);
-  console.log(`Generated: ${svgPath}`);
-}
-
-// Generate SVG icons for all sizes
-sizes.forEach(size => {
-  generateIconSVG(size);
-});
-
-console.log('Icon generation complete!');
-console.log('Note: For a production app, you would need to convert these SVGs to PNG files.');
-console.log('You can use tools like sharp, svgexport, or Inkscape to convert them.');
+generateIcons();
