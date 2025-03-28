@@ -50,6 +50,13 @@ export class DatabaseAccountService implements IAccountService {
   }
 
   async updateValue(id: number, value: number): Promise<Account> {
+
+    await this.accountHistoryService.create({
+      accountId: id,
+      value: value.toString(),
+      recordedAt: new Date(),
+    });
+
     const [account] = await this.db
       .update(accounts)
       .set({ currentValue: value.toString() })
