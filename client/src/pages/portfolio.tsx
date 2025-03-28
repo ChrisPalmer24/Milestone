@@ -1,16 +1,13 @@
 import { useState, useEffect } from "react";
-import { 
-  Card, 
-  CardContent 
-} from "@/components/ui/card";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -49,38 +46,41 @@ import { BsPiggyBank } from "react-icons/bs";
 import PortfolioChart from "@/components/ui/charts/PortfolioChart";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { useToast } from "@/hooks/use-toast";
+import { Milestone } from "@shared/schema";
+import { getNextMilestone } from "@/lib/utils/milestones";
 
 // Form schema for adding a new account
 const accountSchema = z.object({
   provider: z.string().min(1, "Provider is required"),
   accountType: z.string().min(1, "Account type is required"),
-  currentValue: z.string().refine(
-    (val) => !isNaN(Number(val)) && Number(val) > 0,
-    { message: "Value must be a positive number" }
-  ),
+  currentValue: z
+    .string()
+    .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+      message: "Value must be a positive number",
+    }),
 });
 
 export default function Portfolio() {
-  const { 
-    accounts, 
+  const {
+    accounts,
     milestones,
     totalPortfolioValue,
     addAccount,
     deleteAccount,
     setActiveSection,
-    isLoading
+    isLoading,
   } = usePortfolio();
   const { toast } = useToast();
-  
+
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [showMilestones, setShowMilestones] = useState(false);
   const [displayInPercentage, setDisplayInPercentage] = useState(false);
   const [accountToDelete, setAccountToDelete] = useState<number | null>(null);
-  
+
   // State to track the selected provider for conditional account type display
   const [selectedProvider, setSelectedProvider] = useState<string>("");
-  
+
   // Form for adding a new account
   const form = useForm<z.infer<typeof accountSchema>>({
     resolver: zodResolver(accountSchema),
@@ -90,15 +90,15 @@ export default function Portfolio() {
       currentValue: "",
     },
   });
-  
+
   // Watch for changes to the provider field
   const watchProvider = form.watch("provider");
-  
+
   // Update the selected provider when it changes
   useEffect(() => {
     setSelectedProvider(watchProvider);
   }, [watchProvider]);
-  
+
   // Handle form submission
   const onSubmit = async (values: z.infer<typeof accountSchema>) => {
     try {
@@ -106,7 +106,7 @@ export default function Portfolio() {
       await addAccount({
         provider: values.provider,
         accountType: values.accountType as any,
-        currentValue: values.currentValue // Keep as string for numeric type
+        currentValue: values.currentValue, // Keep as string for numeric type
       });
       setIsAddAccountOpen(false);
       form.reset();
@@ -114,7 +114,7 @@ export default function Portfolio() {
       console.error("Error adding account:", error);
     }
   };
-  
+
   // Helper to get logo for provider
   const getProviderLogo = (provider: string) => {
     switch (provider.toLowerCase()) {
@@ -134,26 +134,17 @@ export default function Portfolio() {
         return <SiTradingview className="w-6 h-6" />;
     }
   };
-  
+
   // Get color for account type
   const getAccountTypeColor = (type: string) => {
     // Return black for all account types
     return "text-black font-semibold";
   };
-  
+
   // Find next milestone for the portfolio if any
-  const getNextMilestone = () => {
-    if (!milestones || milestones.length === 0) return null;
-    
-    const portfolioMilestones = milestones
-      .filter(m => !m.accountType && !m.isCompleted)
-      .sort((a, b) => Number(a.targetValue) - Number(b.targetValue));
-    
-    return portfolioMilestones.find(m => Number(m.targetValue) > totalPortfolioValue);
-  };
-  
-  const nextMilestone = getNextMilestone();
-  
+
+  const nextMilestone = getNextMilestone(milestones ?? [], totalPortfolioValue);
+
   // Calculate total gain across all accounts
   const calculateTotalGain = () => {
     // In a real app, this would compare to previous values
@@ -161,22 +152,26 @@ export default function Portfolio() {
     const isPositive = Math.random() > 0.3;
     const gainPercentage = isPositive ? 0.038 : -0.021;
     const gain = totalPortfolioValue * Math.abs(gainPercentage);
-    
+
     return {
-      value: displayInPercentage 
-        ? `${isPositive ? '+' : '-'}${Math.abs(gainPercentage * 100).toFixed(1)}%` 
-        : `${isPositive ? '+' : '-'}£${gain.toLocaleString()}`,
-      isPositive
+      value: displayInPercentage
+        ? `${isPositive ? "+" : "-"}${Math.abs(gainPercentage * 100).toFixed(
+            1
+          )}%`
+        : `${isPositive ? "+" : "-"}£${gain.toLocaleString()}`,
+      isPositive,
     };
   };
 
   return (
     <div className="portfolio-screen max-w-5xl mx-auto px-4 pb-20">
       {/* Chart Section */}
-      <PortfolioChart 
-        className="mt-4" 
+      <PortfolioChart
+        className="mt-4"
         showMilestones={showMilestones}
-        nextMilestone={nextMilestone ? Number(nextMilestone.targetValue) : undefined}
+        nextMilestone={
+          nextMilestone ? Number(nextMilestone.targetValue) : undefined
+        }
       />
 
       {/* Portfolio Accounts List */}
@@ -186,27 +181,39 @@ export default function Portfolio() {
             <h2 className="text-lg font-semibold">Accounts</h2>
             <div className="flex items-center space-x-4">
               <div className="flex bg-gray-200 rounded-lg shadow-md">
-                <button 
-                  className={`text-sm font-medium py-1 px-3 rounded-lg transition-all ${!displayInPercentage ? 'bg-white text-black shadow-inner' : 'hover:bg-gray-300'}`}
+                <button
+                  className={`text-sm font-medium py-1 px-3 rounded-lg transition-all ${
+                    !displayInPercentage
+                      ? "bg-white text-black shadow-inner"
+                      : "hover:bg-gray-300"
+                  }`}
                   onClick={() => setDisplayInPercentage(false)}
                 >
                   £
                 </button>
-                <button 
-                  className={`text-sm font-medium py-1 px-3 rounded-lg transition-all ${displayInPercentage ? 'bg-white text-black shadow-inner' : 'hover:bg-gray-300'}`}
+                <button
+                  className={`text-sm font-medium py-1 px-3 rounded-lg transition-all ${
+                    displayInPercentage
+                      ? "bg-white text-black shadow-inner"
+                      : "hover:bg-gray-300"
+                  }`}
                   onClick={() => setDisplayInPercentage(true)}
                 >
                   %
                 </button>
               </div>
-              
+
               {/* Delete Account Alert Dialog */}
-              <AlertDialog open={!!accountToDelete} onOpenChange={(open) => !open && setAccountToDelete(null)}>
+              <AlertDialog
+                open={!!accountToDelete}
+                onOpenChange={(open) => !open && setAccountToDelete(null)}
+              >
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Delete Account</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Deleting this account will delete all data from it. Are you sure?
+                      Deleting this account will delete all data from it. Are
+                      you sure?
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -226,25 +233,32 @@ export default function Portfolio() {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-              
+
               {/* Edit Mode Toggle Button - Only shown when accounts exist */}
               {accounts.length > 0 && (
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className={`rounded-full w-10 h-10 flex items-center justify-center ${isEditMode ? 'bg-blue-100 border-blue-300 text-blue-600' : 'text-primary'}`}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className={`rounded-full w-10 h-10 flex items-center justify-center ${
+                    isEditMode
+                      ? "bg-blue-100 border-blue-300 text-blue-600"
+                      : "text-primary"
+                  }`}
                   onClick={() => setIsEditMode(!isEditMode)}
                 >
                   <Pencil className="h-5 w-5" />
                 </Button>
               )}
-              
+
               {/* Add Account Dialog */}
-              <Dialog open={isAddAccountOpen} onOpenChange={setIsAddAccountOpen}>
+              <Dialog
+                open={isAddAccountOpen}
+                onOpenChange={setIsAddAccountOpen}
+              >
                 <DialogTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
+                  <Button
+                    variant="outline"
+                    size="icon"
                     className="rounded-full w-10 h-10 flex items-center justify-center bg-black text-white border-black"
                   >
                     <Plus className="h-5 w-5" />
@@ -257,9 +271,12 @@ export default function Portfolio() {
                       Enter the details of your investment account below.
                     </DialogDescription>
                   </DialogHeader>
-                  
+
                   <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <form
+                      onSubmit={form.handleSubmit(onSubmit)}
+                      className="space-y-4"
+                    >
                       <FormField
                         control={form.control}
                         name="provider"
@@ -276,10 +293,18 @@ export default function Portfolio() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="Trading 212">Trading 212</SelectItem>
-                                <SelectItem value="Vanguard">Vanguard</SelectItem>
-                                <SelectItem value="InvestEngine">InvestEngine</SelectItem>
-                                <SelectItem value="Hargreaves Lansdown">Hargreaves Lansdown</SelectItem>
+                                <SelectItem value="Trading 212">
+                                  Trading 212
+                                </SelectItem>
+                                <SelectItem value="Vanguard">
+                                  Vanguard
+                                </SelectItem>
+                                <SelectItem value="InvestEngine">
+                                  InvestEngine
+                                </SelectItem>
+                                <SelectItem value="Hargreaves Lansdown">
+                                  Hargreaves Lansdown
+                                </SelectItem>
                                 <SelectItem value="AJ Bell">AJ Bell</SelectItem>
                               </SelectContent>
                             </Select>
@@ -287,7 +312,7 @@ export default function Portfolio() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="accountType"
@@ -306,17 +331,22 @@ export default function Portfolio() {
                               <SelectContent>
                                 <SelectItem value="ISA">ISA</SelectItem>
                                 <SelectItem value="SIPP">SIPP</SelectItem>
-                                {(selectedProvider === "Hargreaves Lansdown" || selectedProvider === "AJ Bell") && (
-                                  <SelectItem value="LISA">Lifetime ISA</SelectItem>
+                                {(selectedProvider === "Hargreaves Lansdown" ||
+                                  selectedProvider === "AJ Bell") && (
+                                  <SelectItem value="LISA">
+                                    Lifetime ISA
+                                  </SelectItem>
                                 )}
-                                <SelectItem value="GIA">General Account</SelectItem>
+                                <SelectItem value="GIA">
+                                  General Account
+                                </SelectItem>
                               </SelectContent>
                             </Select>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="currentValue"
@@ -334,7 +364,7 @@ export default function Portfolio() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <DialogFooter>
                         <Button type="submit">Add Account</Button>
                       </DialogFooter>
@@ -347,27 +377,31 @@ export default function Portfolio() {
 
           {isLoading ? (
             // Skeleton loading state for accounts
-            Array(3).fill(0).map((_, i) => (
-              <div key={i} className="border-b border-gray-200 py-3">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center">
-                    <Skeleton className="w-10 h-10 rounded-md mr-3" />
-                    <div>
-                      <Skeleton className="h-5 w-24 mb-1" />
-                      <Skeleton className="h-4 w-12" />
+            Array(3)
+              .fill(0)
+              .map((_, i) => (
+                <div key={i} className="border-b border-gray-200 py-3">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <Skeleton className="w-10 h-10 rounded-md mr-3" />
+                      <div>
+                        <Skeleton className="h-5 w-24 mb-1" />
+                        <Skeleton className="h-4 w-12" />
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Skeleton className="h-5 w-20 mb-1" />
+                      <Skeleton className="h-4 w-16" />
                     </div>
                   </div>
-                  <div className="text-right">
-                    <Skeleton className="h-5 w-20 mb-1" />
-                    <Skeleton className="h-4 w-16" />
-                  </div>
                 </div>
-              </div>
-            ))
+              ))
           ) : accounts.length === 0 ? (
             <div className="py-8 text-center">
-              <p className="text-gray-500 mb-4">No investment accounts added yet.</p>
-              <Button 
+              <p className="text-gray-500 mb-4">
+                No investment accounts added yet.
+              </p>
+              <Button
                 onClick={() => setIsAddAccountOpen(true)}
                 className="bg-black text-white hover:bg-gray-800"
               >
@@ -386,18 +420,24 @@ export default function Portfolio() {
                       </div>
                       <div>
                         <h3 className="font-medium">{account.provider}</h3>
-                        <span className={`text-sm ${getAccountTypeColor(account.accountType)}`}>
-                          {account.accountType === 'LISA' ? 'Lifetime ISA' : 
-                           account.accountType === 'GIA' ? 'General Account' : 
-                           account.accountType}
+                        <span
+                          className={`text-sm ${getAccountTypeColor(
+                            account.accountType
+                          )}`}
+                        >
+                          {account.accountType === "LISA"
+                            ? "Lifetime ISA"
+                            : account.accountType === "GIA"
+                            ? "General Account"
+                            : account.accountType}
                         </span>
                       </div>
                     </div>
                     <div className="flex items-center">
                       {isEditMode && (
-                        <Button 
-                          variant="outline" 
-                          size="icon" 
+                        <Button
+                          variant="outline"
+                          size="icon"
                           className="rounded-full w-9 h-9 flex items-center justify-center text-red-600 hover:bg-red-50 hover:border-red-200 mr-3"
                           onClick={() => setAccountToDelete(account.id)}
                         >
@@ -405,15 +445,28 @@ export default function Portfolio() {
                         </Button>
                       )}
                       <div className="text-right">
-                        <p className="font-semibold">£{Number(account.currentValue).toLocaleString()}</p>
+                        <p className="font-semibold">
+                          £{Number(account.currentValue).toLocaleString()}
+                        </p>
                         {/* Demo data - in a real app use actual performance values */}
-                        <p className={`text-sm font-medium ${Math.random() > 0.3 ? 'text-green-600' : 'text-red-600'}`}>
-                          {displayInPercentage 
-                            ? (Math.random() > 0.3 ? '+3.2%' : '-1.8%') 
-                            : (Math.random() > 0.3 
-                                ? `+£${(Number(account.currentValue) * 0.032).toLocaleString()}` 
-                                : `-£${(Number(account.currentValue) * 0.018).toLocaleString()}`)
-                          }
+                        <p
+                          className={`text-sm font-medium ${
+                            Math.random() > 0.3
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }`}
+                        >
+                          {displayInPercentage
+                            ? Math.random() > 0.3
+                              ? "+3.2%"
+                              : "-1.8%"
+                            : Math.random() > 0.3
+                            ? `+£${(
+                                Number(account.currentValue) * 0.032
+                              ).toLocaleString()}`
+                            : `-£${(
+                                Number(account.currentValue) * 0.018
+                              ).toLocaleString()}`}
                         </p>
                       </div>
                     </div>
@@ -428,11 +481,17 @@ export default function Portfolio() {
                     <h3 className="font-semibold text-lg">Total Portfolio</h3>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-lg">£{totalPortfolioValue.toLocaleString()}</p>
+                    <p className="font-bold text-lg">
+                      £{totalPortfolioValue.toLocaleString()}
+                    </p>
                     {(() => {
                       const gain = calculateTotalGain();
                       return (
-                        <p className={`font-medium ${gain.isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                        <p
+                          className={`font-medium ${
+                            gain.isPositive ? "text-green-600" : "text-red-600"
+                          }`}
+                        >
                           {gain.value}
                         </p>
                       );
@@ -443,9 +502,15 @@ export default function Portfolio() {
 
               <div className="mt-6 text-center text-sm text-gray-500">
                 <p>
-                  Last updated on {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} • 
-                  <Button 
-                    variant="link" 
+                  Last updated on{" "}
+                  {new Date().toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  })}{" "}
+                  •
+                  <Button
+                    variant="link"
                     className="text-primary font-medium p-0 ml-1"
                     onClick={() => setActiveSection("record")}
                   >

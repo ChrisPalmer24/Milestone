@@ -17,6 +17,8 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
+export type AccountType = "ISA" | "SIPP" | "LISA" | "GIA" | "ALL";
+
 // Account table to store investment account information
 export const accounts = pgTable("accounts", {
   id: serial("id").primaryKey(),
@@ -58,6 +60,10 @@ export type AccountHistory = typeof accountHistory.$inferSelect;
 
 export type PortfolioHistoryItem = { date: Date; value: number };
 export type PortfolioHistory = PortfolioHistoryItem[];
+
+export interface PortfolioValue {
+  totalValue: number;
+}
 
 // Milestones table to track investment goals
 export const milestones = pgTable("milestones", {

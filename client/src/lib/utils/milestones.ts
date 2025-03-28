@@ -1,4 +1,6 @@
 import { usePortfolio } from "@/context/PortfolioContext";
+import { Milestone } from "@shared/schema";
+
 
 // Use the same Account type from PortfolioContext
 type AccountType = "ISA" | "SIPP" | "LISA" | "GIA";
@@ -296,3 +298,9 @@ function getAccountIcon(accountType: string): string {
       return '💰';
   }
 }
+
+export const getNextMilestone = (milestones: Milestone[], totalPortfolioValue: number) => {
+  return milestones.filter((m) => !m.accountType && !m.isCompleted)
+      .sort((a, b) => Number(a.targetValue) - Number(b.targetValue))
+      .find((m) => Number(m.targetValue) > totalPortfolioValue)
+};

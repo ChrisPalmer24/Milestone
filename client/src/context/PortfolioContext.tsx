@@ -8,48 +8,13 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { toast } from "@/hooks/use-toast";
-
-// Types for our context
-type AccountType = "ISA" | "SIPP" | "LISA" | "GIA" | "ALL";
-
-interface Account {
-  id: number;
-  provider: string;
-  accountType: AccountType;
-  currentValue: number;
-  isApiConnected: boolean;
-  apiKey?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface AccountHistory {
-  id: number;
-  accountId: number;
-  value: number;
-  recordedAt: string;
-}
-
-interface Milestone {
-  id: number;
-  name: string;
-  targetValue: string; // Changed to string to match API expectations
-  accountType: AccountType | null;
-  isCompleted: boolean;
-}
-
-interface FireSettings {
-  targetRetirementAge: number;
-  annualIncomeGoal: string; // Changed to string to match API expectations
-  expectedAnnualReturn: string; // Changed to string to match API expectations
-  safeWithdrawalRate: string; // Changed to string to match API expectations
-  monthlyInvestment: string; // Changed to string to match API expectations
-  currentAge: number;
-}
-
-interface PortfolioValueResponse {
-  totalValue: number;
-}
+import {
+  AccountType,
+  Milestone,
+  Account,
+  FireSettings,
+  PortfolioValue,
+} from "@shared/schema";
 
 interface PortfolioContextType {
   accounts: Account[];
@@ -113,7 +78,7 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
 
   // Fetch total portfolio value
   const { data: portfolioValue, isLoading: isLoadingPortfolioValue } =
-    useQuery<PortfolioValueResponse>({
+    useQuery<PortfolioValue>({
       queryKey: ["/api/portfolio/value"],
     });
 
