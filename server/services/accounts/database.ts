@@ -101,7 +101,16 @@ export class DatabaseAccountService implements IAccountService {
     return userAccounts.reduce((sum, account) => sum + Number(account.currentValue), 0);
   }
 
-  async getPortfolioHistory(userId: number, startDate: Date, endDate: Date): Promise<{ date: Date; value: number }[]> {
+  async getPortfolioHistory(userId: number, startDate: Date, endDate: Date): Promise<{ 
+    date: Date; 
+    value: number;
+    changes: {
+      accountId: number;
+      previousValue: number;
+      newValue: number;
+      change: number;
+    }[];
+  }[]> {
     const userAccounts = await this.getByUserId(userId);
     const accountIds = userAccounts.map(account => account.id);
     
@@ -115,17 +124,56 @@ export class DatabaseAccountService implements IAccountService {
       orderBy: (table, { asc }) => [asc(table.recordedAt)]
     });
 
-    // Group history entries by date and sum values
-    const portfolioHistory = new Map<string, number>();
-    historyEntries.forEach(entry => {
-      const dateKey = entry.recordedAt.toISOString().split('T')[0];
-      portfolioHistory.set(dateKey, (portfolioHistory.get(dateKey) || 0) + Number(entry.value));
+    // Create a map to track the latest known value for each account
+    const accountLatestValues = new Map<number, number>();
+    
+    // Initialize with current values from accounts
+    userAccounts.forEach(account => {
+      accountLatestValues.set(account.id, Number(account.currentValue));
     });
 
-    // Convert to array format
-    return Array.from(portfolioHistory.entries()).map(([date, value]) => ({
-      date: new Date(date),
-      value
-    }));
+    // Create a map to store portfolio values and changes at each timestamp
+    const portfolioValues = new Map<string, {
+      value: number;
+      changes: {
+        accountId: number;
+        previousValue: number;
+        newValue: number;
+        change: number;
+      }[];
+    }>();
+
+    // Process each history entry in chronological order
+    historyEntries.forEach(entry => {
+      const previousValue = accountLatestValues.get(entry.accountId) || 0;
+      const newValue = Number(entry.value);
+      const change = newValue - previousValue;
+      
+      // Update the latest known value for this account
+      accountLatestValues.set(entry.accountId, newValue);
+      
+      // Calculate total portfolio value at this point in time
+      const totalValue = Array.from(accountLatestValues.values()).reduce((sum, value) => sum + value, 0);
+      
+      // Store the portfolio value and changes at this timestamp
+      portfolioValues.set(entry.recordedAt.toISOString(), {
+        value: totalValue,
+        changes: [{
+          accountId: entry.accountId,
+          previousValue,
+          newValue,
+          change
+        }]
+      });
+    });
+
+    // Convert to array format and sort by timestamp
+    return Array.from(portfolioValues.entries())
+      .map(([timestamp, data]) => ({
+        date: new Date(timestamp),
+        value: data.value,
+        changes: data.changes
+      }))
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
   }
 } 
