@@ -3,9 +3,15 @@ import { accounts, accountHistory } from "@shared/schema";
 import type { Account, InsertAccount } from "@shared/schema";
 import type { IAccountService } from "./types";
 import { type Database } from "../../db/index";
-
+import { IAccountHistoryService } from "../account-history/types";
+import { DatabaseAccountHistoryService } from "../account-history/database";
 export class DatabaseAccountService implements IAccountService {
-  constructor(private db: Database) {}
+
+  accountHistoryService: IAccountHistoryService;
+
+  constructor(private db: Database) {
+    this.accountHistoryService = new DatabaseAccountHistoryService(db);
+  }
 
   async get(id: number): Promise<Account | undefined> {
     return this.db.query.accounts.findFirst({
@@ -21,6 +27,11 @@ export class DatabaseAccountService implements IAccountService {
 
   async create(data: InsertAccount): Promise<Account> {
     const [account] = await this.db.insert(accounts).values(data).returning();
+    await this.accountHistoryService.create({
+      accountId: account.id,
+      value: data.currentValue,
+      recordedAt: account.createdAt,
+    });
     return account;
   }
 
