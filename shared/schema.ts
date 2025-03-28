@@ -58,6 +58,8 @@ export const insertAccountHistorySchema = createInsertSchema(accountHistory).omi
 export type InsertAccountHistory = z.infer<typeof insertAccountHistorySchema>;
 export type AccountHistory = typeof accountHistory.$inferSelect;
 
+export type AccountHistoryData = { accountId: number; history: AccountHistory[] }[];
+
 export type PortfolioHistoryItem = { date: Date; value: number };
 export type PortfolioHistory = PortfolioHistoryItem[];
 

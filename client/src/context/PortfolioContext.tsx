@@ -14,6 +14,8 @@ import {
   Account,
   FireSettings,
   PortfolioValue,
+  AccountHistory,
+  AccountHistoryData,
 } from "@shared/schema";
 
 interface PortfolioContextType {
@@ -37,6 +39,7 @@ interface PortfolioContextType {
   deleteMilestone: (id: number) => Promise<void>;
   updateFireSettings: (settings: Partial<FireSettings>) => Promise<void>;
   isLoading: boolean;
+  accountHistory: AccountHistoryData;
 }
 
 // Create the context
@@ -54,7 +57,7 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     data: accounts = [],
     isLoading: isLoadingAccounts,
     isError: isAccountsError,
-  } = useQuery({
+  } = useQuery<Account[]>({
     queryKey: ["/api/accounts/user/1"],
   });
 
@@ -80,6 +83,26 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
   const { data: portfolioValue, isLoading: isLoadingPortfolioValue } =
     useQuery<PortfolioValue>({
       queryKey: ["/api/portfolio/value"],
+    });
+  // Fetch account history for all accounts
+  const { data: accountHistory = [], isLoading: isLoadingAccountHistory } =
+    useQuery<AccountHistoryData>({
+      queryKey: ["/api/account-history"],
+      queryFn: async () => {
+        const data = Promise.all(
+          accounts.map(async (account) => {
+            const response = await fetch(
+              `/api/account-history/account/${account.id}`
+            );
+            if (!response.ok)
+              throw new Error("Failed to fetch account history");
+            const history = await response.json();
+            return { accountId: account.id, history };
+          })
+        );
+        return data;
+      },
+      enabled: accounts.length > 0,
     });
 
   // Calculate total portfolio value
@@ -319,6 +342,7 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
 
   const isLoading =
     isLoadingAccounts ||
+    isLoadingAccountHistory ||
     isLoadingMilestones ||
     isLoadingFireSettings ||
     isLoadingPortfolioValue;
@@ -338,6 +362,7 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     deleteMilestone,
     updateFireSettings,
     isLoading,
+    accountHistory,
   };
 
   return (

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
@@ -48,6 +48,7 @@ import { usePortfolio } from "@/context/PortfolioContext";
 import { useToast } from "@/hooks/use-toast";
 import { Milestone } from "@shared/schema";
 import { getNextMilestone } from "@/lib/utils/milestones";
+import { calculateTotalPercentageChange } from "@/lib/utils/performance";
 
 // Form schema for adding a new account
 const accountSchema = z.object({
@@ -63,6 +64,7 @@ const accountSchema = z.object({
 export default function Portfolio() {
   const {
     accounts,
+    accountHistory,
     milestones,
     totalPortfolioValue,
     addAccount,
@@ -80,6 +82,39 @@ export default function Portfolio() {
 
   // State to track the selected provider for conditional account type display
   const [selectedProvider, setSelectedProvider] = useState<string>("");
+
+  // Memoize accounts with their percentage changes and portfolio totals
+  const { accountsWithPerformance, portfolioTotal } = useMemo(() => {
+    const accountsWithPct = accounts.map((account) => {
+      const accountHistoryData = accountHistory.find(
+        (h) => h.accountId === account.id
+      );
+      const history = accountHistoryData?.history || [];
+      const totalPercentageChange = calculateTotalPercentageChange(history);
+
+      return {
+        ...account,
+        totalPercentageChange,
+      };
+    });
+
+    const totalValue = accountsWithPct.reduce(
+      (sum, account) => sum + Number(account.currentValue),
+      0
+    );
+    const totalPercentageChange = accountsWithPct.reduce(
+      (sum, account) => sum + account.totalPercentageChange,
+      0
+    );
+
+    return {
+      accountsWithPerformance: accountsWithPct,
+      portfolioTotal: {
+        value: totalValue,
+        percentageChange: totalPercentageChange,
+      },
+    };
+  }, [accounts, accountHistory]);
 
   // Form for adding a new account
   const form = useForm<z.infer<typeof accountSchema>>({
@@ -411,7 +446,7 @@ export default function Portfolio() {
           ) : (
             // List of accounts
             <>
-              {accounts.map((account) => (
+              {accountsWithPerformance.map((account) => (
                 <div key={account.id} className="border-b border-gray-200 py-3">
                   <div className="flex justify-between items-center">
                     <div className="flex items-center">
@@ -448,25 +483,15 @@ export default function Portfolio() {
                         <p className="font-semibold">
                           £{Number(account.currentValue).toLocaleString()}
                         </p>
-                        {/* Demo data - in a real app use actual performance values */}
                         <p
                           className={`text-sm font-medium ${
-                            Math.random() > 0.3
+                            account.totalPercentageChange >= 0
                               ? "text-green-600"
                               : "text-red-600"
                           }`}
                         >
-                          {displayInPercentage
-                            ? Math.random() > 0.3
-                              ? "+3.2%"
-                              : "-1.8%"
-                            : Math.random() > 0.3
-                            ? `+£${(
-                                Number(account.currentValue) * 0.032
-                              ).toLocaleString()}`
-                            : `-£${(
-                                Number(account.currentValue) * 0.018
-                              ).toLocaleString()}`}
+                          {account.totalPercentageChange >= 0 ? "+" : ""}
+                          {account.totalPercentageChange.toFixed(1)}%
                         </p>
                       </div>
                     </div>
@@ -474,28 +499,26 @@ export default function Portfolio() {
                 </div>
               ))}
 
-              {/* Totals Row */}
-              <div className="pt-4">
+              {/* Portfolio Total */}
+              <div className="pt-4 border-t border-gray-200">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h3 className="font-semibold text-lg">Total Portfolio</h3>
+                    <h3 className="font-semibold text-lg">Portfolio Total</h3>
                   </div>
                   <div className="text-right">
                     <p className="font-bold text-lg">
-                      £{totalPortfolioValue.toLocaleString()}
+                      £{portfolioTotal.value.toLocaleString()}
                     </p>
-                    {(() => {
-                      const gain = calculateTotalGain();
-                      return (
-                        <p
-                          className={`font-medium ${
-                            gain.isPositive ? "text-green-600" : "text-red-600"
-                          }`}
-                        >
-                          {gain.value}
-                        </p>
-                      );
-                    })()}
+                    <p
+                      className={`text-sm font-medium ${
+                        portfolioTotal.percentageChange >= 0
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {portfolioTotal.percentageChange >= 0 ? "+" : ""}
+                      {portfolioTotal.percentageChange.toFixed(1)}%
+                    </p>
                   </div>
                 </div>
               </div>
