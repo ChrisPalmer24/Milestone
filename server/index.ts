@@ -12,14 +12,6 @@ app.use(express.urlencoded({ extended: false }));
 // Serve static files from public directory (needed for manifest.json and service worker)
 app.use(express.static(path.join(process.cwd(), "public")));
 
-// Special handler for service worker
-app.get('/sw.js', (req, res) => {
-  res.setHeader('Service-Worker-Allowed', '/');
-  res.setHeader('Content-Type', 'application/javascript');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.sendFile(path.join(process.cwd(), 'public', 'sw.js'));
-});
-
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -60,17 +52,6 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 
 (async () => {
   await registerRoutes(app);
-
-  // Serve static files from public directory (needed for manifest.json and service worker)
-  app.use(express.static(path.join(process.cwd(), "public")));
-
-  // Special handler for service worker
-  app.get('/sw.js', (req, res) => {
-    res.setHeader('Service-Worker-Allowed', '/');
-    res.setHeader('Content-Type', 'application/javascript');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.sendFile(path.join(process.cwd(), 'public', 'sw.js'));
-  });
 
   // Setup Vite or static serving last
   if (app.get("env") === "development") {

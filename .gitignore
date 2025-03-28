@@ -7,3 +7,5 @@ vite.config.ts.*
 
 .local.env
 .env
+
+client/dev-dist

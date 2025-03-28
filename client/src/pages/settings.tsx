@@ -8,19 +8,18 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useMobilePlatform } from "@/hooks/use-mobile-platform";
 import MobileSettings from "@/components/mobile/MobileSettings";
-import InstallPWA from "@/components/pwa/InstallPWA";
-import { 
-  Bell, 
-  Moon, 
-  Download, 
-  LifeBuoy, 
-  FileJson, 
+import {
+  Bell,
+  Moon,
+  Download,
+  LifeBuoy,
+  FileJson,
   FileSpreadsheet,
   DatabaseBackup,
   Key,
   Sparkles,
   Check,
-  X
+  X,
 } from "lucide-react";
 import {
   Select,
@@ -33,7 +32,7 @@ import {
 export default function Settings() {
   const { toast } = useToast();
   const isMobile = useMobilePlatform();
-  
+
   // Settings states
   const [darkMode, setDarkMode] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -41,13 +40,13 @@ export default function Settings() {
   const [autoUpdates, setAutoUpdates] = useState(true);
   const [currency, setCurrency] = useState("GBP");
   const [dateFormat, setDateFormat] = useState("DD/MM/YYYY");
-  
+
   // API Integration states
   const [xaiApiKey, setXaiApiKey] = useState("");
   const [hasXaiApiKey, setHasXaiApiKey] = useState(false);
   const [isTestingXaiKey, setIsTestingXaiKey] = useState(false);
   const [xaiKeyValid, setXaiKeyValid] = useState<boolean | null>(null);
-  
+
   // Check if we have an API key stored
   useEffect(() => {
     // This would normally make an API call to the backend to check
@@ -67,10 +66,10 @@ export default function Settings() {
         console.error("Error checking for xAI key:", error);
       }
     };
-    
+
     checkForExistingKey();
   }, []);
-  
+
   const handleSaveSettings = () => {
     // In a real app, we would save these settings to an API
     toast({
@@ -78,14 +77,14 @@ export default function Settings() {
       description: "Your preferences have been updated successfully.",
     });
   };
-  
+
   const handleDataExport = (format: string) => {
     // In a real app, we would generate and download the file
     toast({
       title: "Export started",
       description: `Your data is being exported in ${format} format. This might take a moment.`,
     });
-    
+
     // Simulate download delay
     setTimeout(() => {
       toast({
@@ -94,7 +93,7 @@ export default function Settings() {
       });
     }, 1500);
   };
-  
+
   // Handler for saving xAI API key
   const handleSaveXaiKey = async () => {
     if (!xaiApiKey.trim()) {
@@ -105,39 +104,39 @@ export default function Settings() {
       });
       return;
     }
-    
+
     setIsTestingXaiKey(true);
     setXaiKeyValid(null);
-    
+
     try {
       // First test if the key is valid
       const response = await fetch("/api/settings/verify-xai-key", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ apiKey: xaiApiKey })
+        body: JSON.stringify({ apiKey: xaiApiKey }),
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setXaiKeyValid(data.valid);
-        
+
         if (data.valid) {
           // Save the valid key
           const saveResponse = await fetch("/api/settings/xai-key", {
             method: "POST",
             headers: {
-              "Content-Type": "application/json"
+              "Content-Type": "application/json",
             },
-            body: JSON.stringify({ apiKey: xaiApiKey })
+            body: JSON.stringify({ apiKey: xaiApiKey }),
           });
-          
+
           if (saveResponse.ok) {
             setHasXaiApiKey(true);
             // Mask the key for display
             setXaiApiKey("●●●●●●●●●●●●●●●●●●●●");
-            
+
             toast({
               title: "API Key Saved",
               description: "Your xAI API key has been saved successfully.",
@@ -146,14 +145,16 @@ export default function Settings() {
           } else {
             toast({
               title: "Failed to Save",
-              description: "There was an error saving your API key. Please try again.",
+              description:
+                "There was an error saving your API key. Please try again.",
               variant: "destructive",
             });
           }
         } else {
           toast({
             title: "Invalid API Key",
-            description: "The API key you provided is not valid. Please check and try again.",
+            description:
+              "The API key you provided is not valid. Please check and try again.",
             variant: "destructive",
           });
         }
@@ -170,26 +171,27 @@ export default function Settings() {
       setXaiKeyValid(false);
       toast({
         title: "Connection Error",
-        description: "Failed to communicate with the server. Please try again later.",
+        description:
+          "Failed to communicate with the server. Please try again later.",
         variant: "destructive",
       });
     } finally {
       setIsTestingXaiKey(false);
     }
   };
-  
+
   // Handler for removing xAI API key
   const handleRemoveXaiKey = async () => {
     try {
       const response = await fetch("/api/settings/xai-key", {
-        method: "DELETE"
+        method: "DELETE",
       });
-      
+
       if (response.ok) {
         setHasXaiApiKey(false);
         setXaiApiKey("");
         setXaiKeyValid(null);
-        
+
         toast({
           title: "API Key Removed",
           description: "Your xAI API key has been removed successfully.",
@@ -198,7 +200,8 @@ export default function Settings() {
       } else {
         toast({
           title: "Failed to Remove",
-          description: "There was an error removing your API key. Please try again.",
+          description:
+            "There was an error removing your API key. Please try again.",
           variant: "destructive",
         });
       }
@@ -206,28 +209,26 @@ export default function Settings() {
       console.error("Error removing xAI API key:", error);
       toast({
         title: "Connection Error",
-        description: "Failed to communicate with the server. Please try again later.",
+        description:
+          "Failed to communicate with the server. Please try again later.",
         variant: "destructive",
       });
     }
   };
-  
+
   if (isMobile) {
     return (
       <div className="settings-page max-w-4xl mx-auto px-4 pb-20 pt-6">
         <h1 className="text-2xl font-semibold mb-6">Settings</h1>
-        <InstallPWA />
         <MobileSettings />
       </div>
     );
   }
-  
+
   return (
     <div className="settings-page max-w-4xl mx-auto px-4 pb-20 pt-6">
       <h1 className="text-2xl font-semibold mb-6">Settings</h1>
-      
-      <InstallPWA />
-      
+
       <div className="grid gap-6">
         {/* Preferences Card */}
         <Card>
@@ -238,17 +239,19 @@ export default function Settings() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label htmlFor="dark-mode">Dark Mode</Label>
-                <p className="text-sm text-gray-500">Switch between dark and light theme</p>
+                <p className="text-sm text-gray-500">
+                  Switch between dark and light theme
+                </p>
               </div>
-              <Switch 
-                id="dark-mode" 
-                checked={darkMode} 
+              <Switch
+                id="dark-mode"
+                checked={darkMode}
                 onCheckedChange={setDarkMode}
               />
             </div>
-            
+
             <Separator />
-            
+
             <div className="space-y-4">
               <Label>Display Currency</Label>
               <Select value={currency} onValueChange={setCurrency}>
@@ -262,7 +265,7 @@ export default function Settings() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-4">
               <Label>Date Format</Label>
               <Select value={dateFormat} onValueChange={setDateFormat}>
@@ -278,7 +281,7 @@ export default function Settings() {
             </div>
           </CardContent>
         </Card>
-        
+
         {/* Notifications Card */}
         <Card>
           <CardHeader>
@@ -289,53 +292,61 @@ export default function Settings() {
               <div className="space-y-0.5">
                 <div className="flex items-center">
                   <Bell className="h-4 w-4 mr-2" />
-                  <Label htmlFor="email-notifications">Email Notifications</Label>
+                  <Label htmlFor="email-notifications">
+                    Email Notifications
+                  </Label>
                 </div>
-                <p className="text-sm text-gray-500">Receive updates and alerts via email</p>
+                <p className="text-sm text-gray-500">
+                  Receive updates and alerts via email
+                </p>
               </div>
-              <Switch 
-                id="email-notifications" 
-                checked={emailNotifications} 
+              <Switch
+                id="email-notifications"
+                checked={emailNotifications}
                 onCheckedChange={setEmailNotifications}
               />
             </div>
-            
+
             <Separator />
-            
+
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <div className="flex items-center">
                   <Bell className="h-4 w-4 mr-2" />
                   <Label htmlFor="app-notifications">App Notifications</Label>
                 </div>
-                <p className="text-sm text-gray-500">Receive in-app notifications and alerts</p>
+                <p className="text-sm text-gray-500">
+                  Receive in-app notifications and alerts
+                </p>
               </div>
-              <Switch 
-                id="app-notifications" 
-                checked={appNotifications} 
+              <Switch
+                id="app-notifications"
+                checked={appNotifications}
                 onCheckedChange={setAppNotifications}
               />
             </div>
-            
+
             <Separator />
-            
+
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <div className="flex items-center">
                   <DatabaseBackup className="h-4 w-4 mr-2" />
                   <Label htmlFor="auto-updates">Automatic API Updates</Label>
                 </div>
-                <p className="text-sm text-gray-500">Automatically update connected accounts</p>
+                <p className="text-sm text-gray-500">
+                  Automatically update connected accounts
+                </p>
               </div>
-              <Switch 
-                id="auto-updates" 
-                checked={autoUpdates} 
+              <Switch
+                id="auto-updates"
+                checked={autoUpdates}
                 onCheckedChange={setAutoUpdates}
               />
             </div>
           </CardContent>
         </Card>
-        
+
         {/* Data & Privacy Card */}
         <Card>
           <CardHeader>
@@ -348,8 +359,8 @@ export default function Settings() {
                 Download a copy of your investment data in various formats
               </p>
               <div className="flex flex-wrap gap-3">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   className="flex items-center"
                   onClick={() => handleDataExport("CSV")}
@@ -357,8 +368,8 @@ export default function Settings() {
                   <FileSpreadsheet className="h-4 w-4 mr-2" />
                   CSV Export
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   className="flex items-center"
                   onClick={() => handleDataExport("JSON")}
@@ -366,8 +377,8 @@ export default function Settings() {
                   <FileJson className="h-4 w-4 mr-2" />
                   JSON Export
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   className="flex items-center"
                   onClick={() => handleDataExport("Excel")}
@@ -377,41 +388,29 @@ export default function Settings() {
                 </Button>
               </div>
             </div>
-            
+
             <Separator />
-            
+
             <div>
               <h3 className="text-md font-medium mb-2">Privacy & Terms</h3>
               <div className="flex flex-wrap gap-3">
-                <Button 
-                  variant="link" 
-                  size="sm"
-                  className="text-primary p-0"
-                >
+                <Button variant="link" size="sm" className="text-primary p-0">
                   Privacy Policy
                 </Button>
-                <Button 
-                  variant="link" 
-                  size="sm"
-                  className="text-primary p-0"
-                >
+                <Button variant="link" size="sm" className="text-primary p-0">
                   Terms of Service
                 </Button>
-                <Button 
-                  variant="link" 
-                  size="sm"
-                  className="text-primary p-0"
-                >
+                <Button variant="link" size="sm" className="text-primary p-0">
                   Cookie Policy
                 </Button>
               </div>
             </div>
-            
+
             <Separator />
-            
+
             <div>
-              <Button 
-                variant="link" 
+              <Button
+                variant="link"
                 className="text-red-500 p-0 flex items-center"
               >
                 Delete All My Data
@@ -419,7 +418,7 @@ export default function Settings() {
             </div>
           </CardContent>
         </Card>
-        
+
         {/* API Integrations Card */}
         <Card>
           <CardHeader>
@@ -435,10 +434,10 @@ export default function Settings() {
                 <h3 className="text-md font-medium">xAI / Grok API</h3>
               </div>
               <p className="text-sm text-gray-500 mb-4">
-                Connect to the xAI Grok API to generate intelligent milestone suggestions
-                based on your investment portfolio.
+                Connect to the xAI Grok API to generate intelligent milestone
+                suggestions based on your investment portfolio.
               </p>
-              
+
               {hasXaiApiKey ? (
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
@@ -476,11 +475,7 @@ export default function Settings() {
                         className="ml-2"
                         disabled={isTestingXaiKey || !xaiApiKey.trim()}
                       >
-                        {isTestingXaiKey ? (
-                          <>Verifying...</>
-                        ) : (
-                          <>Save Key</>
-                        )}
+                        {isTestingXaiKey ? <>Verifying...</> : <>Save Key</>}
                       </Button>
                     </div>
                     {xaiKeyValid === false && (
@@ -502,42 +497,44 @@ export default function Settings() {
                       </a>
                     </p>
                     <p className="mt-1">
-                      Your API key is stored securely and never shared with third parties.
+                      Your API key is stored securely and never shared with
+                      third parties.
                     </p>
                   </div>
                 </div>
               )}
             </div>
-            
+
             <Separator />
-            
+
             <div>
               <div className="flex items-center mb-2">
                 <DatabaseBackup className="h-4 w-4 mr-2 text-blue-500" />
                 <h3 className="text-md font-medium">Trading212 API</h3>
               </div>
               <p className="text-sm text-gray-500 mb-1">
-                API keys for investment platforms can be managed in the API Connections page.
+                API keys for investment platforms can be managed in the API
+                Connections page.
               </p>
               <Button
                 variant="link"
                 className="px-0 text-primary"
-                onClick={() => window.location.href = "/api-connections"}
+                onClick={() => (window.location.href = "/api-connections")}
               >
                 Manage Trading Platform Connections
               </Button>
             </div>
           </CardContent>
         </Card>
-        
+
         {/* Help & Support Card */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Help & Support</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               className="w-full sm:w-auto flex items-center justify-center"
             >
@@ -545,16 +542,14 @@ export default function Settings() {
               Contact Support
             </Button>
             <p className="text-sm text-gray-500">
-              Need help with Milestone? Our support team is available Monday-Friday, 9am-5pm GMT.
+              Need help with Milestone? Our support team is available
+              Monday-Friday, 9am-5pm GMT.
             </p>
           </CardContent>
         </Card>
-        
+
         <div className="mt-4 flex justify-end">
-          <Button 
-            onClick={handleSaveSettings}
-            className="w-full sm:w-auto"
-          >
+          <Button onClick={handleSaveSettings} className="w-full sm:w-auto">
             Save Settings
           </Button>
         </div>
