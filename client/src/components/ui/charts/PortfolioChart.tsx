@@ -11,6 +11,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
+import { PortfolioHistory } from "@shared/schema";
 
 // Date range options for the chart
 const DATE_RANGES = [
@@ -83,12 +84,6 @@ type PortfolioChartProps = {
   className?: string;
 };
 
-// Add interface for history data
-interface PortfolioHistoryData {
-  date: string;
-  value: number;
-}
-
 export default function PortfolioChart({
   showMilestones = false,
   nextMilestone,
@@ -108,7 +103,7 @@ export default function PortfolioChart({
   const { start, end } = getDateRange(dateRange);
 
   // Fetch portfolio history data
-  const { data: historyData, isLoading } = useQuery<PortfolioHistoryData[]>({
+  const { data: historyData, isLoading } = useQuery<PortfolioHistory>({
     queryKey: ["/api/portfolio/history", dateRange],
     queryFn: async () => {
       const response = await fetch(
@@ -126,33 +121,6 @@ export default function PortfolioChart({
     refetchOnReconnect: false, // Don't refetch when network reconnects
   });
 
-  // Generate dummy data if no data is available
-  const generateDummyData = (): ChartData[] => {
-    const dummyData: ChartData[] = [];
-    const now = new Date();
-    let baseValue = 15000;
-
-    // Generate data for the past 6 months
-    for (let i = 180; i >= 0; i -= 7) {
-      const date = new Date();
-      date.setDate(now.getDate() - i);
-
-      // Create some random variation
-      const randomChange = Math.random() * 800 - 400;
-      baseValue = Math.max(1000, baseValue + randomChange);
-
-      dummyData.push({
-        date: date.toLocaleDateString("en-GB", {
-          month: "short",
-          day: "2-digit",
-        }),
-        value: baseValue,
-      });
-    }
-
-    return dummyData;
-  };
-
   const data: ChartData[] =
     Array.isArray(historyData) && historyData.length > 0
       ? historyData.map((item) => ({
@@ -162,7 +130,7 @@ export default function PortfolioChart({
           }),
           value: Number(item.value),
         }))
-      : generateDummyData();
+      : [];
 
   // Add milestone data if enabled
   const chartData = [...data];

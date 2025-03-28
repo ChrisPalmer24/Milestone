@@ -56,6 +56,9 @@ export const insertAccountHistorySchema = createInsertSchema(accountHistory).omi
 export type InsertAccountHistory = z.infer<typeof insertAccountHistorySchema>;
 export type AccountHistory = typeof accountHistory.$inferSelect;
 
+export type PortfolioHistoryItem = { date: Date; value: number };
+export type PortfolioHistory = PortfolioHistoryItem[];
+
 // Milestones table to track investment goals
 export const milestones = pgTable("milestones", {
   id: serial("id").primaryKey(),
