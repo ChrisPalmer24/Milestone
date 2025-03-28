@@ -34,4 +34,15 @@ router.get("/history", async (req, res) => {
   }
 });
 
+// Get total portfolio value
+router.get("/value", async (req, res) => {
+  try {
+    const userId = 1; // Demo user
+    const totalValue = await accountService.getPortfolioValue(userId);
+    res.json({ totalValue });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch portfolio value" });
+  }
+});
+
 export default router; 
