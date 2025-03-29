@@ -56,9 +56,9 @@ export default function BottomNav({ activeSection, onChange }: BottomNavProps) {
   };
 
   return (
-    <nav className="bg-white border-t border-gray-200 fixed bottom-0 w-full z-10 h-16">
-      <div className="max-w-5xl mx-auto h-full">
-        <ul className="flex justify-between h-full">
+    <nav className="bg-white border-t border-gray-200 fixed bottom-0 w-full z-10">
+      <div className="max-w-5xl mx-auto">
+        <ul className="flex justify-between">
           {navItems.map((item) => {
             const [isActive] = useRoute(item.path);
             const isActiveHome = location === "/" && item.id === "portfolio";
@@ -67,14 +67,13 @@ export default function BottomNav({ activeSection, onChange }: BottomNavProps) {
               <li key={item.id} className="flex-1">
                 <button
                   className={cn(
-                    "nav-item flex flex-col items-center justify-center h-full w-full",
+                    "nav-item flex flex-col items-center pt-2 pb-1 w-full",
                     item.id === "record" 
                       ? (isActive || activeSection === item.id) 
                         ? "bg-[#0061ff] text-white mx-1"
                         : "bg-black text-white mx-1" 
-                      : (isActive || isActiveHome || activeSection === item.id)
-                        ? "text-[#0061ff]"
-                        : "text-muted-foreground"
+                      : (isActive || isActiveHome || activeSection === item.id) &&
+                        "text-[#0061ff]"
                   )}
                   onClick={() => handleNavigation(item)}
                   aria-label={item.label}
