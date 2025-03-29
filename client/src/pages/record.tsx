@@ -173,8 +173,8 @@ export default function Record() {
                       
                       {/* Column 2: Current Value */}
                       <div className="text-center">
-                        <p className="font-medium">Current Value</p>
-                        <p className="text-lg text-primary">£{parseInt(account.currentValue).toLocaleString()}</p>
+                        <h3 className="font-medium">Current Value</h3>
+                        <p className="text-sm text-muted-foreground">£{parseInt(account.currentValue).toLocaleString()}</p>
                       </div>
                       
                       {/* Column 3: New Value Input & Update Button */}
