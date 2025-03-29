@@ -23,7 +23,7 @@ export default function ResponsiveLayout({ children }: ResponsiveLayoutProps) {
     return (
       <div className="flex flex-col min-h-screen relative pb-16">
         <Header />
-        <main className="flex-1 px-4 py-4 overflow-auto">
+        <main className="flex-1 px-4 py-4 pb-20 overflow-auto">
           {children}
         </main>
         <MobileBottomNav />

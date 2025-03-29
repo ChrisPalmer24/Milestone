@@ -9,8 +9,8 @@ import { Link } from "wouter";
 
 export default function Header() {
   return (
-    <header className="bg-white shadow-sm">
-      <div className="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
+    <header className="bg-white shadow-sm h-16">
+      <div className="max-w-5xl mx-auto px-4 h-full flex justify-between items-center">
         <h1 className="text-xl font-semibold text-neutral-900">Milestone</h1>
         
         <DropdownMenu>
