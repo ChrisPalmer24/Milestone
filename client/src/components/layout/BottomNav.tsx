@@ -68,8 +68,10 @@ export default function BottomNav({ activeSection, onChange }: BottomNavProps) {
                 <button
                   className={cn(
                     "nav-item flex flex-col items-center pt-2 pb-1 w-full",
-                    (isActive || isActiveHome || activeSection === item.id) &&
-                      "text-primary border-t-2 border-primary"
+                    item.id === "record" 
+                      ? "bg-black text-white rounded-lg mx-1" 
+                      : (isActive || isActiveHome || activeSection === item.id) &&
+                        "text-primary border-t-2 border-primary"
                   )}
                   onClick={() => handleNavigation(item)}
                   aria-label={item.label}
