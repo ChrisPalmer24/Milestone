@@ -164,15 +164,22 @@ export default function Record() {
                     key={account.id} 
                     className="p-4 border rounded-lg bg-card"
                   >
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                      <div className="flex-1">
+                    <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+                      {/* Column 1: Account Information */}
+                      <div>
                         <h3 className="font-medium">{account.provider}</h3>
                         <p className="text-sm text-muted-foreground">{account.accountType}</p>
-                        <p className="text-sm">Current: £{parseInt(account.currentValue).toLocaleString()}</p>
                       </div>
                       
-                      <div className="flex-1 md:max-w-xs">
-                        <div className="relative">
+                      {/* Column 2: Current Value */}
+                      <div className="text-center">
+                        <p className="font-medium">Current Value</p>
+                        <p className="text-lg text-primary">£{parseInt(account.currentValue).toLocaleString()}</p>
+                      </div>
+                      
+                      {/* Column 3: New Value Input & Update Button */}
+                      <div className="flex items-center space-x-2">
+                        <div className="relative flex-1">
                           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <span className="text-gray-500">£</span>
                           </div>
@@ -184,16 +191,16 @@ export default function Record() {
                             onChange={(e) => handleAccountValueChange(account.id, e.target.value)}
                           />
                         </div>
+                        
+                        <Button 
+                          onClick={() => handleSubmitAccount(account.id)}
+                          disabled={!accountValues[account.id] || updatingAccounts.includes(account.id) || isLoading}
+                          className="whitespace-nowrap"
+                          size="sm"
+                        >
+                          {updatingAccounts.includes(account.id) ? "Updating..." : "Update"}
+                        </Button>
                       </div>
-                      
-                      <Button 
-                        onClick={() => handleSubmitAccount(account.id)}
-                        disabled={!accountValues[account.id] || updatingAccounts.includes(account.id) || isLoading}
-                        className="whitespace-nowrap"
-                        size="sm"
-                      >
-                        {updatingAccounts.includes(account.id) ? "Updating..." : "Update"}
-                      </Button>
                     </div>
                   </div>
                 ))}
