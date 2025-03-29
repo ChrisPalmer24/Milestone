@@ -4,7 +4,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkles, PlusCircle, Key } from "lucide-react";
 import { usePortfolio } from "@/context/PortfolioContext";
-import { generateMilestoneSuggestions, SuggestedMilestone } from "@/lib/utils/milestones";
+import {
+  generateMilestoneSuggestions,
+  SuggestedMilestone,
+} from "@/lib/utils/milestones";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, getQueryFn } from "@/lib/queryClient";
 
@@ -12,41 +15,36 @@ import { apiRequest, getQueryFn } from "@/lib/queryClient";
 type AccountType = "ISA" | "SIPP" | "LISA" | "GIA";
 
 export default function AISuggestedMilestones() {
-  const { 
-    accounts, 
-    milestones, 
-    totalPortfolioValue, 
-    addMilestone, 
-    isLoading 
-  } = usePortfolio();
-  
+  const { accounts, milestones, totalPortfolioValue, addMilestone, isLoading } =
+    usePortfolio();
+
   const [generatingSuggestions, setGeneratingSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<SuggestedMilestone[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  
+
   const { toast } = useToast();
   const [needsApiKey, setNeedsApiKey] = useState(false);
-  
+
   // Generate new suggestions
   const handleGenerateSuggestions = async () => {
     setGeneratingSuggestions(true);
     setNeedsApiKey(false);
-    
+
     try {
       // Try to use the AI endpoint first
       const response = await fetch("/api/milestones/suggestions/ai");
-      
+
       if (response.status === 403) {
         // API key is missing
         setNeedsApiKey(true);
-        
+
         // Fallback to local generation
         const localSuggestions = generateMilestoneSuggestions(
           accounts,
           totalPortfolioValue,
           milestones
         );
-        
+
         setSuggestions(localSuggestions);
       } else if (response.ok) {
         // We got AI-generated suggestions
@@ -56,7 +54,7 @@ export default function AISuggestedMilestones() {
           toast({
             title: "AI-Generated Milestones",
             description: "Milestones were generated using Grok AI",
-            variant: "default"
+            variant: "default",
           });
         } else {
           // Fallback if AI returned empty results
@@ -76,11 +74,11 @@ export default function AISuggestedMilestones() {
         );
         setSuggestions(localSuggestions);
       }
-      
+
       setShowSuggestions(true);
     } catch (error) {
       console.error("Error generating suggestions:", error);
-      
+
       // Use local generation as fallback on error
       const localSuggestions = generateMilestoneSuggestions(
         accounts,
@@ -93,30 +91,35 @@ export default function AISuggestedMilestones() {
       setGeneratingSuggestions(false);
     }
   };
-  
+
   // Add a suggested milestone to actual milestones
   const handleAddSuggestion = async (suggestion: SuggestedMilestone) => {
     try {
       // Use type assertion to ensure the type matches what addMilestone expects
       const accountType = suggestion.accountType as AccountType | null;
-      
+
       await addMilestone({
         name: suggestion.name,
         accountType: accountType,
-        targetValue: suggestion.targetValue
+        targetValue: suggestion.targetValue,
+        userId: 1, // Add userId for the demo user
+        createdAt: new Date(), // Add createdAt field
       });
-      
+
       // Remove from suggestions
-      setSuggestions(prev => prev.filter(s => 
-        s.name !== suggestion.name || 
-        s.targetValue !== suggestion.targetValue || 
-        s.accountType !== suggestion.accountType
-      ));
+      setSuggestions((prev) =>
+        prev.filter(
+          (s) =>
+            s.name !== suggestion.name ||
+            s.targetValue !== suggestion.targetValue ||
+            s.accountType !== suggestion.accountType
+        )
+      );
     } catch (error) {
       console.error("Error adding suggested milestone:", error);
     }
   };
-  
+
   // Get color based on account type
   const getAccountTypeColor = (type: string | null) => {
     switch (type) {
@@ -132,7 +135,7 @@ export default function AISuggestedMilestones() {
         return "text-primary bg-blue-50";
     }
   };
-  
+
   return (
     <Card className="mt-6">
       <CardContent className="p-4">
@@ -141,7 +144,7 @@ export default function AISuggestedMilestones() {
             <Sparkles className="h-5 w-5 text-primary mr-2" />
             <h2 className="text-lg font-semibold">AI Suggested Milestones</h2>
           </div>
-          
+
           <Button
             variant="outline"
             size="sm"
@@ -153,7 +156,7 @@ export default function AISuggestedMilestones() {
             {showSuggestions ? "Refresh Suggestions" : "Generate Suggestions"}
           </Button>
         </div>
-        
+
         {needsApiKey && (
           // Show message about missing API key
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
@@ -162,8 +165,9 @@ export default function AISuggestedMilestones() {
               <div>
                 <h3 className="font-medium text-amber-800">API Key Required</h3>
                 <p className="text-sm text-amber-700 mt-1">
-                  To use AI-powered milestone suggestions, you need to add an xAI API key. 
-                  Without it, we'll use our local suggestion system.
+                  To use AI-powered milestone suggestions, you need to add an
+                  xAI API key. Without it, we'll use our local suggestion
+                  system.
                 </p>
                 <div className="mt-3">
                   <a
@@ -190,30 +194,37 @@ export default function AISuggestedMilestones() {
             </div>
           </div>
         )}
-        
+
         {isLoading || generatingSuggestions ? (
           // Skeleton loading state
           <div className="space-y-3 mt-4">
-            {Array(3).fill(0).map((_, i) => (
-              <div key={i} className="bg-gray-50 rounded-lg p-4 flex justify-between items-center">
-                <div>
-                  <Skeleton className="h-5 w-48 mb-2" />
-                  <Skeleton className="h-4 w-72" />
+            {Array(3)
+              .fill(0)
+              .map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-gray-50 rounded-lg p-4 flex justify-between items-center"
+                >
+                  <div>
+                    <Skeleton className="h-5 w-48 mb-2" />
+                    <Skeleton className="h-4 w-72" />
+                  </div>
+                  <Skeleton className="h-8 w-8 rounded-full" />
                 </div>
-                <Skeleton className="h-8 w-8 rounded-full" />
-              </div>
-            ))}
+              ))}
           </div>
         ) : !showSuggestions ? (
           // Prompt to generate suggestions
           <div className="py-6 text-center">
             <p className="text-gray-500 mb-2">
-              Use AI to generate smart milestone suggestions based on your portfolio
+              Use AI to generate smart milestone suggestions based on your
+              portfolio
             </p>
             <p className="text-sm text-gray-400 mb-4">
-              Our system analyzes your investments and creates personalized goals
+              Our system analyzes your investments and creates personalized
+              goals
             </p>
-            <Button 
+            <Button
               onClick={handleGenerateSuggestions}
               className="bg-primary text-white"
             >
@@ -235,22 +246,26 @@ export default function AISuggestedMilestones() {
           // Show suggestions
           <div className="space-y-3 mt-3">
             {suggestions.map((suggestion, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className="bg-gray-50 rounded-lg p-4 flex justify-between items-start"
               >
                 <div className="flex-1">
                   <div className="flex items-center mb-1">
-                    <span className="font-medium mr-2">
-                      {suggestion.name} 
-                    </span>
+                    <span className="font-medium mr-2">{suggestion.name}</span>
                     {suggestion.icon && (
                       <span className="text-lg">{suggestion.icon}</span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-600 mb-1.5">{suggestion.description}</p>
+                  <p className="text-sm text-gray-600 mb-1.5">
+                    {suggestion.description}
+                  </p>
                   <div className="flex items-center">
-                    <span className={`text-xs font-medium mr-2 px-2 py-0.5 rounded-full ${getAccountTypeColor(suggestion.accountType)}`}>
+                    <span
+                      className={`text-xs font-medium mr-2 px-2 py-0.5 rounded-full ${getAccountTypeColor(
+                        suggestion.accountType
+                      )}`}
+                    >
                       {suggestion.accountType || "Portfolio"}
                     </span>
                     <span className="text-xs text-gray-500">

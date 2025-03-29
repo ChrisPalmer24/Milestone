@@ -78,7 +78,7 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     isLoading: isLoadingMilestones,
     isError: isMilestonesError,
   } = useQuery({
-    queryKey: ["/api/milestones"],
+    queryKey: ["/api/milestones/user/1"],
   });
 
   // Fetch FIRE settings
@@ -221,7 +221,7 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
       return apiRequest("POST", "/api/milestones", newMilestone);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/milestones"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/milestones/user/1"] });
       toast({
         title: "Milestone added",
         description: "Your investment milestone has been added successfully.",
@@ -241,7 +241,7 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
   const deleteMilestoneMutation = useMutation({
     mutationFn: (id: number) => apiRequest("DELETE", `/api/milestones/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/milestones"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/milestones/user/1"] });
       toast({
         title: "Milestone deleted",
         description: "Your investment milestone has been deleted successfully.",
