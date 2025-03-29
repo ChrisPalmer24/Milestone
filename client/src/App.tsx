@@ -8,7 +8,6 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Portfolio from "@/pages/portfolio";
 import Goals from "@/pages/goals";
-import Record from "@/pages/record";
 import Track from "@/pages/track";
 import Fire from "@/pages/fire";
 import Profile from "@/pages/profile";
@@ -39,9 +38,6 @@ function Router() {
         </Route>
         <Route path="/goals">
           {() => <RouteWithLayout component={Goals} />}
-        </Route>
-        <Route path="/record">
-          {() => <RouteWithLayout component={Record} />}
         </Route>
         <Route path="/track">
           {() => <RouteWithLayout component={Track} />}
