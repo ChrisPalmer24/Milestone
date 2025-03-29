@@ -85,10 +85,10 @@ export default function MobileBottomNav() {
                 className={
                   item.id === 'record'
                     ? 'p-1.5 bg-black text-white'
-                    : `p-1.5 rounded-lg transition-colors ${
+                    : `p-1.5 transition-colors ${
                         isActive 
-                          ? 'text-primary bg-primary/10' 
-                          : 'text-muted-foreground hover:text-primary'
+                          ? 'text-[#0061ff]' 
+                          : 'text-muted-foreground hover:text-[#0061ff]'
                       }`
                 }
               >
@@ -99,7 +99,7 @@ export default function MobileBottomNav() {
                   item.id === 'record'
                     ? 'text-xs mt-1 text-black font-medium'
                     : `text-xs mt-1 ${
-                        isActive ? 'text-primary font-medium' : 'text-muted-foreground'
+                        isActive ? 'text-[#0061ff] font-medium' : 'text-muted-foreground'
                       }`
                 }
               >

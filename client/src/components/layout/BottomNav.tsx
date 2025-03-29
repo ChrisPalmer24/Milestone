@@ -71,7 +71,7 @@ export default function BottomNav({ activeSection, onChange }: BottomNavProps) {
                     item.id === "record" 
                       ? "bg-black text-white mx-1" 
                       : (isActive || isActiveHome || activeSection === item.id) &&
-                        "text-primary border-t-2 border-primary"
+                        "text-[#0061ff]"
                   )}
                   onClick={() => handleNavigation(item)}
                   aria-label={item.label}
