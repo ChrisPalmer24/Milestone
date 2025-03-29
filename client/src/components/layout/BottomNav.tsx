@@ -1,4 +1,4 @@
-import { TrendingUp, Flag, LineChart, Flame, ClipboardList } from "lucide-react";
+import { TrendingUp, Flag, LineChart, Flame, CircleFadingPlus } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
 import { cn } from "@/lib/utils";
 
@@ -26,7 +26,7 @@ const navItems: NavItem[] = [
     id: "record",
     path: "/record",
     label: "Record",
-    icon: <ClipboardList className="w-6 h-6" />,
+    icon: <CircleFadingPlus className="w-6 h-6" />,
   },
   {
     id: "track",

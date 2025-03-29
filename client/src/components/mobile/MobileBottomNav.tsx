@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useRoute, Link } from 'wouter';
-import { Home, BarChart3, LineChart, Target, Settings, ClipboardList } from 'lucide-react';
+import { Home, BarChart3, LineChart, Target, Settings, CircleFadingPlus } from 'lucide-react';
 import { triggerHapticFeedback, isNativePlatform } from '../../capacitor';
 
 type NavItem = {
@@ -47,7 +47,7 @@ export default function MobileBottomNav() {
       id: 'record',
       path: '/record',
       label: 'Record',
-      icon: <ClipboardList size={24} />,
+      icon: <CircleFadingPlus size={24} />,
     },
     {
       id: 'track',
