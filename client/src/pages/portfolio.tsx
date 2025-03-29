@@ -246,8 +246,7 @@ export default function Portfolio() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Delete Account</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Deleting this account will delete all data from it. Are
-                      you sure?
+                      This will delete all data associated with this investment account, are you sure?
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -448,8 +447,12 @@ export default function Portfolio() {
               {accountsWithPerformance.map((account) => (
                 <div
                   key={account.id}
-                  className="border-b border-gray-200 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
-                  onClick={() => setLocation(`/account/${account.id}`)}
+                  className="border-b border-gray-200 py-3 cursor-pointer hover:bg-gray-50 transition-colors relative"
+                  onClick={(e) => {
+                    if (!isEditMode) {
+                      setLocation(`/account/${account.id}`);
+                    }
+                  }}
                 >
                   <div className="flex justify-between items-center">
                     <div className="flex items-center">
@@ -471,20 +474,35 @@ export default function Portfolio() {
                         </span>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold">
-                        £{Number(account.currentValue).toLocaleString()}
-                      </p>
-                      <p
-                        className={`text-sm font-medium ${
-                          account.totalPercentageChange >= 0
-                            ? "text-green-600"
-                            : "text-red-600"
-                        }`}
-                      >
-                        {account.totalPercentageChange >= 0 ? "+" : ""}
-                        {account.totalPercentageChange.toFixed(1)}%
-                      </p>
+                    <div className="flex items-center">
+                      {isEditMode && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="mr-2 text-red-600 hover:text-red-800 hover:bg-red-50"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setAccountToDelete(account.id);
+                          }}
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </Button>
+                      )}
+                      <div className="text-right">
+                        <p className="font-semibold">
+                          £{Number(account.currentValue).toLocaleString()}
+                        </p>
+                        <p
+                          className={`text-sm font-medium ${
+                            account.totalPercentageChange >= 0
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }`}
+                        >
+                          {account.totalPercentageChange >= 0 ? "+" : ""}
+                          {account.totalPercentageChange.toFixed(1)}%
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
