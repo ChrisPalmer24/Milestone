@@ -69,7 +69,7 @@ export default function BottomNav({ activeSection, onChange }: BottomNavProps) {
                   className={cn(
                     "nav-item flex flex-col items-center pt-2 pb-1 w-full",
                     item.id === "record" 
-                      ? "bg-black text-white rounded-lg mx-1" 
+                      ? "bg-black text-white mx-1" 
                       : (isActive || isActiveHome || activeSection === item.id) &&
                         "text-primary border-t-2 border-primary"
                   )}

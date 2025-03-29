@@ -84,7 +84,7 @@ export default function MobileBottomNav() {
               <div 
                 className={
                   item.id === 'record'
-                    ? 'p-1.5 rounded-lg bg-black text-white'
+                    ? 'p-1.5 bg-black text-white'
                     : `p-1.5 rounded-lg transition-colors ${
                         isActive 
                           ? 'text-primary bg-primary/10' 
