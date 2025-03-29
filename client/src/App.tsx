@@ -14,6 +14,7 @@ import Profile from "@/pages/profile";
 import Settings from "@/pages/settings";
 import ApiConnections from "@/pages/api-connections";
 import Account from "@/pages/account";
+import Record from "@/pages/record";
 
 function RouteWithLayout({
   component: Component,
@@ -41,6 +42,9 @@ function Router() {
         </Route>
         <Route path="/track">
           {() => <RouteWithLayout component={Track} />}
+        </Route>
+        <Route path="/record">
+          {() => <RouteWithLayout component={Record} />}
         </Route>
         <Route path="/fire">{() => <RouteWithLayout component={Fire} />}</Route>
         <Route path="/profile">

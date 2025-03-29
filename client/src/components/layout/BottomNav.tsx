@@ -1,4 +1,4 @@
-import { TrendingUp, Flag, LineChart, Flame } from "lucide-react";
+import { TrendingUp, Flag, LineChart, Flame, ClipboardList } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +21,12 @@ const navItems: NavItem[] = [
     path: "/goals",
     label: "Goals",
     icon: <Flag className="w-6 h-6" />,
+  },
+  {
+    id: "record",
+    path: "/record",
+    label: "Record",
+    icon: <ClipboardList className="w-6 h-6" />,
   },
   {
     id: "track",

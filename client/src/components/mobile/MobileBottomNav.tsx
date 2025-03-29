@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useRoute, Link } from 'wouter';
-import { Home, BarChart3, LineChart, Target, Settings } from 'lucide-react';
+import { Home, BarChart3, LineChart, Target, Settings, ClipboardList } from 'lucide-react';
 import { triggerHapticFeedback, isNativePlatform } from '../../capacitor';
 
 type NavItem = {
@@ -38,16 +38,22 @@ export default function MobileBottomNav() {
       icon: <BarChart3 size={24} />,
     },
     {
-      id: 'track',
-      path: '/track',
-      label: 'Track',
-      icon: <LineChart size={24} />,
-    },
-    {
       id: 'goals',
       path: '/goals',
       label: 'Goals',
       icon: <Target size={24} />,
+    },
+    {
+      id: 'record',
+      path: '/record',
+      label: 'Record',
+      icon: <ClipboardList size={24} />,
+    },
+    {
+      id: 'track',
+      path: '/track',
+      label: 'Track',
+      icon: <LineChart size={24} />,
     },
     {
       id: 'settings',
