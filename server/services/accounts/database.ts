@@ -71,12 +71,26 @@ export class DatabaseAccountService implements IAccountService {
   }
 
   async delete(id: number): Promise<boolean> {
-    const [deleted] = await this.db
-      .delete(accounts)
-      .where(eq(accounts.id, id))
-      .returning();
-    
-    return !!deleted;
+    // First delete all history entries for this account
+    try {
+      return await this.db.transaction(async (tx) => {
+        // Delete all history entries for this account first
+        await tx
+          .delete(accountHistory)
+          .where(eq(accountHistory.accountId, id));
+          
+        // Then delete the account
+        const [deleted] = await tx
+          .delete(accounts)
+          .where(eq(accounts.id, id))
+          .returning();
+        
+        return !!deleted;
+      });
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      throw error;
+    }
   }
 
   async connectApi(id: number, apiKey: string): Promise<Account> {
