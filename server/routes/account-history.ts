@@ -72,6 +72,29 @@ router.post("/", async (req, res) => {
   }
 });
 
+// Update history entry
+router.put("/:id", async (req, res) => {
+  try {
+    const historyId = parseInt(req.params.id);
+    const historyData = insertAccountHistorySchema.partial().parse(req.body);
+    const history = await accountHistoryService.update(historyId, historyData);
+    
+    if (!history) {
+      return res.status(404).json({ message: "History entry not found" });
+    }
+    
+    res.json(history);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: "Invalid history data", errors: error.errors });
+    }
+    if (error instanceof Error && error.message === "History entry not found") {
+      return res.status(404).json({ message: "History entry not found" });
+    }
+    res.status(500).json({ message: "Failed to update history entry" });
+  }
+});
+
 // Delete history entry
 router.delete("/:id", async (req, res) => {
   try {

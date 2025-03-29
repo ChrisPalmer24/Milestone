@@ -14,8 +14,14 @@ import Fire from "@/pages/fire";
 import Profile from "@/pages/profile";
 import Settings from "@/pages/settings";
 import ApiConnections from "@/pages/api-connections";
+import Account from "@/pages/account";
 
-function RouteWithLayout({ component: Component, ...rest }: { component: React.ComponentType }) {
+function RouteWithLayout({
+  component: Component,
+  ...rest
+}: {
+  component: React.ComponentType;
+}) {
   return (
     <ResponsiveLayout>
       <Component {...rest} />
@@ -25,38 +31,37 @@ function RouteWithLayout({ component: Component, ...rest }: { component: React.C
 
 function Router() {
   return (
-    <Switch>
-      <Route path="/">
-        {() => <RouteWithLayout component={Home} />}
-      </Route>
-      <Route path="/portfolio">
-        {() => <RouteWithLayout component={Portfolio} />}
-      </Route>
-      <Route path="/goals">
-        {() => <RouteWithLayout component={Goals} />}
-      </Route>
-      <Route path="/record">
-        {() => <RouteWithLayout component={Record} />}
-      </Route>
-      <Route path="/track">
-        {() => <RouteWithLayout component={Track} />}
-      </Route>
-      <Route path="/fire">
-        {() => <RouteWithLayout component={Fire} />}
-      </Route>
-      <Route path="/profile">
-        {() => <RouteWithLayout component={Profile} />}
-      </Route>
-      <Route path="/settings">
-        {() => <RouteWithLayout component={Settings} />}
-      </Route>
-      <Route path="/api-connections">
-        {() => <RouteWithLayout component={ApiConnections} />}
-      </Route>
-      <Route>
-        {() => <RouteWithLayout component={NotFound} />}
-      </Route>
-    </Switch>
+    <WouterRouter>
+      <Switch>
+        <Route path="/">{() => <RouteWithLayout component={Home} />}</Route>
+        <Route path="/portfolio">
+          {() => <RouteWithLayout component={Portfolio} />}
+        </Route>
+        <Route path="/goals">
+          {() => <RouteWithLayout component={Goals} />}
+        </Route>
+        <Route path="/record">
+          {() => <RouteWithLayout component={Record} />}
+        </Route>
+        <Route path="/track">
+          {() => <RouteWithLayout component={Track} />}
+        </Route>
+        <Route path="/fire">{() => <RouteWithLayout component={Fire} />}</Route>
+        <Route path="/profile">
+          {() => <RouteWithLayout component={Profile} />}
+        </Route>
+        <Route path="/settings">
+          {() => <RouteWithLayout component={Settings} />}
+        </Route>
+        <Route path="/api-connections">
+          {() => <RouteWithLayout component={ApiConnections} />}
+        </Route>
+        <Route path="/account/:id">
+          {() => <RouteWithLayout component={Account} />}
+        </Route>
+        <Route>{() => <RouteWithLayout component={NotFound} />}</Route>
+      </Switch>
+    </WouterRouter>
   );
 }
 

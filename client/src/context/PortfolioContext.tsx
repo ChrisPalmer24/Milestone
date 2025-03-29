@@ -39,7 +39,18 @@ interface PortfolioContextType {
   deleteMilestone: (id: number) => Promise<void>;
   updateFireSettings: (settings: Partial<FireSettings>) => Promise<void>;
   isLoading: boolean;
-  accountHistory: AccountHistoryData;
+  accountsHistory: AccountHistoryData;
+  addAccountHistory: (data: {
+    accountId: number;
+    value: string;
+    recordedAt: Date;
+  }) => Promise<void>;
+  updateAccountHistory: (
+    id: number,
+    data: { value: string; recordedAt: Date }
+  ) => Promise<void>;
+  deleteAccountHistory: (id: number) => Promise<void>;
+  getAccountHistory: (accountId: number) => AccountHistory[];
 }
 
 // Create the context
@@ -85,13 +96,14 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
       queryKey: ["/api/portfolio/value"],
     });
   // Fetch account history for all accounts
-  const { data: accountHistory = [], isLoading: isLoadingAccountHistory } =
+  const { data: accountsHistory = [], isLoading: isLoadingAccountHistory } =
     useQuery<AccountHistoryData>({
       queryKey: ["/api/account-history"],
       queryFn: async () => {
         const data = Promise.all(
           accounts.map(async (account) => {
-            const response = await fetch(
+            const response = await apiRequest(
+              "GET",
               `/api/account-history/account/${account.id}`
             );
             if (!response.ok)
@@ -266,6 +278,98 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
+  // Add new mutations for account history
+  const addAccountHistoryMutation = useMutation({
+    mutationFn: (data: {
+      accountId: number;
+      value: string;
+      recordedAt: Date;
+    }) =>
+      apiRequest("POST", "/api/account-history", {
+        ...data,
+        recordedAt: data.recordedAt.toISOString(),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/accounts/user/1"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/account-history"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/portfolio/value"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/portfolio/history"] });
+      toast({
+        title: "History entry added",
+        description: "Account history entry has been added successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error adding history entry",
+        description:
+          error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateAccountHistoryMutation = useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: { value: string; recordedAt: Date };
+    }) =>
+      apiRequest("PUT", `/api/account-history/${id}`, {
+        ...data,
+        recordedAt: data.recordedAt.toISOString(),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/accounts/user/1"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/account-history"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/portfolio/value"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/portfolio/history"] });
+      toast({
+        title: "History entry updated",
+        description: "Account history entry has been updated successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error updating history entry",
+        description:
+          error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteAccountHistoryMutation = useMutation({
+    mutationFn: (id: number) =>
+      apiRequest("DELETE", `/api/account-history/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/accounts/user/1"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/account-history"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/portfolio/value"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/portfolio/history"] });
+      toast({
+        title: "History entry deleted",
+        description: "Account history entry has been deleted successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error deleting history entry",
+        description:
+          error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Helper function to get history for a specific account
+  const getAccountHistory = (accountId: number): AccountHistory[] => {
+    const accountData = accountsHistory.find((h) => h.accountId === accountId);
+    return accountData?.history || [];
+  };
+
   // Wrapper functions for mutations
   const addAccount = async (account: {
     provider: string;
@@ -308,6 +412,26 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
 
   const updateFireSettings = async (settings: Partial<FireSettings>) => {
     await updateFireSettingsMutation.mutateAsync(settings);
+  };
+
+  // Wrapper functions for history mutations
+  const addAccountHistory = async (data: {
+    accountId: number;
+    value: string;
+    recordedAt: Date;
+  }) => {
+    await addAccountHistoryMutation.mutateAsync(data);
+  };
+
+  const updateAccountHistory = async (
+    id: number,
+    data: { value: string; recordedAt: Date }
+  ) => {
+    await updateAccountHistoryMutation.mutateAsync({ id, data });
+  };
+
+  const deleteAccountHistory = async (id: number) => {
+    await deleteAccountHistoryMutation.mutateAsync(id);
   };
 
   // Check for errors and show notifications
@@ -362,7 +486,11 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     deleteMilestone,
     updateFireSettings,
     isLoading,
-    accountHistory,
+    accountsHistory: accountsHistory,
+    addAccountHistory,
+    updateAccountHistory,
+    deleteAccountHistory,
+    getAccountHistory,
   };
 
   return (

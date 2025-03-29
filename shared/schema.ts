@@ -51,8 +51,14 @@ export const accountHistory = pgTable("account_history", {
   recordedAt: timestamp("recorded_at").defaultNow().notNull(),
 });
 
-export const insertAccountHistorySchema = createInsertSchema(accountHistory).omit({
+// Create base schema
+const baseAccountHistorySchema = createInsertSchema(accountHistory).omit({
   id: true,
+});
+
+// Extend schema to handle date string
+export const insertAccountHistorySchema = baseAccountHistorySchema.extend({
+  recordedAt: z.string().transform((val) => new Date(val)),
 });
 
 export type InsertAccountHistory = z.infer<typeof insertAccountHistorySchema>;

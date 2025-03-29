@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
@@ -62,14 +63,14 @@ const accountSchema = z.object({
 });
 
 export default function Portfolio() {
+  const [, setLocation] = useLocation();
   const {
     accounts,
-    accountHistory,
+    accountsHistory: accountHistory,
     milestones,
     totalPortfolioValue,
     addAccount,
     deleteAccount,
-    setActiveSection,
     isLoading,
   } = usePortfolio();
   const { toast } = useToast();
@@ -137,11 +138,10 @@ export default function Portfolio() {
   // Handle form submission
   const onSubmit = async (values: z.infer<typeof accountSchema>) => {
     try {
-      // Send the currentValue as a string to match the server's expectation
       await addAccount({
         provider: values.provider,
         accountType: values.accountType as any,
-        currentValue: values.currentValue, // Keep as string for numeric type
+        currentValue: values.currentValue,
       });
       setIsAddAccountOpen(false);
       form.reset();
@@ -177,7 +177,6 @@ export default function Portfolio() {
   };
 
   // Find next milestone for the portfolio if any
-
   const nextMilestone = getNextMilestone(milestones ?? [], totalPortfolioValue);
 
   // Calculate total gain across all accounts
@@ -447,7 +446,11 @@ export default function Portfolio() {
             // List of accounts
             <>
               {accountsWithPerformance.map((account) => (
-                <div key={account.id} className="border-b border-gray-200 py-3">
+                <div
+                  key={account.id}
+                  className="border-b border-gray-200 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() => setLocation(`/account/${account.id}`)}
+                >
                   <div className="flex justify-between items-center">
                     <div className="flex items-center">
                       <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center mr-3">
@@ -468,32 +471,20 @@ export default function Portfolio() {
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center">
-                      {isEditMode && (
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="rounded-full w-9 h-9 flex items-center justify-center text-red-600 hover:bg-red-50 hover:border-red-200 mr-3"
-                          onClick={() => setAccountToDelete(account.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <div className="text-right">
-                        <p className="font-semibold">
-                          £{Number(account.currentValue).toLocaleString()}
-                        </p>
-                        <p
-                          className={`text-sm font-medium ${
-                            account.totalPercentageChange >= 0
-                              ? "text-green-600"
-                              : "text-red-600"
-                          }`}
-                        >
-                          {account.totalPercentageChange >= 0 ? "+" : ""}
-                          {account.totalPercentageChange.toFixed(1)}%
-                        </p>
-                      </div>
+                    <div className="text-right">
+                      <p className="font-semibold">
+                        £{Number(account.currentValue).toLocaleString()}
+                      </p>
+                      <p
+                        className={`text-sm font-medium ${
+                          account.totalPercentageChange >= 0
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {account.totalPercentageChange >= 0 ? "+" : ""}
+                        {account.totalPercentageChange.toFixed(1)}%
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -535,7 +526,7 @@ export default function Portfolio() {
                   <Button
                     variant="link"
                     className="text-primary font-medium p-0 ml-1"
-                    onClick={() => setActiveSection("record")}
+                    onClick={() => setLocation("/record")}
                   >
                     Update Now
                   </Button>
