@@ -128,9 +128,9 @@ export class DatabaseAccountService implements IAccountService {
     const accountLatestValues = new Map<number, number>();
     
     // Initialize with current values from accounts
-    userAccounts.forEach(account => {
-      accountLatestValues.set(account.id, Number(account.currentValue));
-    });
+    // userAccounts.forEach(account => {
+    //   accountLatestValues.set(account.id, Number(account.currentValue));
+    // });
 
     // Create a map to store portfolio values and changes at each timestamp
     const portfolioValues = new Map<string, {
@@ -144,7 +144,7 @@ export class DatabaseAccountService implements IAccountService {
     }>();
 
     // Process each history entry in chronological order
-    historyEntries.forEach(entry => {
+    [...historyEntries.sort((a, b) => a.recordedAt.getTime() - b.recordedAt.getTime())].forEach(entry => {
       const previousValue = accountLatestValues.get(entry.accountId) || 0;
       const newValue = Number(entry.value);
       const change = newValue - previousValue;
@@ -155,16 +155,31 @@ export class DatabaseAccountService implements IAccountService {
       // Calculate total portfolio value at this point in time
       const totalValue = Array.from(accountLatestValues.values()).reduce((sum, value) => sum + value, 0);
       
-      // Store the portfolio value and changes at this timestamp
-      portfolioValues.set(entry.recordedAt.toISOString(), {
-        value: totalValue,
-        changes: [{
+      // Format the date to YYYY-MM-DD for consistent daily grouping
+      const dateKey = entry.recordedAt.toISOString().split('T')[0];
+      
+      // If we already have an entry for this date, update it with the new changes
+      if (portfolioValues.has(dateKey)) {
+        const existingEntry = portfolioValues.get(dateKey)!;
+        existingEntry.value = totalValue;
+        existingEntry.changes.push({
           accountId: entry.accountId,
           previousValue,
           newValue,
           change
-        }]
-      });
+        });
+      } else {
+        // Otherwise create a new entry for this date
+        portfolioValues.set(dateKey, {
+          value: totalValue,
+          changes: [{
+            accountId: entry.accountId,
+            previousValue,
+            newValue,
+            change
+          }]
+        });
+      }
     });
 
     // Convert to array format and sort by timestamp

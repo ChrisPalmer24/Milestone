@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { PortfolioHistory } from "@shared/schema";
+import { usePortfolio } from "@/context/PortfolioContext";
 
 // Date range options for the chart
 const DATE_RANGES = [
@@ -28,6 +29,12 @@ type ChartData = {
   date: string;
   value: number;
   milestone?: number;
+  changes?: {
+    accountId: number;
+    previousValue: number;
+    newValue: number;
+    change: number;
+  }[];
 };
 
 type DateRangeOption =
@@ -42,6 +49,31 @@ type DateRangeOption =
 // Helper to format currency values
 const formatCurrency = (value: number) => {
   return `£${value.toLocaleString()}`;
+};
+
+// Helper to combine data points for the same date
+const combineDataPoints = (data: ChartData[]): ChartData[] => {
+  const combinedData = new Map<string, ChartData>();
+
+  data.forEach((item) => {
+    const date = item.date;
+    if (combinedData.has(date)) {
+      // If we already have data for this date, update the value
+      const existing = combinedData.get(date)!;
+      existing.value = item.value;
+      if (item.milestone) {
+        existing.milestone = item.milestone;
+      }
+    } else {
+      // If this is the first data point for this date, add it
+      combinedData.set(date, { ...item });
+    }
+  });
+
+  // Convert map back to array and sort by date
+  return Array.from(combinedData.values()).sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
 };
 
 // Helper to calculate date range
@@ -93,6 +125,8 @@ export default function PortfolioChart({
   const [chartVisible, setChartVisible] = useState(true);
   const [showMilestonesLocal, setShowMilestonesLocal] =
     useState(showMilestones);
+  const [selectedPoint, setSelectedPoint] = useState<ChartData | null>(null);
+  const { accounts } = usePortfolio();
 
   // Update local state when prop changes
   useEffect(() => {
@@ -123,13 +157,16 @@ export default function PortfolioChart({
 
   const data: ChartData[] =
     Array.isArray(historyData) && historyData.length > 0
-      ? historyData.map((item) => ({
-          date: new Date(item.date).toLocaleDateString("en-GB", {
-            month: "short",
-            day: "2-digit",
-          }),
-          value: Number(item.value),
-        }))
+      ? combineDataPoints(
+          historyData.map((item) => ({
+            date: new Date(item.date).toLocaleDateString("en-GB", {
+              month: "short",
+              day: "2-digit",
+            }),
+            value: Number(item.value),
+            changes: item.changes,
+          }))
+        )
       : [];
 
   // Add milestone data if enabled
@@ -144,6 +181,16 @@ export default function PortfolioChart({
       milestone: nextMilestone,
     });
   }
+
+  console.log("history data: ", historyData);
+
+  // Helper to get account type name
+  const getAccountTypeName = (accountId: number) => {
+    const account = accounts.find((acc) => acc.id === accountId);
+    return account
+      ? `${account.provider} ${account.accountType}`
+      : `Account ${accountId}`;
+  };
 
   if (isLoading) {
     return (
@@ -214,7 +261,16 @@ export default function PortfolioChart({
           <>
             <div className="chart-container h-[240px] w-full mb-5">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
+                <LineChart
+                  data={chartData}
+                  onClick={(data) => {
+                    if (data && data.activePayload) {
+                      setSelectedPoint(
+                        data.activePayload[0].payload as ChartData
+                      );
+                    }
+                  }}
+                >
                   <CartesianGrid
                     strokeDasharray="3 3"
                     vertical={false}
@@ -237,6 +293,11 @@ export default function PortfolioChart({
                       `£${value.toLocaleString()}`,
                       "Portfolio Value",
                     ]}
+                    cursor={{
+                      stroke: "#3B82F6",
+                      strokeWidth: 1,
+                      strokeDasharray: "3 3",
+                    }}
                   />
                   <Line
                     type="monotone"
@@ -277,6 +338,64 @@ export default function PortfolioChart({
                 </button>
               ))}
             </div>
+
+            {selectedPoint && (
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="font-medium text-lg">
+                      {selectedPoint.date}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Total Portfolio Value: £
+                      {selectedPoint.value.toLocaleString()}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedPoint(null)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    Close
+                  </button>
+                </div>
+
+                {selectedPoint.changes && selectedPoint.changes.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">
+                      Account Changes
+                    </h4>
+                    <div className="space-y-2">
+                      {selectedPoint.changes.map((change, index) => (
+                        <div
+                          key={index}
+                          className="flex justify-between items-center text-sm"
+                        >
+                          <span className="text-gray-600 font-medium">
+                            {getAccountTypeName(change.accountId)}
+                          </span>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-gray-500">
+                              £{change.previousValue.toLocaleString()} → £
+                              {change.newValue.toLocaleString()}
+                            </span>
+                            <span
+                              className={
+                                change.change >= 0
+                                  ? "text-green-600"
+                                  : "text-red-600"
+                              }
+                            >
+                              {change.change >= 0 ? "+" : ""}£
+                              {Math.abs(change.change).toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
       </CardContent>
