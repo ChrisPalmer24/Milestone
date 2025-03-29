@@ -38,6 +38,9 @@ interface PortfolioContextType {
   ) => Promise<void>;
   deleteMilestone: (id: number) => Promise<void>;
   updateFireSettings: (settings: Partial<FireSettings>) => Promise<void>;
+  createFireSettings: (
+    settings: Omit<FireSettings, "id" | "userId">
+  ) => Promise<void>;
   isLoading: boolean;
   accountsHistory: AccountHistoryData;
   addAccountHistory: (data: {
@@ -87,7 +90,7 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     isLoading: isLoadingFireSettings,
     isError: isFireSettingsError,
   } = useQuery({
-    queryKey: ["/api/fire-settings"],
+    queryKey: ["/api/fire-settings/user/1"],
   });
 
   // Fetch total portfolio value
@@ -261,7 +264,9 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     mutationFn: (settings: Partial<FireSettings>) =>
       apiRequest("PATCH", "/api/fire-settings", settings),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/fire-settings"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/fire-settings/user/1"],
+      });
       toast({
         title: "FIRE settings updated",
         description:
@@ -271,6 +276,32 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     onError: (error) => {
       toast({
         title: "Error updating FIRE settings",
+        description:
+          error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const createFireSettingsMutation = useMutation({
+    mutationFn: (settings: Omit<FireSettings, "id" | "userId">) =>
+      apiRequest("POST", "/api/fire-settings", {
+        ...settings,
+        userId: 1, // Demo user
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["/api/fire-settings/user/1"],
+      });
+      toast({
+        title: "FIRE settings created",
+        description:
+          "Your retirement planning settings have been created successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error creating FIRE settings",
         description:
           error instanceof Error ? error.message : "An unknown error occurred",
         variant: "destructive",
@@ -414,6 +445,12 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     await updateFireSettingsMutation.mutateAsync(settings);
   };
 
+  const createFireSettings = async (
+    settings: Omit<FireSettings, "id" | "userId">
+  ) => {
+    await createFireSettingsMutation.mutateAsync(settings);
+  };
+
   // Wrapper functions for history mutations
   const addAccountHistory = async (data: {
     accountId: number;
@@ -485,6 +522,7 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     addMilestone,
     deleteMilestone,
     updateFireSettings,
+    createFireSettings,
     isLoading,
     accountsHistory: accountsHistory,
     addAccountHistory,
