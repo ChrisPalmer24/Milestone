@@ -84,7 +84,9 @@ export default function MobileBottomNav() {
               <div 
                 className={
                   item.id === 'record'
-                    ? 'p-1.5 bg-black text-white'
+                    ? isActive
+                      ? 'p-1.5 bg-[#0061ff] text-white'
+                      : 'p-1.5 bg-black text-white'
                     : `p-1.5 transition-colors ${
                         isActive 
                           ? 'text-[#0061ff]' 
@@ -97,7 +99,9 @@ export default function MobileBottomNav() {
               <span 
                 className={
                   item.id === 'record'
-                    ? 'text-xs mt-1 text-black font-medium'
+                    ? isActive 
+                      ? 'text-xs mt-1 text-[#0061ff] font-medium'
+                      : 'text-xs mt-1 text-black font-medium'
                     : `text-xs mt-1 ${
                         isActive ? 'text-[#0061ff] font-medium' : 'text-muted-foreground'
                       }`
