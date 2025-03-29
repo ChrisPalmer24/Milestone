@@ -45,7 +45,8 @@ export async function setupVite(app: Express) {
         'X-Content-Type-Options': 'nosniff',
         'X-Frame-Options': 'DENY',
         'Referrer-Policy': 'no-referrer-when-downgrade',
-      }
+      },
+      allowedHosts: true
     },
     appType: "custom",
   });

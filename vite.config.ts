@@ -82,8 +82,38 @@ export default defineConfig({
     },
   },
   root: path.resolve(__dirname, "client"),
+
+  server: {
+    middlewareMode: false,
+    fs: {
+      strict: true,
+      allow: ['..'],
+    },
+    headers: {
+      'Cache-Control': 'public, max-age=31536000',
+      'Access-Control-Allow-Origin': '*',
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+      'Referrer-Policy': 'no-referrer-when-downgrade'
+    },
+    allowedHosts: true
+  },
   build: {
     outDir: path.resolve(__dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        assetFileNames: (assetInfo) => {
+          const name = assetInfo.name || '';
+          const extType = name.split('.')[1] || 'asset';
+          if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(extType)) {
+            return `assets/img/[name][extname]`;
+          }
+          return `assets/${extType}/[name][extname]`;
+        },
+      },
+    },
   },
+  publicDir: 'public',
+  assetsInclude: ['**/*.png', '**/*.svg', '**/*.ico', '**/*.webp']
 });
