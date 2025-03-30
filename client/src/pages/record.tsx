@@ -159,7 +159,9 @@ export default function Record() {
           ) : (
             <>
               <div className="space-y-4">
-                {accounts.map((account) => (
+                {[...accounts]
+                  .sort((a, b) => Number(b.currentValue) - Number(a.currentValue))
+                  .map((account) => (
                   <div 
                     key={account.id} 
                     className="p-4 border rounded-lg bg-card"
