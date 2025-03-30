@@ -100,17 +100,22 @@ export default function Portfolio() {
       };
     });
 
-    const totalValue = accountsWithPct.reduce(
+    // Sort accounts from largest to smallest balance
+    const sortedAccounts = [...accountsWithPct].sort((a, b) => 
+      Number(b.currentValue) - Number(a.currentValue)
+    );
+
+    const totalValue = sortedAccounts.reduce(
       (sum, account) => sum + Number(account.currentValue),
       0
     );
-    const totalPercentageChange = accountsWithPct.reduce(
+    const totalPercentageChange = sortedAccounts.reduce(
       (sum, account) => sum + account.totalPercentageChange,
       0
     );
 
     return {
-      accountsWithPerformance: accountsWithPct,
+      accountsWithPerformance: sortedAccounts,
       portfolioTotal: {
         value: totalValue,
         percentageChange: totalPercentageChange,
