@@ -40,7 +40,9 @@ export const insertAccountSchema = createInsertSchema(accounts).omit({
   apiKey: true,
 });
 
-export type InsertAccount = z.infer<typeof insertAccountSchema>;
+export type InsertAccount = Omit<z.infer<typeof insertAccountSchema>, "accountType"> & {
+  accountType: AccountType;
+};
 export type Account = typeof accounts.$inferSelect;
 
 // History table to track account value changes over time
