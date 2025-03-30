@@ -11,7 +11,9 @@ export default function Header() {
   return (
     <header className="bg-white shadow-sm">
       <div className="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
-        <h1 className="text-xl font-semibold text-neutral-900">Milestone</h1>
+        <Link to="/portfolio">
+          <h1 className="text-xl font-semibold text-neutral-900 hover:text-primary cursor-pointer transition-colors">Milestone</h1>
+        </Link>
         
         <DropdownMenu>
           <DropdownMenuTrigger className="text-neutral-700 hover:text-neutral-900 rounded-full p-1 hover:bg-gray-100">
