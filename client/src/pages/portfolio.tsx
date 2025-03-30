@@ -80,6 +80,7 @@ export default function Portfolio() {
   const [showMilestones, setShowMilestones] = useState(true);
   const [displayInPercentage, setDisplayInPercentage] = useState(false);
   const [accountToDelete, setAccountToDelete] = useState<number | null>(null);
+  const [isAddingAccount, setIsAddingAccount] = useState(false);
 
   // State to track the selected provider for conditional account type display
   const [selectedProvider, setSelectedProvider] = useState<string>("");
@@ -138,6 +139,7 @@ export default function Portfolio() {
   // Handle form submission
   const onSubmit = async (values: z.infer<typeof accountSchema>) => {
     try {
+      setIsAddingAccount(true);
       await addAccount({
         provider: values.provider,
         accountType: values.accountType as any,
@@ -145,8 +147,21 @@ export default function Portfolio() {
       });
       setIsAddAccountOpen(false);
       form.reset();
+      toast({
+        title: "Account added successfully",
+        description:
+          "Your new investment account has been added to your portfolio.",
+      });
     } catch (error) {
       console.error("Error adding account:", error);
+      toast({
+        title: "Error adding account",
+        description:
+          "There was a problem adding your account. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAddingAccount(false);
     }
   };
 
@@ -400,7 +415,16 @@ export default function Portfolio() {
                       />
 
                       <DialogFooter>
-                        <Button type="submit">Add Account</Button>
+                        <Button type="submit" disabled={isAddingAccount}>
+                          {isAddingAccount ? (
+                            <>
+                              <span className="mr-2">Adding...</span>
+                              <span className="animate-spin">⏳</span>
+                            </>
+                          ) : (
+                            "Add Account"
+                          )}
+                        </Button>
                       </DialogFooter>
                     </form>
                   </Form>
