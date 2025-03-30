@@ -6,6 +6,7 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
+  ReferenceLine,
 } from "recharts";
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -298,14 +299,16 @@ export default function PortfolioChart({
                       strokeWidth: 1,
                       strokeDasharray: "3 3",
                     }}
+                    isAnimationActive={false}
                   />
                   <Line
                     type="monotone"
                     dataKey="value"
                     stroke="#3B82F6"
                     strokeWidth={2}
-                    dot={false}
-                    activeDot={{ r: 5 }}
+                    dot={{ r: 4, fill: "#3B82F6" }}
+                    activeDot={{ r: 5, fill: "#2563EB" }}
+                    isAnimationActive={false}
                   />
                   {showMilestonesLocal && (
                     <Line
@@ -314,8 +317,9 @@ export default function PortfolioChart({
                       stroke="#F59E0B"
                       strokeWidth={2}
                       strokeDasharray="5 5"
-                      dot={false}
-                      activeDot={{ r: 5 }}
+                      dot={{ r: 4, fill: "#F59E0B" }}
+                      activeDot={{ r: 5, fill: "#D97706" }}
+                      isAnimationActive={false}
                     />
                   )}
                 </LineChart>
