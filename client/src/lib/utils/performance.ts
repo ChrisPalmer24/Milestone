@@ -11,6 +11,13 @@ export const calculateTotalPercentageChange = (history: AccountHistory[]): numbe
   const firstValue = Number(sortedHistory[0].value);
   const lastValue = Number(sortedHistory[sortedHistory.length - 1].value);
   
+  // Check if first value is zero to avoid division by zero (infinity)
+  if (firstValue === 0) {
+    // If the first value was zero and now there's value, return a fixed percentage
+    // instead of infinity
+    return lastValue > 0 ? 100 : 0;
+  }
+  
   // Calculate percentage change: ((new - old) / old) * 100
   // This will give positive percentage for increases and negative for decreases
   return ((lastValue - firstValue) / firstValue) * 100;
