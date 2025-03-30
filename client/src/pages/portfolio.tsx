@@ -77,7 +77,7 @@ export default function Portfolio() {
 
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [showMilestones, setShowMilestones] = useState(false);
+  const [showMilestones, setShowMilestones] = useState(true);
   const [displayInPercentage, setDisplayInPercentage] = useState(false);
   const [accountToDelete, setAccountToDelete] = useState<number | null>(null);
 
@@ -246,7 +246,8 @@ export default function Portfolio() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Delete Account</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will delete all data associated with this investment account, are you sure?
+                      This will delete all data associated with this investment
+                      account, are you sure?
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

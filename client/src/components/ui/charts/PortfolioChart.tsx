@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { PortfolioHistory } from "@shared/schema";
 import { usePortfolio } from "@/context/PortfolioContext";
+import { Check } from "lucide-react";
 
 // Date range options for the chart
 const DATE_RANGES = [
@@ -36,6 +37,10 @@ type ChartData = {
     newValue: number;
     change: number;
   }[];
+  achievedMilestone?: {
+    name: string;
+    targetValue: number;
+  };
 };
 
 type DateRangeOption =
@@ -118,21 +123,38 @@ type PortfolioChartProps = {
 };
 
 export default function PortfolioChart({
-  showMilestones = false,
+  showMilestones = true,
   nextMilestone,
   className,
 }: PortfolioChartProps) {
   const [dateRange, setDateRange] = useState<DateRangeOption>("6months");
   const [chartVisible, setChartVisible] = useState(true);
-  const [showMilestonesLocal, setShowMilestonesLocal] =
-    useState(showMilestones);
+  const [showMilestonesLocal, setShowMilestonesLocal] = useState(true);
   const [selectedPoint, setSelectedPoint] = useState<ChartData | null>(null);
-  const { accounts } = usePortfolio();
+  const { accounts, milestones } = usePortfolio();
 
   // Update local state when prop changes
   useEffect(() => {
     setShowMilestonesLocal(showMilestones);
   }, [showMilestones]);
+
+  // Update milestones visibility when chart visibility changes
+  useEffect(() => {
+    if (!chartVisible) {
+      setShowMilestonesLocal(false);
+    }
+  }, [chartVisible]);
+
+  // Calculate the maximum Y-axis value
+  const getMaxYValue = () => {
+    const maxPortfolioValue = Math.max(...chartData.map((d) => d.value));
+    if (!showMilestonesLocal || !milestones) return maxPortfolioValue;
+
+    const maxMilestoneValue = Math.max(
+      ...milestones.map((m) => Number(m.targetValue))
+    );
+    return Math.max(maxPortfolioValue, maxMilestoneValue) * 1.1; // Add 10% padding
+  };
 
   // Calculate date range for API request
   const { start, end } = getDateRange(dateRange);
@@ -159,31 +181,44 @@ export default function PortfolioChart({
   const data: ChartData[] =
     Array.isArray(historyData) && historyData.length > 0
       ? combineDataPoints(
-          historyData.map((item) => ({
-            date: new Date(item.date).toLocaleDateString("en-GB", {
-              month: "short",
-              day: "2-digit",
-            }),
-            value: Number(item.value),
-            changes: item.changes,
-          }))
+          historyData.map((item) => {
+            // Find the highest milestone achieved at this point
+            const achievedMilestone = milestones
+              ?.filter((m) => {
+                const portfolioValue = Number(item.value);
+                const milestoneValue = Number(m.targetValue);
+                console.log(
+                  `Comparing portfolio value ${portfolioValue} with milestone ${m.name} value ${milestoneValue}`
+                );
+                return portfolioValue >= milestoneValue;
+              })
+              .sort((a, b) => Number(b.targetValue) - Number(a.targetValue))[0];
+
+            console.log(
+              `Achieved milestone for ${item.date}:`,
+              achievedMilestone
+            );
+
+            return {
+              date: new Date(item.date).toLocaleDateString("en-GB", {
+                month: "short",
+                day: "2-digit",
+              }),
+              value: Number(item.value),
+              changes: item.changes,
+              achievedMilestone: achievedMilestone
+                ? {
+                    name: achievedMilestone.name,
+                    targetValue: Number(achievedMilestone.targetValue),
+                  }
+                : undefined,
+            };
+          })
         )
       : [];
 
   // Add milestone data if enabled
   const chartData = [...data];
-  if (showMilestonesLocal && nextMilestone && chartData.length > 0) {
-    // Add the last actual value point
-    const lastPoint = chartData[chartData.length - 1];
-
-    // Add the milestone target
-    chartData.push({
-      ...lastPoint,
-      milestone: nextMilestone,
-    });
-  }
-
-  console.log("history data: ", historyData);
 
   // Helper to get account type name
   const getAccountTypeName = (accountId: number) => {
@@ -232,29 +267,35 @@ export default function PortfolioChart({
                 </label>
               </div>
             </div>
-            <div className="flex items-center">
-              <span className="text-sm text-neutral-700 mr-2">Milestones</span>
-              <div className="relative inline-block w-10 mr-2 align-middle select-none">
-                <input
-                  type="checkbox"
-                  id="toggle-milestones"
-                  checked={showMilestonesLocal}
-                  onChange={() => setShowMilestonesLocal(!showMilestonesLocal)}
-                  className="sr-only"
-                />
-                <label
-                  htmlFor="toggle-milestones"
-                  className="block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"
-                >
-                  <span
-                    className={cn(
-                      "block h-6 w-6 rounded-full bg-white shadow transform transition-transform duration-200 ease-in-out",
-                      showMilestonesLocal ? "translate-x-4" : ""
-                    )}
-                  ></span>
-                </label>
+            {chartVisible && (
+              <div className="flex items-center">
+                <span className="text-sm text-neutral-700 mr-2">
+                  Milestones
+                </span>
+                <div className="relative inline-block w-10 mr-2 align-middle select-none">
+                  <input
+                    type="checkbox"
+                    id="toggle-milestones"
+                    checked={showMilestonesLocal}
+                    onChange={() =>
+                      setShowMilestonesLocal(!showMilestonesLocal)
+                    }
+                    className="sr-only"
+                  />
+                  <label
+                    htmlFor="toggle-milestones"
+                    className="block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"
+                  >
+                    <span
+                      className={cn(
+                        "block h-6 w-6 rounded-full bg-white shadow transform transition-transform duration-200 ease-in-out",
+                        showMilestonesLocal ? "translate-x-4" : ""
+                      )}
+                    ></span>
+                  </label>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -288,19 +329,88 @@ export default function PortfolioChart({
                     axisLine={false}
                     tickLine={false}
                     tick={{ fontSize: 12 }}
+                    domain={[0, getMaxYValue()]}
                   />
                   <Tooltip
-                    formatter={(value: number) => [
-                      `£${value.toLocaleString()}`,
-                      "Portfolio Value",
-                    ]}
+                    formatter={(value: number, name: string, props: any) => {
+                      const data = props.payload as ChartData;
+                      console.log("Tooltip data:", data);
+                      console.log(
+                        "Achieved milestone:",
+                        data.achievedMilestone
+                      );
+
+                      const items = [
+                        [`£${value.toLocaleString()}`, "Portfolio Value"],
+                      ];
+
+                      if (data.achievedMilestone) {
+                        items.push([
+                          `£${data.achievedMilestone.targetValue.toLocaleString()}`,
+                          `Milestone: ${data.achievedMilestone.name}`,
+                        ]);
+                      }
+
+                      return items;
+                    }}
                     cursor={{
                       stroke: "#3B82F6",
                       strokeWidth: 1,
                       strokeDasharray: "3 3",
                     }}
                     isAnimationActive={false}
+                    contentStyle={{
+                      backgroundColor: "white",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "0.5rem",
+                      padding: "0.5rem",
+                    }}
+                    labelStyle={{
+                      color: "#374151",
+                      fontWeight: 500,
+                    }}
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload as ChartData;
+                        return (
+                          <div className="bg-white border border-gray-200 rounded-lg p-2 shadow-sm">
+                            <p className="font-medium text-gray-900">
+                              {data.date}
+                            </p>
+                            <p className="text-gray-700">
+                              £{data.value.toLocaleString()}
+                            </p>
+                            {data.achievedMilestone && (
+                              <p className="text-green-600 font-medium flex items-center gap-1">
+                                <Check className="h-4 w-4" />
+                                {data.achievedMilestone.name}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
                   />
+                  {showMilestonesLocal &&
+                    milestones &&
+                    milestones.map((milestone) => (
+                      <ReferenceLine
+                        key={milestone.id}
+                        y={Number(milestone.targetValue)}
+                        stroke="#F59E0B"
+                        strokeWidth={1}
+                        strokeDasharray="5 5"
+                        label={{
+                          value: `£${Number(
+                            milestone.targetValue
+                          ).toLocaleString()}`,
+                          position: "right",
+                          fill: "#F59E0B",
+                          fontSize: 12,
+                        }}
+                      />
+                    ))}
                   <Line
                     type="monotone"
                     dataKey="value"
@@ -310,18 +420,6 @@ export default function PortfolioChart({
                     activeDot={{ r: 5, fill: "#2563EB" }}
                     isAnimationActive={false}
                   />
-                  {showMilestonesLocal && (
-                    <Line
-                      type="monotone"
-                      dataKey="milestone"
-                      stroke="#F59E0B"
-                      strokeWidth={2}
-                      strokeDasharray="5 5"
-                      dot={{ r: 4, fill: "#F59E0B" }}
-                      activeDot={{ r: 5, fill: "#D97706" }}
-                      isAnimationActive={false}
-                    />
-                  )}
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -362,6 +460,19 @@ export default function PortfolioChart({
                     Close
                   </button>
                 </div>
+
+                {selectedPoint.achievedMilestone && (
+                  <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                    <h4 className="text-sm font-medium text-green-800 mb-1">
+                      Milestone Achieved!
+                    </h4>
+                    <p className="text-sm text-green-700">
+                      {selectedPoint.achievedMilestone.name} (£
+                      {selectedPoint.achievedMilestone.targetValue.toLocaleString()}
+                      )
+                    </p>
+                  </div>
+                )}
 
                 {selectedPoint.changes && selectedPoint.changes.length > 0 && (
                   <div className="mt-4">
