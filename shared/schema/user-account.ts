@@ -270,7 +270,7 @@ export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type RevokeFamilyInput = z.infer<typeof revokeFamilySchema>; 
 
-export type SessionUser = CoreUser & {
+export type SessionUser = {
   account: UserAccount;
   profile: UserProfile;
 }

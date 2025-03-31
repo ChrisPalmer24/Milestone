@@ -2,12 +2,20 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import path from "path";
+import cookieParser from "cookie-parser";
+import { validateAuthEnvVars } from "./utils/time";
+import authRoutes from "./routes/auth";
+import verificationRoutes from "./routes/verification";
 
 const app = express();
+
+// Validate environment variables
+validateAuthEnvVars();
 
 // Basic middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser(process.env.COOKIE_SECRET || "your-cookie-secret"));
 
 // Serve static files from public directory (needed for manifest.json and service worker)
 app.use(express.static(path.join(process.cwd(), "public")));
@@ -49,6 +57,10 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 
   res.status(status).json({ message });
 });
+
+// Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/verification", verificationRoutes);
 
 (async () => {
   await registerRoutes(app);

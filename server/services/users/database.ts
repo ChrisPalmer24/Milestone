@@ -154,7 +154,7 @@ export class DatabaseUserService implements IUserService {
   
       // Create the user profile linked to the core user
       const [userProfile] = await tx.insert(userProfiles).values({
-        coreUserId: coreUser.id,
+        userAccountId: userAccount.id,
       }).returning();
   
       if (!userProfile) {
@@ -162,34 +162,31 @@ export class DatabaseUserService implements IUserService {
       }
   
       return {
-        ...coreUser,
         account: userAccount,
         profile: userProfile
       };
     });
   }
-  
-  async getCompleteUser(userId: string): Promise<SessionUser | null> {
-    const user = await db.query.coreUsers.findFirst({
-      where: eq(coreUsers.id, userId),
+
+  async getCompleteUserForAccount(userAccountId: string): Promise<SessionUser | null> {
+
+    const userAccount = await db.query.userAccounts.findFirst({
+      where: eq(userAccounts.id, userAccountId),
       with: {
-        userAccount: true,
-        userProfile: true,
+        coreUser: true,
+        userProfile: true
       },
     });
   
-    if (!user) {
+    if (!userAccount) {
       return null;
     }
-  
-    if(!user.userAccount || !user.userProfile) {
-      return null;
-    }
-  
+
+    const { userProfile, ...rest } = userAccount;
+
     return {
-      ...user,
-      account: user.userAccount,
-      profile: user.userProfile,
+      account: rest,
+      profile: userProfile,
     };
   }
 
@@ -209,7 +206,6 @@ export class DatabaseUserService implements IUserService {
     await this.db
       .update(userAccounts)
       .set({
-        isVerified: true,
         verificationToken: null,
         verificationExpiry: null,
       })

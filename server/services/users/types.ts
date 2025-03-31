@@ -21,7 +21,8 @@ export interface IUserService {
   deleteUserProfile(id: UserProfile["id"]): Promise<boolean>;
 
   createUserComplete(user: RegisterInput): Promise<SessionUser>;
-  getCompleteUser(userId: string): Promise<SessionUser | null>;
+  getCompleteUserForAccount(userAccountId: string): Promise<SessionUser | null>;
+  getCompleteUser(coreUserId: string): Promise<SessionUser | null>;
 
   // Authentication operations
   verifyEmail(token: string): Promise<boolean>;
