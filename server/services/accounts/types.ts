@@ -1,13 +1,13 @@
-import { Account, InsertAccount } from "@shared/schema";
+import { Account, InsertAccount, User } from "@shared/schema";
 
 export interface IAccountService {
-  get(id: number): Promise<Account | undefined>;
-  getByUserId(userId: number): Promise<Account[]>;
+  get(id: Account["id"]): Promise<Account | undefined>;
+  getByUserId(userId: User["id"]): Promise<Account[]>;
   create(data: InsertAccount): Promise<Account>;
-  update(id: number, data: Partial<InsertAccount>): Promise<Account>;
-  delete(id: number): Promise<boolean>;
-  updateValue(id: number, value: number): Promise<Account>;
-  connectApi(id: number, apiKey: string): Promise<Account>;
-  getPortfolioValue(userId: number): Promise<number>;
-  getPortfolioHistory(userId: number, startDate: Date, endDate: Date): Promise<{ date: Date; value: number }[]>;
+  update(id: Account["id"], data: Partial<InsertAccount>): Promise<Account>;
+  delete(id: Account["id"]): Promise<boolean>;
+  updateValue(id: Account["id"], value: number): Promise<Account>;
+  connectApi(id: Account["id"], apiKey: string): Promise<Account>;
+  getPortfolioValue(userId: User["id"]): Promise<number>;
+  getPortfolioHistory(userId: User["id"], startDate: Date, endDate: Date): Promise<{ date: Date; value: number }[]>;
 } 

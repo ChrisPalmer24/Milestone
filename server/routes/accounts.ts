@@ -11,7 +11,7 @@ const accountService = services.getAccountService();
 router.get("/user/:userId", async (req, res) => {
   try {
     console.log("req.params.userId :", req.params.userId);
-    const userId = parseInt(req.params.userId);
+    const userId = req.params.userId;
     const accounts = await accountService.getByUserId(userId);
     res.json(accounts);
   } catch (error) {
@@ -22,7 +22,7 @@ router.get("/user/:userId", async (req, res) => {
 // Get account by ID
 router.get("/:id", async (req, res) => {
   try {
-    const accountId = parseInt(req.params.id);
+    const accountId = req.params.id;
     const account = await accountService.get(accountId);
     
     if (!account) {
@@ -54,7 +54,7 @@ router.post("/", async (req, res) => {
 // Update account
 router.patch("/:id", async (req, res) => {
   try {
-    const accountId = parseInt(req.params.id);
+    const accountId = req.params.id;
     const accountData = insertAccountSchema.partial().parse(req.body);
     const account = await accountService.update(accountId, accountData);
     res.json(account);
@@ -72,7 +72,7 @@ router.patch("/:id", async (req, res) => {
 // Delete account
 router.delete("/:id", async (req, res) => {
   try {
-    const accountId = parseInt(req.params.id);
+    const accountId = req.params.id;
     const success = await accountService.delete(accountId);
     
     if (!success) {
@@ -88,7 +88,7 @@ router.delete("/:id", async (req, res) => {
 // Update account value
 router.patch("/:id/value", async (req, res) => {
   try {
-    const accountId = parseInt(req.params.id);
+    const accountId = req.params.id;
     const { value } = req.body;
     
     if (typeof value !== 'number' || isNaN(value)) {
@@ -108,7 +108,7 @@ router.patch("/:id/value", async (req, res) => {
 // Connect account API
 router.post("/:id/connect", async (req, res) => {
   try {
-    const accountId = parseInt(req.params.id);
+    const accountId = req.params.id;
     const { apiKey } = req.body;
     
     if (!apiKey || typeof apiKey !== 'string') {

@@ -2,10 +2,11 @@ import { pgTable, serial, integer, numeric} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { users } from "./user-account";
+import { cuid, idColumn } from "./utils";
 
 export const fireSettings = pgTable("fire_settings", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id).unique(),
+  id: idColumn(),
+  userId: cuid("user_id").notNull().references(() => users.id).unique(),
   targetRetirementAge: integer("target_retirement_age").default(60).notNull(),
   annualIncomeGoal: numeric("annual_income_goal").default("48000").notNull(),
   expectedAnnualReturn: numeric("expected_annual_return").default("7").notNull(), // Percentage

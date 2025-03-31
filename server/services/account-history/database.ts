@@ -1,6 +1,6 @@
 import { eq, and, gte, lte } from "drizzle-orm";
 import { accountHistory, accounts } from "@shared/schema";
-import { AccountHistory, InsertAccountHistory } from "@shared/schema";
+import { Account, AccountHistory, InsertAccountHistory } from "@shared/schema";
 import { IAccountHistoryService } from "./types";
 import { type Database } from "../../db/index";
 
@@ -11,7 +11,7 @@ export class DatabaseAccountHistoryService implements IAccountHistoryService {
     this.db = db;
   }
 
-  private async recalculateAccountValue(accountId: number): Promise<void> {
+  private async recalculateAccountValue(accountId: Account["id"]): Promise<void> {
     // Get the most recent history entry for the account
     const latestHistory = await this.db.query.accountHistory.findFirst({
       where: eq(accountHistory.accountId, accountId),
@@ -29,7 +29,7 @@ export class DatabaseAccountHistoryService implements IAccountHistoryService {
 
   private async withTransaction<T>(
     operation: () => Promise<T>,
-    accountId: number
+    accountId: Account["id"]
   ): Promise<T> {
     return this.db.transaction(async (tx) => {
       const result = await operation();
@@ -38,20 +38,20 @@ export class DatabaseAccountHistoryService implements IAccountHistoryService {
     });
   }
 
-  async get(id: number): Promise<AccountHistory | undefined> {
+  async get(id: AccountHistory["id"]): Promise<AccountHistory | undefined> {
     return this.db.query.accountHistory.findFirst({
       where: eq(accountHistory.id, id),
     });
   }
 
-  async getByAccountId(accountId: number): Promise<AccountHistory[]> {
+  async getByAccountId(accountId: Account["id"]): Promise<AccountHistory[]> {
     return this.db.query.accountHistory.findMany({
       where: eq(accountHistory.accountId, accountId),
       orderBy: (accountHistory, { desc }) => [desc(accountHistory.recordedAt)],
     });
   }
 
-  async getByDateRange(accountId: number, startDate: Date, endDate: Date): Promise<AccountHistory[]> {
+  async getByDateRange(accountId: Account["id"], startDate: Date, endDate: Date): Promise<AccountHistory[]> {
     return this.db.query.accountHistory.findMany({
       where: and(
         eq(accountHistory.accountId, accountId),
@@ -69,7 +69,7 @@ export class DatabaseAccountHistoryService implements IAccountHistoryService {
     }, data.accountId);
   }
 
-  async update(id: number, data: Partial<InsertAccountHistory>): Promise<AccountHistory> {
+  async update(id: AccountHistory["id"], data: Partial<InsertAccountHistory>): Promise<AccountHistory> {
     // First get the account ID from the history entry
     const existingHistory = await this.get(id);
     if (!existingHistory) {
@@ -91,7 +91,7 @@ export class DatabaseAccountHistoryService implements IAccountHistoryService {
     }, existingHistory.accountId);
   }
 
-  async delete(id: number): Promise<boolean> {
+  async delete(id: AccountHistory["id"]): Promise<boolean> {
     // First get the account ID from the history entry
     const existingHistory = await this.get(id);
     if (!existingHistory) {

@@ -10,7 +10,7 @@ const accountHistoryService = services.getAccountHistoryService();
 // Get history by ID
 router.get("/:id", async (req, res) => {
   try {
-    const historyId = parseInt(req.params.id);
+    const historyId = req.params.id;
     const history = await accountHistoryService.get(historyId);
     
     if (!history) {
@@ -26,7 +26,7 @@ router.get("/:id", async (req, res) => {
 // Get all history for an account
 router.get("/account/:accountId", async (req, res) => {
   try {
-    const accountId = parseInt(req.params.accountId);
+    const accountId = req.params.accountId;
     const history = await accountHistoryService.getByAccountId(accountId);
     res.json(history);
   } catch (error) {
@@ -37,7 +37,7 @@ router.get("/account/:accountId", async (req, res) => {
 // Get history by date range
 router.get("/account/:accountId/range", async (req, res) => {
   try {
-    const accountId = parseInt(req.params.accountId);
+    const accountId = req.params.accountId;
     const { startDate, endDate } = req.query;
     
     if (!startDate || !endDate) {
@@ -75,7 +75,7 @@ router.post("/", async (req, res) => {
 // Update history entry
 router.put("/:id", async (req, res) => {
   try {
-    const historyId = parseInt(req.params.id);
+    const historyId = req.params.id;
     const historyData = insertAccountHistorySchema.partial().parse(req.body);
     const history = await accountHistoryService.update(historyId, historyData);
     
@@ -98,7 +98,7 @@ router.put("/:id", async (req, res) => {
 // Delete history entry
 router.delete("/:id", async (req, res) => {
   try {
-    const historyId = parseInt(req.params.id);
+    const historyId = req.params.id;
     const success = await accountHistoryService.delete(historyId);
     
     if (!success) {

@@ -11,7 +11,7 @@ export class DatabaseUserService implements IUserService {
     this.db = db;
   }
 
-  async get(id: number): Promise<User | undefined> {
+  async get(id: User["id"]): Promise<User | undefined> {
     return this.db.query.users.findFirst({
       where: eq(users.id, id),
     });
@@ -28,7 +28,7 @@ export class DatabaseUserService implements IUserService {
     return user;
   }
 
-  async update(id: number, data: Partial<InsertUser>): Promise<User> {
+  async update(id: User["id"], data: Partial<InsertUser>): Promise<User> {
     const [user] = await this.db
       .update(users)
       .set(data)
@@ -42,7 +42,7 @@ export class DatabaseUserService implements IUserService {
     return user;
   }
 
-  async delete(id: number): Promise<boolean> {
+  async delete(id: User["id"]): Promise<boolean> {
     const [deleted] = await this.db
       .delete(users)
       .where(eq(users.id, id))

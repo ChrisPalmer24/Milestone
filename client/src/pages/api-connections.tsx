@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,15 +13,15 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { usePortfolio } from "@/context/PortfolioContext";
-import { 
-  Link as LinkIcon, 
-  Unlink, 
-  Check, 
-  RefreshCw, 
+import {
+  Link as LinkIcon,
+  Unlink,
+  Check,
+  RefreshCw,
   Lock,
   AlertTriangle,
   Info,
-  Briefcase
+  Briefcase,
 } from "lucide-react";
 import { SiTradingview, SiCoinbase } from "react-icons/si";
 import {
@@ -40,16 +46,20 @@ import {
 export default function ApiConnections() {
   const { accounts, connectAccountApi } = usePortfolio();
   const { toast } = useToast();
-  
+
   // State for API dialog
   const [apiDialogOpen, setApiDialogOpen] = useState(false);
-  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(
+    null
+  );
   const [apiKey, setApiKey] = useState("");
-  
+
   // State for disconnect dialog
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
-  const [accountToDisconnect, setAccountToDisconnect] = useState<number | null>(null);
-  
+  const [accountToDisconnect, setAccountToDisconnect] = useState<string | null>(
+    null
+  );
+
   // Helper to get logo for provider
   const getProviderLogo = (provider: string) => {
     switch (provider.toLowerCase()) {
@@ -65,44 +75,46 @@ export default function ApiConnections() {
         return <SiTradingview className="w-6 h-6" />;
     }
   };
-  
+
   // Open API connect dialog
-  const openApiDialog = (accountId: number) => {
+  const openApiDialog = (accountId: string) => {
     setSelectedAccountId(accountId);
     setApiKey("");
     setApiDialogOpen(true);
   };
-  
+
   // Open disconnect confirmation dialog
-  const openDisconnectDialog = (accountId: number) => {
+  const openDisconnectDialog = (accountId: string) => {
     setAccountToDisconnect(accountId);
     setDisconnectDialogOpen(true);
   };
-  
+
   // Handle API connection
   const handleConnectApi = async () => {
     if (!selectedAccountId || !apiKey.trim()) return;
-    
+
     try {
       await connectAccountApi(selectedAccountId, apiKey);
       setApiDialogOpen(false);
       toast({
         title: "API Connected",
-        description: "Your account has been connected successfully. Values will now update automatically.",
+        description:
+          "Your account has been connected successfully. Values will now update automatically.",
       });
     } catch (error) {
       toast({
         title: "Error connecting API",
-        description: "There was a problem connecting to the API. Please check your API key and try again.",
+        description:
+          "There was a problem connecting to the API. Please check your API key and try again.",
         variant: "destructive",
       });
     }
   };
-  
+
   // Handle API disconnection (simulated)
   const handleDisconnectApi = async () => {
     if (!accountToDisconnect) return;
-    
+
     // In a real app, we would disconnect the API here
     setDisconnectDialogOpen(false);
     toast({
@@ -110,65 +122,69 @@ export default function ApiConnections() {
       description: "Your account has been disconnected from the API.",
     });
   };
-  
+
   // Determine which accounts support API connections
-  const getApiStatus = (provider: string): {
+  const getApiStatus = (
+    provider: string
+  ): {
     supported: boolean;
     status: "connected" | "not-connected" | "beta" | "coming-soon";
     name: string;
   } => {
     const lowerProvider = provider.toLowerCase();
-    
+
     if (lowerProvider === "trading212" || lowerProvider === "trading 212") {
-      return { 
-        supported: true, 
-        status: "connected", 
-        name: "Trading212" 
+      return {
+        supported: true,
+        status: "connected",
+        name: "Trading212",
       };
-    } 
-    
+    }
+
     if (lowerProvider === "vanguard") {
-      return { 
-        supported: true, 
-        status: "beta", 
-        name: "Vanguard" 
+      return {
+        supported: true,
+        status: "beta",
+        name: "Vanguard",
       };
     }
-    
+
     if (lowerProvider === "investengine" || lowerProvider === "invest engine") {
-      return { 
-        supported: true, 
-        status: "coming-soon", 
-        name: "InvestEngine" 
+      return {
+        supported: true,
+        status: "coming-soon",
+        name: "InvestEngine",
       };
     }
-    
-    return { 
-      supported: false, 
-      status: "not-connected", 
-      name: provider 
+
+    return {
+      supported: false,
+      status: "not-connected",
+      name: provider,
     };
   };
-  
+
   // Split accounts into connected and disconnected
-  const connectedAccounts = accounts.filter(acc => acc.isApiConnected);
-  const disconnectedAccounts = accounts.filter(acc => !acc.isApiConnected && 
-    getApiStatus(acc.provider).supported);
-  
+  const connectedAccounts = accounts.filter((acc) => acc.isApiConnected);
+  const disconnectedAccounts = accounts.filter(
+    (acc) => !acc.isApiConnected && getApiStatus(acc.provider).supported
+  );
+
   return (
     <div className="api-connections-page max-w-4xl mx-auto px-4 pb-20 pt-6">
       <h1 className="text-2xl font-semibold mb-4">API Connections</h1>
       <p className="text-gray-500 mb-6">
-        Connect your investment accounts to automatically update your portfolio values
+        Connect your investment accounts to automatically update your portfolio
+        values
       </p>
-      
+
       {/* Connected accounts section */}
       <div className="mb-8">
         <h2 className="text-lg font-medium mb-4 flex items-center">
           <Check className="w-5 h-5 mr-2 text-green-600" />
           Connected Accounts
         </h2>
-        
+
         {connectedAccounts.length === 0 ? (
           <Card>
             <CardContent className="p-6 text-center">
@@ -177,15 +193,16 @@ export default function ApiConnections() {
                 <h3 className="text-md font-medium">No Connected Accounts</h3>
               </div>
               <p className="text-gray-500 text-sm mb-4">
-                You don't have any accounts connected via API yet. Connect your accounts to auto-update your portfolio values.
+                You don't have any accounts connected via API yet. Connect your
+                accounts to auto-update your portfolio values.
               </p>
             </CardContent>
           </Card>
         ) : (
           <div className="grid gap-4">
-            {connectedAccounts.map(account => {
+            {connectedAccounts.map((account) => {
               const apiInfo = getApiStatus(account.provider);
-              
+
               return (
                 <Card key={account.id}>
                   <CardContent className="p-6">
@@ -199,23 +216,25 @@ export default function ApiConnections() {
                           <div className="flex items-center text-sm text-gray-500">
                             <span>{account.accountType}</span>
                             <span className="mx-2">•</span>
-                            <span>Last updated: {new Date(account.updatedAt).toLocaleTimeString()}</span>
+                            <span>
+                              Last updated:{" "}
+                              {new Date(account.updatedAt).toLocaleTimeString()}
+                            </span>
                           </div>
                           <div className="flex items-center mt-1">
-                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                            <Badge
+                              variant="outline"
+                              className="bg-green-50 text-green-700 border-green-200"
+                            >
                               <Check className="w-3 h-3 mr-1" />
                               Connected
                             </Badge>
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8"
-                        >
+                        <Button variant="ghost" size="sm" className="h-8">
                           <RefreshCw className="w-4 h-4 mr-2" />
                           Update Now
                         </Button>
@@ -230,11 +249,14 @@ export default function ApiConnections() {
                         </Button>
                       </div>
                     </div>
-                    
+
                     <div className="mt-3 pt-3 border-t text-sm text-gray-500">
                       <div className="flex items-center">
                         <Lock className="w-4 h-4 mr-2 text-gray-400" />
-                        <p>API keys are securely stored and used only for fetching your account data.</p>
+                        <p>
+                          API keys are securely stored and used only for
+                          fetching your account data.
+                        </p>
                       </div>
                     </div>
                   </CardContent>
@@ -244,11 +266,11 @@ export default function ApiConnections() {
           </div>
         )}
       </div>
-      
+
       {/* Available connections section */}
       <div className="mb-8">
         <h2 className="text-lg font-medium mb-4">Available Connections</h2>
-        
+
         {disconnectedAccounts.length === 0 ? (
           <Card>
             <CardContent className="p-6 text-center">
@@ -259,9 +281,9 @@ export default function ApiConnections() {
           </Card>
         ) : (
           <div className="grid gap-4">
-            {disconnectedAccounts.map(account => {
+            {disconnectedAccounts.map((account) => {
               const apiInfo = getApiStatus(account.provider);
-              
+
               return (
                 <Card key={account.id}>
                   <CardContent className="p-6">
@@ -277,22 +299,31 @@ export default function ApiConnections() {
                           </div>
                           <div className="flex items-center mt-1">
                             {apiInfo.status === "beta" ? (
-                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                              <Badge
+                                variant="outline"
+                                className="bg-blue-50 text-blue-700 border-blue-200"
+                              >
                                 Beta
                               </Badge>
                             ) : apiInfo.status === "coming-soon" ? (
-                              <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                              <Badge
+                                variant="outline"
+                                className="bg-orange-50 text-orange-700 border-orange-200"
+                              >
                                 Coming Soon
                               </Badge>
                             ) : (
-                              <Badge variant="outline" className="bg-gray-100 text-gray-600">
+                              <Badge
+                                variant="outline"
+                                className="bg-gray-100 text-gray-600"
+                              >
                                 Not Connected
                               </Badge>
                             )}
                           </div>
                         </div>
                       </div>
-                      
+
                       <Button
                         variant="outline"
                         size="sm"
@@ -311,13 +342,15 @@ export default function ApiConnections() {
           </div>
         )}
       </div>
-      
+
       {/* Supported brokers section */}
       <div>
         <h2 className="text-lg font-medium mb-4">Supported Brokers</h2>
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Our API connections support the following brokers</CardTitle>
+            <CardTitle className="text-base">
+              Our API connections support the following brokers
+            </CardTitle>
             <CardDescription>
               We're constantly adding support for more brokers and platforms.
             </CardDescription>
@@ -330,13 +363,16 @@ export default function ApiConnections() {
               <div>
                 <h3 className="font-medium">Trading212</h3>
                 <div className="flex items-center">
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
+                  <Badge
+                    variant="outline"
+                    className="bg-green-50 text-green-700 border-green-200 text-xs"
+                  >
                     Available Now
                   </Badge>
                 </div>
               </div>
             </div>
-            
+
             <div className="flex items-center p-3 border rounded-md">
               <div className="w-8 h-8 bg-gray-100 rounded-md flex items-center justify-center mr-3">
                 <Briefcase className="w-5 h-5" />
@@ -344,13 +380,16 @@ export default function ApiConnections() {
               <div>
                 <h3 className="font-medium">Vanguard</h3>
                 <div className="flex items-center">
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
+                  <Badge
+                    variant="outline"
+                    className="bg-blue-50 text-blue-700 border-blue-200 text-xs"
+                  >
                     Beta
                   </Badge>
                 </div>
               </div>
             </div>
-            
+
             <div className="flex items-center p-3 border rounded-md">
               <div className="w-8 h-8 bg-gray-100 rounded-md flex items-center justify-center mr-3">
                 <SiCoinbase className="w-5 h-5" />
@@ -358,7 +397,10 @@ export default function ApiConnections() {
               <div>
                 <h3 className="font-medium">InvestEngine</h3>
                 <div className="flex items-center">
-                  <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 text-xs">
+                  <Badge
+                    variant="outline"
+                    className="bg-orange-50 text-orange-700 border-orange-200 text-xs"
+                  >
                     Coming Soon
                   </Badge>
                 </div>
@@ -367,7 +409,7 @@ export default function ApiConnections() {
           </CardContent>
         </Card>
       </div>
-      
+
       {/* API Connection Dialog */}
       <Dialog open={apiDialogOpen} onOpenChange={setApiDialogOpen}>
         <DialogContent className="sm:max-w-md">
@@ -377,7 +419,7 @@ export default function ApiConnections() {
               Enter your API key to automatically sync your account values.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="api-key" className="text-sm">
@@ -399,12 +441,13 @@ export default function ApiConnections() {
               <div className="flex items-start mt-3">
                 <Info className="h-4 w-4 text-blue-500 mt-0.5 mr-2 flex-shrink-0" />
                 <p className="text-xs text-gray-500">
-                  To find your API key, log in to your broker's website, go to settings, and look for API access or developer options.
+                  To find your API key, log in to your broker's website, go to
+                  settings, and look for API access or developer options.
                 </p>
               </div>
             </div>
           </div>
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setApiDialogOpen(false)}>
               Cancel
@@ -415,14 +458,18 @@ export default function ApiConnections() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       {/* Disconnect Confirmation Dialog */}
-      <AlertDialog open={disconnectDialogOpen} onOpenChange={setDisconnectDialogOpen}>
+      <AlertDialog
+        open={disconnectDialogOpen}
+        onOpenChange={setDisconnectDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Disconnect API?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will disconnect the API connection for this account. Your data will no longer update automatically.
+              This will disconnect the API connection for this account. Your
+              data will no longer update automatically.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

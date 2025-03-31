@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { fireSettings } from "@shared/schema";
+import { fireSettings, User } from "@shared/schema";
 import { FireSettings, InsertFireSettings } from "@shared/schema";
 import { IFireSettingsService } from "./types";
 import { type Database } from "../../db/index";
@@ -11,13 +11,13 @@ export class DatabaseFireSettingsService implements IFireSettingsService {
     this.db = db;
   }
 
-  async get(id: number): Promise<FireSettings | undefined> {
+  async get(id: FireSettings["id"]): Promise<FireSettings | undefined> {
     return this.db.query.fireSettings.findFirst({
       where: eq(fireSettings.id, id),
     });
   }
 
-  async getByUserId(userId: number): Promise<FireSettings | undefined> {
+  async getByUserId(userId: User["id"]): Promise<FireSettings | undefined> {
     return this.db.query.fireSettings.findFirst({
       where: eq(fireSettings.userId, userId),
     });
@@ -28,7 +28,7 @@ export class DatabaseFireSettingsService implements IFireSettingsService {
     return settings;
   }
 
-  async update(id: number, data: Partial<InsertFireSettings>): Promise<FireSettings> {
+  async update(id: FireSettings["id"], data: Partial<InsertFireSettings>): Promise<FireSettings> {
     const [settings] = await this.db
       .update(fireSettings)
       .set(data)
@@ -42,7 +42,7 @@ export class DatabaseFireSettingsService implements IFireSettingsService {
     return settings;
   }
 
-  async delete(id: number): Promise<boolean> {
+  async delete(id: FireSettings["id"]): Promise<boolean> {
     const [deleted] = await this.db
       .delete(fireSettings)
       .where(eq(fireSettings.id, id))
@@ -51,7 +51,7 @@ export class DatabaseFireSettingsService implements IFireSettingsService {
     return !!deleted;
   }
 
-  async updateByUserId(userId: number, data: Partial<InsertFireSettings>): Promise<FireSettings> {
+  async updateByUserId(userId: User["id"], data: Partial<InsertFireSettings>): Promise<FireSettings> {
     const [settings] = await this.db
       .update(fireSettings)
       .set(data)

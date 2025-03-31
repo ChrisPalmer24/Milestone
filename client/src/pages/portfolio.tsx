@@ -79,7 +79,7 @@ export default function Portfolio() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [showMilestones, setShowMilestones] = useState(true);
   const [displayInPercentage, setDisplayInPercentage] = useState(false);
-  const [accountToDelete, setAccountToDelete] = useState<number | null>(null);
+  const [accountToDelete, setAccountToDelete] = useState<string | null>(null);
   const [isAddingAccount, setIsAddingAccount] = useState(false);
 
   // State to track the selected provider for conditional account type display
@@ -101,8 +101,8 @@ export default function Portfolio() {
     });
 
     // Sort accounts from largest to smallest balance
-    const sortedAccounts = [...accountsWithPct].sort((a, b) => 
-      Number(b.currentValue) - Number(a.currentValue)
+    const sortedAccounts = [...accountsWithPct].sort(
+      (a, b) => Number(b.currentValue) - Number(a.currentValue)
     );
 
     const totalValue = sortedAccounts.reduce(

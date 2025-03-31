@@ -10,7 +10,7 @@ const userService = services.getUserService();
 // Get user by ID
 router.get("/:id", async (req, res) => {
   try {
-    const userId = parseInt(req.params.id);
+    const userId = req.params.id;
     const user = await userService.get(userId);
     
     if (!user) {
@@ -55,7 +55,7 @@ router.post("/", async (req, res) => {
 // Update user
 router.patch("/:id", async (req, res) => {
   try {
-    const userId = parseInt(req.params.id);
+    const userId = req.params.id;
     const userData = insertUserSchema.partial().parse(req.body);
     const user = await userService.update(userId, userData);
     res.json(user);
@@ -73,7 +73,7 @@ router.patch("/:id", async (req, res) => {
 // Delete user
 router.delete("/:id", async (req, res) => {
   try {
-    const userId = parseInt(req.params.id);
+    const userId = req.params.id;
     const success = await userService.delete(userId);
     
     if (!success) {

@@ -1,10 +1,10 @@
-import { Milestone, InsertMilestone } from "@shared/schema";
+import { Milestone, InsertMilestone, User } from "@shared/schema";
 
 export interface IMilestoneService {
-  get(id: number): Promise<Milestone | undefined>;
-  getByUserId(userId: number): Promise<Milestone[]>;
+  get(id: Milestone["id"]): Promise<Milestone | undefined>;
+  getByUserId(userId: User["id"]): Promise<Milestone[]>;
   create(data: InsertMilestone): Promise<Milestone>;
-  update(id: number, data: Partial<InsertMilestone>): Promise<Milestone>;
-  delete(id: number): Promise<boolean>;
-  updateCompletion(id: number, isCompleted: boolean): Promise<Milestone>;
+  update(id: Milestone["id"], data: Partial<InsertMilestone>): Promise<Milestone>;
+  delete(id: Milestone["id"]): Promise<boolean>;
+  updateCompletion(id: Milestone["id"], isCompleted: boolean): Promise<Milestone>;
 } 

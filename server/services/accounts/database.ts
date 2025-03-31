@@ -1,6 +1,6 @@
 import { eq, and, inArray, gte, lte } from "drizzle-orm";
-import { accounts, accountHistory } from "@shared/schema";
-import type { Account, InsertAccount } from "@shared/schema";
+import { accounts, accountHistory, users } from "@shared/schema";
+import type { Account, InsertAccount, User } from "@shared/schema";
 import type { IAccountService } from "./types";
 import { type Database } from "../../db/index";
 import { IAccountHistoryService } from "../account-history/types";
@@ -13,13 +13,13 @@ export class DatabaseAccountService implements IAccountService {
     this.accountHistoryService = new DatabaseAccountHistoryService(db);
   }
 
-  async get(id: number): Promise<Account | undefined> {
+  async get(id: Account["id"]): Promise<Account | undefined> {
     return this.db.query.accounts.findFirst({
       where: eq(accounts.id, id)
     });
   }
 
-  async getByUserId(userId: number): Promise<Account[]> {
+  async getByUserId(userId: User["id"]): Promise<Account[]> {
     return this.db.query.accounts.findMany({
       where: eq(accounts.userId, userId)
     });
@@ -35,7 +35,7 @@ export class DatabaseAccountService implements IAccountService {
     return account;
   }
 
-  async update(id: number, data: Partial<InsertAccount>): Promise<Account> {
+  async update(id: Account["id"], data: Partial<InsertAccount>): Promise<Account> {
     const [account] = await this.db
       .update(accounts)
       .set(data)
@@ -49,7 +49,7 @@ export class DatabaseAccountService implements IAccountService {
     return account;
   }
 
-  async updateValue(id: number, value: number): Promise<Account> {
+  async updateValue(id: Account["id"], value: number): Promise<Account> {
 
     await this.accountHistoryService.create({
       accountId: id,
@@ -70,7 +70,7 @@ export class DatabaseAccountService implements IAccountService {
     return account;
   }
 
-  async delete(id: number): Promise<boolean> {
+  async delete(id: Account["id"]): Promise<boolean> {
     // First delete all history entries for this account
     try {
       return await this.db.transaction(async (tx) => {
@@ -93,7 +93,7 @@ export class DatabaseAccountService implements IAccountService {
     }
   }
 
-  async connectApi(id: number, apiKey: string): Promise<Account> {
+  async connectApi(id: Account["id"], apiKey: string): Promise<Account> {
     const [account] = await this.db
       .update(accounts)
       .set({ 
@@ -110,16 +110,16 @@ export class DatabaseAccountService implements IAccountService {
     return account;
   }
 
-  async getPortfolioValue(userId: number): Promise<number> {
+  async getPortfolioValue(userId: User["id"]): Promise<number> {
     const userAccounts = await this.getByUserId(userId);
     return userAccounts.reduce((sum, account) => sum + Number(account.currentValue), 0);
   }
 
-  async getPortfolioHistory(userId: number, startDate: Date, endDate: Date): Promise<{ 
+  async getPortfolioHistory(userId: User["id"], startDate: Date, endDate: Date): Promise<{ 
     date: Date; 
     value: number;
     changes: {
-      accountId: number;
+      accountId: Account["id"];
       previousValue: number;
       newValue: number;
       change: number;
@@ -139,7 +139,7 @@ export class DatabaseAccountService implements IAccountService {
     });
 
     // Create a map to track the latest known value for each account
-    const accountLatestValues = new Map<number, number>();
+    const accountLatestValues = new Map<string, number>();
     
     // Initialize with current values from accounts
     // userAccounts.forEach(account => {
@@ -150,7 +150,7 @@ export class DatabaseAccountService implements IAccountService {
     const portfolioValues = new Map<string, {
       value: number;
       changes: {
-        accountId: number;
+        accountId: Account["id"];
         previousValue: number;
         newValue: number;
         change: number;

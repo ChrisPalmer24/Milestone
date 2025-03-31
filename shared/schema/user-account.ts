@@ -1,10 +1,11 @@
 import { pgTable, text, serial } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { idColumn } from "./utils";
 
 // User table
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
+  id: idColumn(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
 });

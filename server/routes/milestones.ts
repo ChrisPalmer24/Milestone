@@ -10,7 +10,7 @@ const milestoneService = services.getMilestoneService();
 // Get all milestones for a user
 router.get("/user/:userId", async (req, res) => {
   try {
-    const userId = parseInt(req.params.userId);
+    const userId = req.params.userId;
     const milestones = await milestoneService.getByUserId(userId);
     res.json(milestones);
   } catch (error) {
@@ -21,7 +21,7 @@ router.get("/user/:userId", async (req, res) => {
 // Get milestone by ID
 router.get("/:id", async (req, res) => {
   try {
-    const milestoneId = parseInt(req.params.id);
+    const milestoneId = req.params.id;
     const milestone = await milestoneService.get(milestoneId);
     
     if (!milestone) {
@@ -51,7 +51,7 @@ router.post("/", async (req, res) => {
 // Update milestone
 router.patch("/:id", async (req, res) => {
   try {
-    const milestoneId = parseInt(req.params.id);
+    const milestoneId = req.params.id;
     const milestoneData = insertMilestoneSchema.partial().parse(req.body);
     const milestone = await milestoneService.update(milestoneId, milestoneData);
     res.json(milestone);
@@ -69,7 +69,7 @@ router.patch("/:id", async (req, res) => {
 // Delete milestone
 router.delete("/:id", async (req, res) => {
   try {
-    const milestoneId = parseInt(req.params.id);
+    const milestoneId = req.params.id;
     const success = await milestoneService.delete(milestoneId);
     
     if (!success) {
@@ -85,7 +85,7 @@ router.delete("/:id", async (req, res) => {
 // Update milestone completion
 router.patch("/:id/completion", async (req, res) => {
   try {
-    const milestoneId = parseInt(req.params.id);
+    const milestoneId = req.params.id;
     const { isCompleted } = req.body;
     
     if (typeof isCompleted !== 'boolean') {

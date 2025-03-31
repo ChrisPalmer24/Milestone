@@ -38,6 +38,7 @@ import { z } from "zod";
 import { SiTradingview, SiCoinbase } from "react-icons/si";
 import { BsPiggyBank } from "react-icons/bs";
 import { usePortfolio } from "@/context/PortfolioContext";
+import { Account } from "@shared/schema";
 
 // Form schema for history entry
 const historySchema = z.object({
@@ -49,9 +50,9 @@ const historySchema = z.object({
   }),
 });
 
-export default function Account() {
+export default function AccountPage() {
   const params = useParams();
-  const accountId = parseInt(params?.id || "0");
+  const accountId: Account["id"] | undefined = params?.id;
   const {
     accounts,
     getAccountHistory,
@@ -63,12 +64,12 @@ export default function Account() {
 
   const [isAddHistoryOpen, setIsAddHistoryOpen] = useState(false);
   const [isEditHistoryOpen, setIsEditHistoryOpen] = useState(false);
-  const [historyToDelete, setHistoryToDelete] = useState<number | null>(null);
+  const [historyToDelete, setHistoryToDelete] = useState<string | null>(null);
   const [historyToEdit, setHistoryToEdit] = useState<any>(null);
 
   // Get account and history data
   const account = accounts.find((acc) => acc.id === accountId);
-  const history = getAccountHistory(accountId);
+  const history = accountId ? getAccountHistory(accountId) : [];
 
   // Form for adding/editing history
   const form = useForm<z.infer<typeof historySchema>>({
@@ -80,6 +81,8 @@ export default function Account() {
   });
 
   const handleCreateHistory = async (values: z.infer<typeof historySchema>) => {
+    if (!accountId) return;
+
     try {
       await addAccountHistory({
         accountId,

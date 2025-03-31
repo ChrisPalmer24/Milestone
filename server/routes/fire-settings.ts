@@ -10,7 +10,7 @@ const fireSettingsService = services.getFireSettingsService();
 // Get FIRE settings by ID
 router.get("/:id", async (req, res) => {
   try {
-    const settingsId = parseInt(req.params.id);
+    const settingsId = req.params.id;
     const settings = await fireSettingsService.get(settingsId);
     
     if (!settings) {
@@ -26,7 +26,7 @@ router.get("/:id", async (req, res) => {
 // Get FIRE settings by user ID
 router.get("/user/:userId", async (req, res) => {
   try {
-    const userId = parseInt(req.params.userId);
+    const userId = req.params.userId;
     const settings = await fireSettingsService.getByUserId(userId);
     
     if (!settings) {
@@ -56,7 +56,7 @@ router.post("/", async (req, res) => {
 // Update FIRE settings
 router.patch("/:id", async (req, res) => {
   try {
-    const settingsId = parseInt(req.params.id);
+    const settingsId = req.params.id;
     const settingsData = insertFireSettingsSchema.partial().parse(req.body);
     const settings = await fireSettingsService.update(settingsId, settingsData);
     res.json(settings);
@@ -74,7 +74,7 @@ router.patch("/:id", async (req, res) => {
 // Delete FIRE settings
 router.delete("/:id", async (req, res) => {
   try {
-    const settingsId = parseInt(req.params.id);
+    const settingsId = req.params.id;
     const success = await fireSettingsService.delete(settingsId);
     
     if (!success) {
@@ -90,7 +90,7 @@ router.delete("/:id", async (req, res) => {
 // Update FIRE settings by user ID
 router.patch("/user/:userId", async (req, res) => {
   try {
-    const userId = parseInt(req.params.userId);
+    const userId = req.params.userId;
     const settingsData = insertFireSettingsSchema.partial().parse(req.body);
     const settings = await fireSettingsService.updateByUserId(userId, settingsData);
     res.json(settings);
