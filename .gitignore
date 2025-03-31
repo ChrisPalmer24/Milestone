@@ -9,3 +9,5 @@ vite.config.ts.*
 .env
 
 client/dev-dist
+
+data/postgres
