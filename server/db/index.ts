@@ -1,7 +1,7 @@
 import { drizzle as drizzleNeon } from "drizzle-orm/neon-serverless";
 import { drizzle as drizzleNodePostgres } from "drizzle-orm/node-postgres";
 import ws from "ws";
-import * as schema from "@shared/schema";
+import * as schema from "@shared/schema/index";
 
 export function createDatabaseConnection() {
 
