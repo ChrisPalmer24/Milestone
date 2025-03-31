@@ -1,7 +1,7 @@
 import { pgTable, text, serial, integer, numeric, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-import { users } from "./user-account";
+import { userAccounts } from "./user-account";
 import { cuid, idColumn } from "./utils";
 
 export type AccountType = "ISA" | "SIPP" | "LISA" | "GIA" | "ALL";
@@ -9,7 +9,7 @@ export type AccountType = "ISA" | "SIPP" | "LISA" | "GIA" | "ALL";
 // Account table to store investment account information
 export const accounts = pgTable("accounts", {
   id: idColumn(),
-  userId: cuid("user_id").notNull().references(() => users.id),
+  userAccountId: cuid("user_account_id").notNull().references(() => userAccounts.id),
   provider: text("provider").notNull(),
   accountType: text("account_type").notNull(), // ISA, SIPP, LISA (Lifetime ISA), GIA (General Account)
   currentValue: numeric("current_value").notNull(),

@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { fireSettings, User } from "@shared/schema";
+import { fireSettings, UserAccount } from "@shared/schema";
 import { FireSettings, InsertFireSettings } from "@shared/schema";
 import { IFireSettingsService } from "./types";
 import { type Database } from "../../db/index";
@@ -17,9 +17,9 @@ export class DatabaseFireSettingsService implements IFireSettingsService {
     });
   }
 
-  async getByUserId(userId: User["id"]): Promise<FireSettings | undefined> {
+  async getByUserAccountId(userAccountId: UserAccount["id"]): Promise<FireSettings | undefined> {
     return this.db.query.fireSettings.findFirst({
-      where: eq(fireSettings.userId, userId),
+      where: eq(fireSettings.userAccountId, userAccountId),
     });
   }
 
@@ -51,11 +51,11 @@ export class DatabaseFireSettingsService implements IFireSettingsService {
     return !!deleted;
   }
 
-  async updateByUserId(userId: User["id"], data: Partial<InsertFireSettings>): Promise<FireSettings> {
+  async updateByUserAccountId(userAccountId: UserAccount["id"], data: Partial<InsertFireSettings>): Promise<FireSettings> {
     const [settings] = await this.db
       .update(fireSettings)
       .set(data)
-      .where(eq(fireSettings.userId, userId))
+      .where(eq(fireSettings.userAccountId, userAccountId))
       .returning();
 
     if (!settings) {

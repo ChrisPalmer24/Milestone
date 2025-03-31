@@ -8,11 +8,10 @@ const services = ServiceFactory.getInstance();
 const accountService = services.getAccountService();
 
 // Get all accounts for a user
-router.get("/user/:userId", async (req, res) => {
+router.get("/user/:userAccountId", async (req, res) => {
   try {
-    console.log("req.params.userId :", req.params.userId);
-    const userId = req.params.userId;
-    const accounts = await accountService.getByUserId(userId);
+    const userAccountId = req.params.userAccountId;
+    const accounts = await accountService.getByUserAccountId(userAccountId);
     res.json(accounts);
   } catch (error) {
     res.status(500).json({ message: "Failed to get accounts" });
@@ -39,7 +38,6 @@ router.get("/:id", async (req, res) => {
 router.post("/", async (req, res) => {
   try {
     const accountData = insertAccountSchema.parse(req.body);
-    console.log("accountData :", accountData);
     const account = await accountService.create(accountData);
     res.status(201).json(account);
   } catch (error) {

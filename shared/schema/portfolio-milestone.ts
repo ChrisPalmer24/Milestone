@@ -1,12 +1,12 @@
 import { pgTable, text, serial, integer, numeric, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-import { users } from "./user-account";
+import { userAccounts } from "./user-account";
 import { cuid, idColumn } from "./utils";
 // Milestones table to track investment goals
 export const milestones = pgTable("milestones", {
   id: idColumn(),
-  userId: cuid("user_id").notNull().references(() => users.id),
+  userAccountId: cuid("user_account_id").notNull().references(() => userAccounts.id),
   name: text("name").notNull(),
   targetValue: numeric("target_value").notNull(),
   accountType: text("account_type"), // Optional, can be specific to an account type (ISA, SIPP, LISA, GIA) or null for total portfolio

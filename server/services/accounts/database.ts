@@ -1,6 +1,6 @@
 import { eq, and, inArray, gte, lte } from "drizzle-orm";
-import { accounts, accountHistory, users } from "@shared/schema";
-import type { Account, InsertAccount, User } from "@shared/schema";
+import { accounts, accountHistory } from "@shared/schema";
+import type { Account, InsertAccount, UserAccount } from "@shared/schema";
 import type { IAccountService } from "./types";
 import { type Database } from "../../db/index";
 import { IAccountHistoryService } from "../account-history/types";
@@ -19,9 +19,9 @@ export class DatabaseAccountService implements IAccountService {
     });
   }
 
-  async getByUserId(userId: User["id"]): Promise<Account[]> {
+  async getByUserAccountId(userAccountId: UserAccount["id"]): Promise<Account[]> {
     return this.db.query.accounts.findMany({
-      where: eq(accounts.userId, userId)
+      where: eq(accounts.userAccountId, userAccountId)
     });
   }
 
@@ -110,12 +110,12 @@ export class DatabaseAccountService implements IAccountService {
     return account;
   }
 
-  async getPortfolioValue(userId: User["id"]): Promise<number> {
-    const userAccounts = await this.getByUserId(userId);
+  async getPortfolioValue(userAccountId: UserAccount["id"]): Promise<number> {
+    const userAccounts = await this.getByUserAccountId(userAccountId);
     return userAccounts.reduce((sum, account) => sum + Number(account.currentValue), 0);
   }
 
-  async getPortfolioHistory(userId: User["id"], startDate: Date, endDate: Date): Promise<{ 
+  async getPortfolioHistory(userAccountId: UserAccount["id"], startDate: Date, endDate: Date): Promise<{ 
     date: Date; 
     value: number;
     changes: {
@@ -125,7 +125,7 @@ export class DatabaseAccountService implements IAccountService {
       change: number;
     }[];
   }[]> {
-    const userAccounts = await this.getByUserId(userId);
+    const userAccounts = await this.getByUserAccountId(userAccountId);
     const accountIds = userAccounts.map(account => account.id);
     
     // Get all history entries for the user's accounts within the date range

@@ -8,10 +8,10 @@ const services = ServiceFactory.getInstance();
 const milestoneService = services.getMilestoneService();
 
 // Get all milestones for a user
-router.get("/user/:userId", async (req, res) => {
+router.get("/user/:userAccountId", async (req, res) => {
   try {
-    const userId = req.params.userId;
-    const milestones = await milestoneService.getByUserId(userId);
+    const userAccountId = req.params.userAccountId;
+    const milestones = await milestoneService.getByUserAccountId(userAccountId);
     res.json(milestones);
   } catch (error) {
     res.status(500).json({ message: "Failed to get milestones" });

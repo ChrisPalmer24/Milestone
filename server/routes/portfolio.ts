@@ -1,12 +1,9 @@
 import { Router } from "express";
-import { z } from "zod";
 import { ServiceFactory } from "../services/factory";
-import { insertAccountSchema } from "@shared/schema";
 
 const router = Router();
 const services = ServiceFactory.getInstance();
 const accountService = services.getAccountService();
-const userService = services.getUserService();
 // Get portfolio history
 router.get("/history", async (req, res) => {
   try {

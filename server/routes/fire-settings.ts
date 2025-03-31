@@ -23,11 +23,11 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// Get FIRE settings by user ID
-router.get("/user/:userId", async (req, res) => {
+// Get FIRE settings by user account ID
+router.get("/user/:userAccountId", async (req, res) => {
   try {
-    const userId = req.params.userId;
-    const settings = await fireSettingsService.getByUserId(userId);
+    const userAccountId = req.params.userAccountId;
+    const settings = await fireSettingsService.getByUserAccountId(userAccountId);
     
     if (!settings) {
       return res.status(404).json({ message: "FIRE settings not found" });
@@ -87,12 +87,12 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-// Update FIRE settings by user ID
-router.patch("/user/:userId", async (req, res) => {
+// Update FIRE settings by user account ID
+router.patch("/user/:userAccountId", async (req, res) => {
   try {
-    const userId = req.params.userId;
+    const userAccountId = req.params.userAccountId;
     const settingsData = insertFireSettingsSchema.partial().parse(req.body);
-    const settings = await fireSettingsService.updateByUserId(userId, settingsData);
+    const settings = await fireSettingsService.updateByUserAccountId(userAccountId, settingsData);
     res.json(settings);
   } catch (error) {
     if (error instanceof z.ZodError) {

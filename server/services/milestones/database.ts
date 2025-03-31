@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { milestones, User } from "@shared/schema";
+import { milestones, CoreUser, UserAccount } from "@shared/schema";
 import { Milestone, InsertMilestone } from "@shared/schema";
 import { IMilestoneService } from "./types";
 import { type Database } from "../../db/index";
@@ -17,9 +17,9 @@ export class DatabaseMilestoneService implements IMilestoneService {
     });
   }
 
-  async getByUserId(userId: User["id"]): Promise<Milestone[]> {
+  async getByUserAccountId(userAccountId: UserAccount["id"]): Promise<Milestone[]> {
     return this.db.query.milestones.findMany({
-      where: eq(milestones.userId, userId),
+      where: eq(milestones.userAccountId, userAccountId),
       orderBy: (milestones, { desc }) => [desc(milestones.createdAt)],
     });
   }
