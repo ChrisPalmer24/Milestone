@@ -1,0 +1,161 @@
+import { db } from "../../server/db";
+import { users, accounts, accountHistory, fireSettings, milestones } from "../../shared/schema";
+import { readFileSync } from "fs";
+import { join } from "path";
+
+interface MigrationData {
+  version: string;
+  exportedAt: string;
+  users: Array<{
+    id: number;
+    username: string;
+    password: string;
+  }>;
+  accounts: Array<{
+    id: number;
+    userId: number;
+    provider: string;
+    accountType: string;
+    currentValue: string;
+    isApiConnected: boolean;
+    apiKey: string | null;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+  accountHistory: Array<{
+    id: number;
+    accountId: number;
+    value: string;
+    recordedAt: string;
+  }>;
+  fireSettings: Array<{
+    id: number;
+    userId: number;
+    targetRetirementAge: number;
+    annualIncomeGoal: string;
+    expectedAnnualReturn: string;
+    safeWithdrawalRate: string;
+    monthlyInvestment: string;
+    currentAge: number;
+  }>;
+  milestones: Array<{
+    id: number;
+    userId: number;
+    name: string;
+    targetValue: string;
+    accountType: string | null;
+    isCompleted: boolean;
+    createdAt: string;
+  }>;
+}
+
+// Maps to store old ID -> new CUID relationships
+const userIdMap = new Map<number, string>();
+const accountIdMap = new Map<number, string>();
+
+async function importData() {
+  console.log("Starting data import...");
+
+  // Read the migration data
+  const migrationDataPath = join(process.cwd(), "tools", "migrate", "data", "cuid-migration-data.json");
+  const migrationData: MigrationData = JSON.parse(readFileSync(migrationDataPath, "utf-8"));
+
+  try {
+    // Start a transaction to ensure data consistency
+    await db.transaction(async (tx) => {
+      // 1. Import users first
+      console.log("Importing users...");
+      for (const user of migrationData.users) {
+        const [newUser] = await tx
+          .insert(users)
+          .values({
+            username: user.username,
+            password: user.password,
+          })
+          .returning();
+        
+        userIdMap.set(user.id, newUser.id);
+      }
+      console.log(`Imported ${migrationData.users.length} users`);
+
+      // 2. Import accounts
+      console.log("Importing accounts...");
+      for (const account of migrationData.accounts) {
+        const [newAccount] = await tx
+          .insert(accounts)
+          .values({
+            userId: userIdMap.get(account.userId)!,
+            provider: account.provider,
+            accountType: account.accountType,
+            currentValue: account.currentValue,
+            isApiConnected: account.isApiConnected,
+            apiKey: account.apiKey,
+            createdAt: new Date(account.createdAt),
+            updatedAt: new Date(account.updatedAt),
+          })
+          .returning();
+        
+        accountIdMap.set(account.id, newAccount.id);
+      }
+      console.log(`Imported ${migrationData.accounts.length} accounts`);
+
+      // 3. Import account history
+      console.log("Importing account history...");
+      for (const history of migrationData.accountHistory) {
+        await tx.insert(accountHistory).values({
+          accountId: accountIdMap.get(history.accountId)!,
+          value: history.value,
+          recordedAt: new Date(history.recordedAt),
+        });
+      }
+      console.log(`Imported ${migrationData.accountHistory.length} account history records`);
+
+      // 4. Import FIRE settings
+      console.log("Importing FIRE settings...");
+      for (const setting of migrationData.fireSettings) {
+        await tx.insert(fireSettings).values({
+          userId: userIdMap.get(setting.userId)!,
+          targetRetirementAge: setting.targetRetirementAge,
+          annualIncomeGoal: setting.annualIncomeGoal,
+          expectedAnnualReturn: setting.expectedAnnualReturn,
+          safeWithdrawalRate: setting.safeWithdrawalRate,
+          monthlyInvestment: setting.monthlyInvestment,
+          currentAge: setting.currentAge,
+        });
+      }
+      console.log(`Imported ${migrationData.fireSettings.length} FIRE settings`);
+
+      // 5. Import milestones
+      console.log("Importing milestones...");
+      for (const milestone of migrationData.milestones) {
+        await tx.insert(milestones).values({
+          userId: userIdMap.get(milestone.userId)!,
+          name: milestone.name,
+          targetValue: milestone.targetValue,
+          accountType: milestone.accountType,
+          isCompleted: milestone.isCompleted,
+          createdAt: new Date(milestone.createdAt),
+        });
+      }
+      console.log(`Imported ${migrationData.milestones.length} milestones`);
+    });
+
+    console.log("\nImport completed successfully!");
+    console.log("\nImport Summary:");
+    console.log(`- Users: ${migrationData.users.length}`);
+    console.log(`- Accounts: ${migrationData.accounts.length}`);
+    console.log(`- Account History: ${migrationData.accountHistory.length}`);
+    console.log(`- FIRE Settings: ${migrationData.fireSettings.length}`);
+    console.log(`- Milestones: ${migrationData.milestones.length}`);
+
+  } catch (error) {
+    console.error("Error during import:", error);
+    process.exit(1);
+  }
+}
+
+// Run the import
+importData().catch((error) => {
+  console.error("Error during import:", error);
+  process.exit(1);
+}); 
