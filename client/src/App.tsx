@@ -3,6 +3,9 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { PortfolioProvider } from "@/context/PortfolioContext";
+import { SessionProvider } from "@/context/SessionContext";
+import { useSession } from "@/hooks/use-session";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import ResponsiveLayout from "@/components/layout/ResponsiveLayout";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
@@ -15,6 +18,9 @@ import Settings from "@/pages/settings";
 import ApiConnections from "@/pages/api-connections";
 import Account from "@/pages/account";
 import Record from "@/pages/record";
+import { LoginPage } from "@/pages/LoginPage";
+import { RegisterPage } from "@/pages/RegisterPage";
+import { Loader2 } from "lucide-react";
 
 function RouteWithLayout({
   component: Component,
@@ -33,31 +39,80 @@ function Router() {
   return (
     <WouterRouter>
       <Switch>
-        <Route path="/">{() => <RouteWithLayout component={Home} />}</Route>
+        {/* Auth Routes */}
+        <Route path="/login">{() => <LoginPage />}</Route>
+        <Route path="/register">{() => <RegisterPage />}</Route>
+
+        {/* Protected Routes */}
+        <Route path="/">
+          {() => (
+            <ProtectedRoute>
+              <RouteWithLayout component={Home} />
+            </ProtectedRoute>
+          )}
+        </Route>
         <Route path="/portfolio">
-          {() => <RouteWithLayout component={Portfolio} />}
+          {() => (
+            <ProtectedRoute>
+              <RouteWithLayout component={Portfolio} />
+            </ProtectedRoute>
+          )}
         </Route>
         <Route path="/goals">
-          {() => <RouteWithLayout component={Goals} />}
+          {() => (
+            <ProtectedRoute>
+              <RouteWithLayout component={Goals} />
+            </ProtectedRoute>
+          )}
         </Route>
         <Route path="/track">
-          {() => <RouteWithLayout component={Track} />}
+          {() => (
+            <ProtectedRoute>
+              <RouteWithLayout component={Track} />
+            </ProtectedRoute>
+          )}
         </Route>
         <Route path="/record">
-          {() => <RouteWithLayout component={Record} />}
+          {() => (
+            <ProtectedRoute>
+              <RouteWithLayout component={Record} />
+            </ProtectedRoute>
+          )}
         </Route>
-        <Route path="/fire">{() => <RouteWithLayout component={Fire} />}</Route>
+        <Route path="/fire">
+          {() => (
+            <ProtectedRoute>
+              <RouteWithLayout component={Fire} />
+            </ProtectedRoute>
+          )}
+        </Route>
         <Route path="/profile">
-          {() => <RouteWithLayout component={Profile} />}
+          {() => (
+            <ProtectedRoute>
+              <RouteWithLayout component={Profile} />
+            </ProtectedRoute>
+          )}
         </Route>
         <Route path="/settings">
-          {() => <RouteWithLayout component={Settings} />}
+          {() => (
+            <ProtectedRoute>
+              <RouteWithLayout component={Settings} />
+            </ProtectedRoute>
+          )}
         </Route>
         <Route path="/api-connections">
-          {() => <RouteWithLayout component={ApiConnections} />}
+          {() => (
+            <ProtectedRoute>
+              <RouteWithLayout component={ApiConnections} />
+            </ProtectedRoute>
+          )}
         </Route>
         <Route path="/account/:id">
-          {() => <RouteWithLayout component={Account} />}
+          {() => (
+            <ProtectedRoute>
+              <RouteWithLayout component={Account} />
+            </ProtectedRoute>
+          )}
         </Route>
         <Route>{() => <RouteWithLayout component={NotFound} />}</Route>
       </Switch>
@@ -65,13 +120,34 @@ function Router() {
   );
 }
 
+function Loading() {
+  return (
+    <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
+      <Loader2 className="h-12 w-12 animate-spin text-indigo-600 mb-4" />
+      <p className="text-gray-600 text-lg font-medium">Loading your data...</p>
+    </div>
+  );
+}
+
+function Wrapper() {
+  const { isInitialUserLoading } = useSession();
+
+  if (isInitialUserLoading) {
+    return <Loading />;
+  }
+
+  return <Router />;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <PortfolioProvider>
-        <Router />
-        <Toaster />
-      </PortfolioProvider>
+      <SessionProvider>
+        <PortfolioProvider>
+          <Wrapper />
+          <Toaster />
+        </PortfolioProvider>
+      </SessionProvider>
     </QueryClientProvider>
   );
 }
