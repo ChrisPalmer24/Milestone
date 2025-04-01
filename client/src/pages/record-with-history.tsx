@@ -34,13 +34,7 @@ type AccountFormData = {
 };
 
 export default function Record() {
-  const { 
-    accounts, 
-    addAccountHistory, 
-    isLoading, 
-    accountsHistory,
-    updateAccountHistory
-  } = usePortfolio();
+  const { accounts, addAccountHistory, isLoading, accountsHistory } = usePortfolio();
   
   const { toast } = useToast();
   const [accountValues, setAccountValues] = useState<AccountFormData>({});
@@ -89,14 +83,12 @@ export default function Record() {
     if (!editHistoryRecord) return;
     
     try {
-      // Use the updateAccountHistory function to update the record
-      await updateAccountHistory(
-        editHistoryRecord.id,
-        {
-          value: editValue,
-          recordedAt: new Date(editHistoryRecord.recordedAt)
-        }
-      );
+      // This would need an update function in the PortfolioContext/API
+      // For now, we'll just show a toast indicating what would happen
+      toast({
+        title: "Update history functionality",
+        description: `Value would be updated from ${editHistoryRecord.value} to ${editValue}`,
+      });
       
       setEditHistoryRecord(null);
       setEditValue("");
