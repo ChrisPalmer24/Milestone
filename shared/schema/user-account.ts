@@ -1,12 +1,12 @@
-import { pgTable, text, boolean, timestamp } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { pgTable, text, boolean, timestamp, uuid } from "drizzle-orm/pg-core";
+import { relations, sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-import { cuid, idColumn, timestampColumns } from "./utils";
+import { timestampColumns } from "./utils";
 
 // Core User table
 export const coreUsers = pgTable("core_users", {
-  id: idColumn(),
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   status: text("status", { enum: ["active", "inactive", "suspended"] }).notNull().default("active"),
   ...timestampColumns(),
 });
@@ -17,8 +17,8 @@ export const coreUsersRelations = relations(coreUsers, ({ one, many }) => ({
 
 // User Account table
 export const userAccounts = pgTable("user_accounts", {
-  id: idColumn(),
-  coreUserId: cuid("core_user_id").notNull().references(() => coreUsers.id),
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  coreUserId: uuid("core_user_id").notNull().references(() => coreUsers.id),
   email: text("email").notNull().unique(),
   phoneNumber: text("phone_number").unique(),
   passwordHash: text("password_hash").notNull(),
@@ -30,8 +30,8 @@ export const userAccounts = pgTable("user_accounts", {
 
 // Email Verification table
 export const emailVerifications = pgTable("email_verifications", {
-  id: idColumn(),
-  userAccountId: cuid("user_account_id").notNull().references(() => userAccounts.id),
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userAccountId: uuid("user_account_id").notNull().references(() => userAccounts.id),
   token: text("token").notNull(),
   isCompleted: boolean("is_completed").notNull().default(false),
   completedAt: timestamp("completed_at"),
@@ -41,8 +41,8 @@ export const emailVerifications = pgTable("email_verifications", {
 
 // Phone Verification table
 export const phoneVerifications = pgTable("phone_verifications", {
-  id: idColumn(),
-  userAccountId: cuid("user_account_id").notNull().references(() => userAccounts.id),
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userAccountId: uuid("user_account_id").notNull().references(() => userAccounts.id),
   token: text("token").notNull(),
   isCompleted: boolean("is_completed").notNull().default(false),
   completedAt: timestamp("completed_at"),
@@ -69,8 +69,8 @@ export const userAccountsRelations = relations(userAccounts, ({ one, many }) => 
 
 // User Profile table
 export const userProfiles = pgTable("user_profiles", {
-  id: idColumn(),
-  userAccountId: cuid("user_account_id").notNull().references(() => userAccounts.id),
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userAccountId: uuid("user_account_id").notNull().references(() => userAccounts.id),
   avatarUrl: text("avatar_url"),
   // Add profile fields as needed
   ...timestampColumns(),
@@ -85,8 +85,8 @@ export const userProfilesRelations = relations(userProfiles, ({ one }) => ({
 
 // Password Reset table
 export const passwordResets = pgTable("password_resets", {
-  id: idColumn(),
-  userAccountId: cuid("user_account_id").notNull().references(() => userAccounts.id),
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userAccountId: uuid("user_account_id").notNull().references(() => userAccounts.id),
   token: text("token").notNull(),
   isCompleted: boolean("is_completed").notNull().default(false),
   completedAt: timestamp("completed_at"),
@@ -103,8 +103,8 @@ export const passwordResetsRelations = relations(passwordResets, ({ one }) => ({
 
 // Password Change History table
 export const passwordChangeHistory = pgTable("password_change_history", {
-  id: idColumn(),
-  userAccountId: cuid("user_account_id").notNull().references(() => userAccounts.id),
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userAccountId: uuid("user_account_id").notNull().references(() => userAccounts.id),
   passwordHash: text("password_hash").notNull(),
   changedAt: timestamp("changed_at").notNull(),
   ...timestampColumns(),
@@ -119,8 +119,8 @@ export const passwordChangeHistoryRelations = relations(passwordChangeHistory, (
 
 // User Subscription table
 export const userSubscriptions = pgTable("user_subscriptions", {
-  id: idColumn(),
-  userAccountId: cuid("user_account_id").notNull().references(() => userAccounts.id),
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userAccountId: uuid("user_account_id").notNull().references(() => userAccounts.id),
   plan: text("plan").notNull(),
   status: text("status", { enum: ["active", "cancelled", "expired"] }).notNull().default("active"),
   startDate: timestamp("start_date").notNull(),
@@ -137,8 +137,8 @@ export const userSubscriptionsRelations = relations(userSubscriptions, ({ one })
 
 // Refresh Token table
 export const refreshTokens = pgTable("refresh_tokens", {
-  id: idColumn(),
-  userAccountId: cuid("user_account_id").notNull().references(() => userAccounts.id),
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userAccountId: uuid("user_account_id").notNull().references(() => userAccounts.id),
   tokenHash: text("token_hash").notNull(),
   familyId: text("family_id").notNull(),
   parentTokenHash: text("parent_token_hash"),

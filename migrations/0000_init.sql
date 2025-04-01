@@ -1,16 +1,16 @@
 CREATE TABLE "account_history" (
-	"id" text PRIMARY KEY NOT NULL,
-	"account_id" text NOT NULL,
-	"value" numeric NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"account_id" uuid NOT NULL,
+	"value" real NOT NULL,
 	"recorded_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "accounts" (
-	"id" text PRIMARY KEY NOT NULL,
-	"user_account_id" text NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_account_id" uuid NOT NULL,
 	"provider" text NOT NULL,
 	"account_type" text NOT NULL,
-	"current_value" numeric NOT NULL,
+	"current_value" real NOT NULL,
 	"is_api_connected" boolean DEFAULT false NOT NULL,
 	"api_key" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
@@ -18,8 +18,8 @@ CREATE TABLE "accounts" (
 );
 --> statement-breakpoint
 CREATE TABLE "milestones" (
-	"id" text PRIMARY KEY NOT NULL,
-	"user_account_id" text NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_account_id" uuid NOT NULL,
 	"name" text NOT NULL,
 	"target_value" numeric NOT NULL,
 	"account_type" text,
@@ -28,8 +28,8 @@ CREATE TABLE "milestones" (
 );
 --> statement-breakpoint
 CREATE TABLE "fire_settings" (
-	"id" text PRIMARY KEY NOT NULL,
-	"user_account_id" text NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_account_id" uuid NOT NULL,
 	"target_retirement_age" integer DEFAULT 60 NOT NULL,
 	"annual_income_goal" numeric DEFAULT '48000' NOT NULL,
 	"expected_annual_return" numeric DEFAULT '7' NOT NULL,
@@ -39,15 +39,15 @@ CREATE TABLE "fire_settings" (
 );
 --> statement-breakpoint
 CREATE TABLE "core_users" (
-	"id" text PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"status" text DEFAULT 'active' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp
 );
 --> statement-breakpoint
 CREATE TABLE "email_verifications" (
-	"id" text PRIMARY KEY NOT NULL,
-	"user_account_id" text NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_account_id" uuid NOT NULL,
 	"token" text NOT NULL,
 	"is_completed" boolean DEFAULT false NOT NULL,
 	"completed_at" timestamp,
@@ -57,8 +57,8 @@ CREATE TABLE "email_verifications" (
 );
 --> statement-breakpoint
 CREATE TABLE "password_change_history" (
-	"id" text PRIMARY KEY NOT NULL,
-	"user_account_id" text NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_account_id" uuid NOT NULL,
 	"password_hash" text NOT NULL,
 	"changed_at" timestamp NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
@@ -66,8 +66,8 @@ CREATE TABLE "password_change_history" (
 );
 --> statement-breakpoint
 CREATE TABLE "password_resets" (
-	"id" text PRIMARY KEY NOT NULL,
-	"user_account_id" text NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_account_id" uuid NOT NULL,
 	"token" text NOT NULL,
 	"is_completed" boolean DEFAULT false NOT NULL,
 	"completed_at" timestamp,
@@ -77,8 +77,8 @@ CREATE TABLE "password_resets" (
 );
 --> statement-breakpoint
 CREATE TABLE "phone_verifications" (
-	"id" text PRIMARY KEY NOT NULL,
-	"user_account_id" text NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_account_id" uuid NOT NULL,
 	"token" text NOT NULL,
 	"is_completed" boolean DEFAULT false NOT NULL,
 	"completed_at" timestamp,
@@ -88,8 +88,8 @@ CREATE TABLE "phone_verifications" (
 );
 --> statement-breakpoint
 CREATE TABLE "refresh_tokens" (
-	"id" text PRIMARY KEY NOT NULL,
-	"user_account_id" text NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_account_id" uuid NOT NULL,
 	"token_hash" text NOT NULL,
 	"family_id" text NOT NULL,
 	"parent_token_hash" text,
@@ -102,8 +102,8 @@ CREATE TABLE "refresh_tokens" (
 );
 --> statement-breakpoint
 CREATE TABLE "user_accounts" (
-	"id" text PRIMARY KEY NOT NULL,
-	"core_user_id" text NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"core_user_id" uuid NOT NULL,
 	"email" text NOT NULL,
 	"phone_number" text,
 	"password_hash" text NOT NULL,
@@ -117,16 +117,16 @@ CREATE TABLE "user_accounts" (
 );
 --> statement-breakpoint
 CREATE TABLE "user_profiles" (
-	"id" text PRIMARY KEY NOT NULL,
-	"user_account_id" text NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_account_id" uuid NOT NULL,
 	"avatar_url" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp
 );
 --> statement-breakpoint
 CREATE TABLE "user_subscriptions" (
-	"id" text PRIMARY KEY NOT NULL,
-	"user_account_id" text NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_account_id" uuid NOT NULL,
 	"plan" text NOT NULL,
 	"status" text DEFAULT 'active' NOT NULL,
 	"start_date" timestamp NOT NULL,

@@ -1,18 +1,18 @@
-import { pgTable, text, serial, integer, numeric, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, real, numeric, timestamp, boolean, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { userAccounts } from "./user-account";
-import { cuid, idColumn } from "./utils";
+import { sql } from "drizzle-orm";
 
 export type AccountType = "ISA" | "SIPP" | "LISA" | "GIA" | "ALL";
 
 // Account table to store investment account information
 export const accounts = pgTable("accounts", {
-  id: idColumn(),
-  userAccountId: cuid("user_account_id").notNull().references(() => userAccounts.id),
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userAccountId: uuid("user_account_id").notNull().references(() => userAccounts.id),
   provider: text("provider").notNull(),
   accountType: text("account_type").notNull(), // ISA, SIPP, LISA (Lifetime ISA), GIA (General Account)
-  currentValue: numeric("current_value").notNull(),
+  currentValue: real("current_value").notNull(),
   isApiConnected: boolean("is_api_connected").default(false).notNull(),
   apiKey: text("api_key"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -34,9 +34,9 @@ export type Account = typeof accounts.$inferSelect;
 
 // History table to track account value changes over time
 export const accountHistory = pgTable("account_history", {
-  id: idColumn(),
-  accountId: cuid("account_id").notNull().references(() => accounts.id),
-  value: numeric("value").notNull(),
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  accountId: uuid("account_id").notNull().references(() => accounts.id),
+  value: real("value").notNull(),
   recordedAt: timestamp("recorded_at").defaultNow().notNull(),
 });
 
