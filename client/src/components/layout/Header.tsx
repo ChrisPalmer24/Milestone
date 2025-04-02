@@ -97,11 +97,8 @@ const NotificationItem = ({
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className={`relative mb-2 p-2 rounded-md text-sm cursor-pointer transition-colors ${
-        notification.isRead 
-          ? 'bg-gray-50' 
-          : 'bg-blue-50 hover:bg-blue-100'
-      } ${notification.isNew ? 'notification-item-new' : ''}
+      className={`relative mb-2 p-2 rounded-md text-sm cursor-pointer transition-colors bg-blue-50 hover:bg-blue-100
+      ${notification.isNew ? 'notification-item-new' : ''}
         ${notification.isExiting ? 'notification-item-exiting' : ''}`}
     >
       <div className="flex justify-between items-center">
@@ -109,8 +106,13 @@ const NotificationItem = ({
           <div className="flex items-center justify-center">
             {getNotificationIcon()}
           </div>
-          <div>
-            <p className="font-medium">{notification.title}</p>
+          <div className={notification.isRead ? 'opacity-70' : 'opacity-100'}>
+            <div className="flex items-center gap-1">
+              {!notification.isRead && (
+                <div className="w-2 h-2 rounded-full bg-blue-500 mr-1"></div>
+              )}
+              <p className="font-medium">{notification.title}</p>
+            </div>
             <p className="text-gray-500 text-xs">{notification.message}</p>
           </div>
         </div>
