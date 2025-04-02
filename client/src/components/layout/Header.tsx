@@ -317,7 +317,9 @@ export default function Header() {
           </DropdownMenu>
         </div>
         
-        <h1 className="text-xl font-semibold text-neutral-900 flex-1 text-center">Milestone</h1>
+        <Link to="/portfolio" className="flex-1 text-center">
+          <h1 className="text-xl font-semibold text-neutral-900 inline-block cursor-pointer hover:text-blue-500 transition-colors">Milestone</h1>
+        </Link>
         
         <div className="flex-1 flex justify-end">
           <DropdownMenu>
