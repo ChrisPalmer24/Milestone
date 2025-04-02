@@ -1,8 +1,14 @@
-import { useLocation, Link } from 'wouter';
-import { BarChart3, LineChart, Flag, Flame, CircleFadingPlus } from 'lucide-react';
-import { triggerHapticFeedback } from '../../capacitor';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { useMobilePlatform } from '@/hooks/use-mobile-platform';
+import { useLocation, Link } from "wouter";
+import {
+  BarChart3,
+  LineChart,
+  Flag,
+  Flame,
+  CircleFadingPlus,
+} from "lucide-react";
+import { triggerHapticFeedback } from "../../capacitor";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useMobilePlatform } from "@/hooks/use-mobile-platform";
 
 type NavItem = {
   id: string;
@@ -15,7 +21,7 @@ export default function MobileBottomNav() {
   const [location] = useLocation();
   const isMobileViewport = useIsMobile();
   const isMobilePlatform = useMobilePlatform();
-  
+
   // Only render on mobile viewports or native mobile platforms
   if (!isMobileViewport && !isMobilePlatform) {
     return null;
@@ -24,33 +30,33 @@ export default function MobileBottomNav() {
   // Testing with a duplicated Track menu item instead of Goals
   const navItems: NavItem[] = [
     {
-      id: 'portfolio',
-      path: '/portfolio',
-      label: 'Portfolio',
+      id: "portfolio",
+      path: "/portfolio",
+      label: "Portfolio",
       icon: <BarChart3 size={20} />,
     },
     {
-      id: 'fire',
-      path: '/fire',
-      label: 'FIRE',
+      id: "fire",
+      path: "/fire",
+      label: "FIRE",
       icon: <Flame size={20} />,
     },
     {
-      id: 'record',
-      path: '/record',
-      label: 'Record',
+      id: "record",
+      path: "/record",
+      label: "Record",
       icon: <CircleFadingPlus size={20} />,
     },
     {
-      id: 'track',
-      path: '/track',
-      label: 'Track',
+      id: "track",
+      path: "/track",
+      label: "Track",
       icon: <LineChart size={20} />,
     },
     {
-      id: 'goals',
-      path: '/goals',
-      label: 'Goals',
+      id: "goals",
+      path: "/goals",
+      label: "Goals",
       icon: <Flag size={20} />,
     },
   ];
@@ -67,31 +73,31 @@ export default function MobileBottomNav() {
           <tr>
             {navItems.map((item) => {
               const isActive = location === item.path;
-              
+
               return (
                 <td key={item.id} className="p-0 text-center">
-                  <Link 
+                  <Link
                     href={item.path}
                     onClick={handleNavClick}
                     className="flex flex-col items-center justify-center h-full w-full"
                   >
                     <div className="h-6 flex items-center justify-center">
-                      <div 
+                      <div
                         className={`transition-colors ${
-                          isActive 
-                            ? 'text-[#0061ff]' 
-                            : 'text-black hover:text-[#0061ff]'
+                          isActive
+                            ? "text-[#0061ff]"
+                            : "text-black hover:text-[#0061ff]"
                         }`}
                       >
                         {item.icon}
                       </div>
                     </div>
                     <div className="h-4 flex items-center justify-center">
-                      <span 
+                      <span
                         className={`text-xs ${
-                          isActive 
-                            ? 'text-[#0061ff] font-medium' 
-                            : 'text-black hover:text-[#0061ff]'
+                          isActive
+                            ? "text-[#0061ff] font-medium"
+                            : "text-black hover:text-[#0061ff]"
                         }`}
                       >
                         {item.label}
