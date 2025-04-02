@@ -311,7 +311,7 @@ export default function Header() {
         
         <div className="flex-1 flex justify-end">
           <DropdownMenu>
-            <DropdownMenuTrigger className="text-neutral-700 hover:text-neutral-900 rounded-full p-1 hover:bg-gray-100">
+            <DropdownMenuTrigger className="text-neutral-700 hover:text-neutral-900 rounded-full p-1 hover:bg-gray-100 relative">
               <Bell className="w-6 h-6" />
               {notificationCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center notification-badge">
