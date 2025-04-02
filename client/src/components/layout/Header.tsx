@@ -1,4 +1,4 @@
-import { User, Settings, Link as LinkIcon, LogOut, Bell, X } from "lucide-react";
+import { User, Settings, Link as LinkIcon, LogOut, Bell, X, Goal, Trophy, Target, Wallet } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -75,6 +75,21 @@ const NotificationItem = ({
     currentXRef.current = null;
   };
 
+  // Determine which icon to display based on notification title
+  const getNotificationIcon = () => {
+    const title = notification.title.toLowerCase();
+    
+    if (title.includes('milestone') && title.includes('portfolio')) {
+      return <Trophy className="w-4 h-4 text-blue-500 mr-2 flex-shrink-0" />;
+    } else if (title.includes('milestone') && (title.includes('isa') || title.includes('sipp') || title.includes('lisa') || title.includes('gia'))) {
+      return <Wallet className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />;
+    } else if (title.includes('goal') || title.includes('progress')) {
+      return <Target className="w-4 h-4 text-purple-500 mr-2 flex-shrink-0" />;
+    } else {
+      return <Bell className="w-4 h-4 text-gray-500 mr-2 flex-shrink-0" />;
+    }
+  };
+
   return (
     <div 
       ref={notificationRef}
@@ -90,9 +105,12 @@ const NotificationItem = ({
         ${notification.isExiting ? 'notification-item-exiting' : ''}`}
     >
       <div className="flex justify-between items-start">
-        <div className="flex-grow pr-6">
-          <p className="font-medium">{notification.title}</p>
-          <p className="text-gray-500 text-xs">{notification.message}</p>
+        <div className="flex items-start flex-grow pr-6">
+          {getNotificationIcon()}
+          <div>
+            <p className="font-medium">{notification.title}</p>
+            <p className="text-gray-500 text-xs">{notification.message}</p>
+          </div>
         </div>
         <button 
           onClick={(e) => {
@@ -289,7 +307,7 @@ export default function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
           
-          <h1 className="text-xl font-semibold text-neutral-900">Milestone</h1>
+          <h1 className="text-xl font-semibold text-neutral-900 mx-auto">Milestone</h1>
         </div>
 
         <div className="relative">
@@ -297,7 +315,7 @@ export default function Header() {
             <DropdownMenuTrigger className="text-neutral-700 hover:text-neutral-900 rounded-full p-1 hover:bg-gray-100">
               <Bell className="w-6 h-6" />
               {notificationCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center notification-badge">
+                <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center notification-badge">
                   {notificationCount}
                 </span>
               )}
@@ -319,18 +337,6 @@ export default function Header() {
               <div className="px-2 py-1 max-h-80 overflow-auto">
                 {notifications.length > 0 ? (
                   <>
-                    <div className="flex justify-between items-center mb-2">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          clearAllNotifications();
-                        }}
-                        className="text-xs text-gray-500 hover:text-gray-700 font-medium"
-                      >
-                        Clear all
-                      </button>
-                    </div>
-
                     {notifications.map((notification) => 
                       <NotificationItem
                         key={notification.id}
@@ -346,16 +352,31 @@ export default function Header() {
                   </div>
                 )}
                 
-                {/* Test button - only visible in development */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation(); // Prevent dropdown from closing
-                    addNotification();
-                  }}
-                  className="w-full mt-2 py-1 px-2 text-xs text-gray-500 hover:bg-gray-100 rounded-md transition-colors"
-                >
-                  Simulate new notification
-                </button>
+                {/* Button row at the bottom */}
+                <div className="flex space-x-2 mt-2">
+                  {notifications.length > 0 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        clearAllNotifications();
+                      }}
+                      className="flex-1 py-1 px-2 text-xs text-gray-500 hover:bg-gray-100 rounded-md transition-colors"
+                    >
+                      Clear all
+                    </button>
+                  )}
+                  
+                  {/* Test button - only visible in development */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent dropdown from closing
+                      addNotification();
+                    }}
+                    className="flex-1 py-1 px-2 text-xs text-gray-500 hover:bg-gray-100 rounded-md transition-colors"
+                  >
+                    Simulate new notification
+                  </button>
+                </div>
               </div>
             </DropdownMenuContent>
           </DropdownMenu>
