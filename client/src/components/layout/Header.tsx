@@ -1,4 +1,4 @@
-import { User, Settings, Link as LinkIcon, LogOut, Bell, X, Goal, Trophy, Target, Wallet } from "lucide-react";
+import { User, Settings, Link as LinkIcon, LogOut, Bell, X, Trophy, Target, Wallet, Flag } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -84,7 +84,7 @@ const NotificationItem = ({
     } else if (title.includes('milestone') && (title.includes('isa') || title.includes('sipp') || title.includes('lisa') || title.includes('gia'))) {
       return <Wallet className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" />;
     } else if (title.includes('goal') || title.includes('progress')) {
-      return <Target className="w-5 h-5 text-purple-500 mr-2 flex-shrink-0" />;
+      return <Flag className="w-5 h-5 text-purple-500 mr-2 flex-shrink-0" />;
     } else {
       return <Bell className="w-5 h-5 text-gray-500 mr-2 flex-shrink-0" />;
     }
