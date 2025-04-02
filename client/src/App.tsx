@@ -129,22 +129,12 @@ function Loading() {
   );
 }
 
-function Wrapper() {
-  const { isInitialUserLoading } = useSession();
-
-  if (isInitialUserLoading) {
-    return <Loading />;
-  }
-
-  return <Router />;
-}
-
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <SessionProvider>
         <PortfolioProvider>
-          <Wrapper />
+          <Router />
           <Toaster />
         </PortfolioProvider>
       </SessionProvider>

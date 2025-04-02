@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, useRef, ChangeEvent, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { UserRound, Mail, Lock, Calendar, Award, Target } from "lucide-react";
+import { UserRound, Mail, Lock, Calendar, Award, Target, Upload, Camera } from "lucide-react";
 
 export default function Profile() {
   // Demo user data
@@ -20,6 +21,7 @@ export default function Profile() {
   });
   
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Form states
   const [name, setName] = useState(user.username);
@@ -27,11 +29,48 @@ export default function Profile() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  
+  // Load saved profile image from localStorage
+  useEffect(() => {
+    const savedImage = localStorage.getItem('profileImage');
+    if (savedImage) {
+      setProfileImage(savedImage);
+    }
+  }, []);
+  
+  // Handle profile image change
+  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfileImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  const triggerImageUpload = () => {
+    fileInputRef.current?.click();
+  };
   
   const handleProfileUpdate = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // In a real app, we would make an API call here
+    // In a real app, we would make an API call here with the profile image
+    // const formData = new FormData();
+    // formData.append('username', name);
+    // formData.append('email', email);
+    // if (profileImage) {
+    //   formData.append('profileImage', profileImage);
+    // }
+    
+    // Save the profile image in local storage for demo purposes
+    if (profileImage) {
+      localStorage.setItem('profileImage', profileImage);
+    }
+    
     toast({
       title: "Profile updated",
       description: "Your profile information has been updated successfully.",
@@ -74,11 +113,45 @@ export default function Profile() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-col items-center mb-6">
-              <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                <UserRound className="w-12 h-12 text-primary" />
+              <div className="relative group">
+                <Avatar className="w-24 h-24">
+                  {profileImage ? (
+                    <AvatarImage src={profileImage} alt="Profile" />
+                  ) : (
+                    <AvatarFallback className="bg-primary/10">
+                      <UserRound className="w-12 h-12 text-primary" />
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+                
+                <div 
+                  className="absolute inset-0 bg-black bg-opacity-40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                  onClick={triggerImageUpload}
+                >
+                  <Camera className="w-8 h-8 text-white" />
+                </div>
+                
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleImageChange} 
+                  accept="image/*"
+                  className="hidden" 
+                />
               </div>
-              <h2 className="text-xl font-semibold">{user.username}</h2>
+              
+              <h2 className="text-xl font-semibold mt-4">{user.username}</h2>
               <p className="text-gray-500">{user.email}</p>
+              
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2 text-xs"
+                onClick={triggerImageUpload}
+              >
+                <Upload className="w-3 h-3 mr-1" />
+                Change Photo
+              </Button>
             </div>
             
             <Separator className="my-4" />

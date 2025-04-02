@@ -31,7 +31,17 @@ export function ProtectedRoute({
     }
   }, [isInitialUserLoading]);
 
-  // Don't render anything until we've confirmed authorization
+  // Show loading state while checking authentication
+  if (isInitialUserLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
+        <div className="h-12 w-12 border-4 border-t-blue-500 border-blue-200 rounded-full animate-spin mb-4"></div>
+        <p className="text-gray-600 text-lg font-medium">Loading your data...</p>
+      </div>
+    );
+  }
+  
+  // Don't render anything if not authenticated (will redirect)
   if (!isAuthenticated) {
     return null;
   }

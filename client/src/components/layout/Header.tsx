@@ -6,6 +6,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Link } from "wouter";
 import { useSession } from "@/hooks/use-session";
 import { useState, useRef, useEffect } from "react";
@@ -126,7 +127,17 @@ const NotificationItem = ({
 };
 
 export default function Header() {
-  const { logout } = useSession();
+  const { logout, user } = useSession();
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  
+  // Load profile image from localStorage
+  useEffect(() => {
+    const savedImage = localStorage.getItem('profileImage');
+    if (savedImage) {
+      setProfileImage(savedImage);
+    }
+  }, []);
+  
   // Track notification count and items
   const [notifications, setNotifications] = useState<Notification[]>([
     {
@@ -277,8 +288,16 @@ export default function Header() {
       <div className="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
         <div className="flex-1">
           <DropdownMenu>
-            <DropdownMenuTrigger className="text-neutral-700 hover:text-neutral-900 rounded-full p-1 hover:bg-gray-100">
-              <User className="w-6 h-6" />
+            <DropdownMenuTrigger className="focus:outline-none">
+              <Avatar className="cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all">
+                {profileImage ? (
+                  <AvatarImage src={profileImage} alt="Profile" />
+                ) : (
+                  <AvatarFallback className="bg-gray-100 text-gray-500">
+                    <User className="w-4 h-4" />
+                  </AvatarFallback>
+                )}
+              </Avatar>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
               <DropdownMenuItem asChild>
