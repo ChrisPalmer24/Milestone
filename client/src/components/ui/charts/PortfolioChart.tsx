@@ -363,7 +363,7 @@ export default function PortfolioChart({
                       if (active && payload && payload.length) {
                         const data = payload[0].payload as ChartData;
                         return (
-                          <div className="bg-white border border-gray-200 rounded-lg p-2 shadow-sm">
+                          <div className="bg-gray-100 border-none rounded-lg p-2 shadow-sm">
                             <p className="font-medium text-gray-900">
                               {data.date}
                             </p>
@@ -414,15 +414,15 @@ export default function PortfolioChart({
               </ResponsiveContainer>
             </div>
 
-            <div className="flex justify-between items-center space-x-1 mb-5">
+            <div className="flex justify-center items-center space-x-2 mb-5">
               {DATE_RANGES.map((range) => (
                 <button
                   key={range.value}
                   className={cn(
-                    "date-range-btn text-xs font-medium py-1 px-2 rounded-md transition-all",
+                    "date-range-btn text-xs font-medium py-1 px-3 rounded-full transition-all",
                     dateRange === range.value
-                      ? "bg-primary text-white shadow-sm"
-                      : "bg-gray-200 hover:bg-gray-300 shadow-sm"
+                      ? "bg-primary text-white"
+                      : "text-gray-600 hover:bg-gray-100"
                   )}
                   onClick={() => setDateRange(range.value as DateRangeOption)}
                 >
