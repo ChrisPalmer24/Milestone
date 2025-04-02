@@ -73,30 +73,20 @@ export default function MobileBottomNav() {
               className="flex flex-1 flex-col items-center py-2"
             >
               <div 
-                className={
-                  item.id === 'record'
-                    ? isActive
-                      ? 'p-1.5 bg-[#0061ff] text-white'
-                      : 'p-1.5 bg-black text-white'
-                    : `p-1.5 transition-colors ${
-                        isActive 
-                          ? 'text-[#0061ff]' 
-                          : 'text-muted-foreground hover:text-[#0061ff]'
-                      }`
-                }
+                className={`p-1 transition-colors ${
+                  isActive 
+                    ? 'text-[#0061ff]' 
+                    : 'text-black hover:text-[#0061ff]'
+                }`}
               >
                 {item.icon}
               </div>
               <span 
-                className={
-                  item.id === 'record'
-                    ? isActive 
-                      ? 'text-xs mt-1 text-[#0061ff] font-medium'
-                      : 'text-xs mt-1 text-black font-medium'
-                    : `text-xs mt-1 ${
-                        isActive ? 'text-[#0061ff] font-medium' : 'text-muted-foreground'
-                      }`
-                }
+                className={`text-xs mt-0.5 ${
+                  isActive 
+                    ? 'text-[#0061ff] font-medium' 
+                    : 'text-black hover:text-[#0061ff]'
+                }`}
               >
                 {item.label}
               </span>
