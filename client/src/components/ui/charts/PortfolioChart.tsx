@@ -220,17 +220,17 @@ export default function PortfolioChart({
 
   if (isLoading) {
     return (
-      <Card className={cn("w-full", className)}>
-        <CardContent className="p-4 h-[300px] flex items-center justify-center">
+      <div className={cn("w-full md:bg-white md:border md:rounded-lg md:shadow-sm", className)}>
+        <div className="p-2 md:p-4 h-[300px] flex items-center justify-center">
           <p className="text-muted-foreground">Loading chart data...</p>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card className={cn("w-full", className)}>
-      <CardContent className="p-4">
+    <div className={cn("w-full md:bg-white md:border md:rounded-lg md:shadow-sm", className)}>
+      <div className="p-1 md:p-4">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">Portfolio Overview</h2>
           <div className="flex space-x-3">
@@ -503,7 +503,7 @@ export default function PortfolioChart({
             )}
           </>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
