@@ -1,5 +1,5 @@
 import { useLocation, Link } from 'wouter';
-import { BarChart3, LineChart, Target, Flame, CircleFadingPlus } from 'lucide-react';
+import { BarChart3, LineChart, Flag, Flame, CircleFadingPlus } from 'lucide-react';
 import { triggerHapticFeedback } from '../../capacitor';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useMobilePlatform } from '@/hooks/use-mobile-platform';
@@ -21,13 +21,19 @@ export default function MobileBottomNav() {
     return null;
   }
 
-  // Simplify to just what we need, removing Goals temporarily
+  // Create 5 navigation items with equal widths
   const navItems: NavItem[] = [
     {
       id: 'portfolio',
       path: '/portfolio',
       label: 'Portfolio',
       icon: <BarChart3 size={20} />,
+    },
+    {
+      id: 'goals',
+      path: '/goals',
+      label: 'Goals',
+      icon: <Flag size={20} />,
     },
     {
       id: 'record',
