@@ -18,8 +18,11 @@ export default function ResponsiveLayout({ children }: ResponsiveLayoutProps) {
   const isMobilePlatform = useMobilePlatform();
   const isMobileViewport = useIsMobile();
   
+  // Determine if we should use the mobile layout
+  const useMobileLayout = isMobilePlatform || isMobileViewport;
+  
   // Render mobile layout for native mobile platforms or small viewports
-  if (isMobilePlatform || isMobileViewport) {
+  if (useMobileLayout) {
     return (
       <div className="flex flex-col min-h-screen relative pb-16">
         <Header />

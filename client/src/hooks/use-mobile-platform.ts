@@ -2,16 +2,16 @@ import { useState, useEffect } from 'react';
 import { isNativePlatform } from '../capacitor';
 
 /**
- * Hook that detects if the app is running on a mobile native platform
- * via Capacitor, returns true for iOS and Android, false for web
+ * Hook that detects if the app is running on a native mobile platform
+ * This uses Capacitor's detection to determine if we're on iOS/Android
  */
 export function useMobilePlatform() {
-  const [isMobile, setIsMobile] = useState(false);
-  
+  const [isMobilePlatform, setIsMobilePlatform] = useState(false);
+
   useEffect(() => {
-    // Check if this is running on a native mobile platform
-    setIsMobile(isNativePlatform());
+    // Check if we're on a native platform
+    setIsMobilePlatform(isNativePlatform());
   }, []);
-  
-  return isMobile;
+
+  return isMobilePlatform;
 }

@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
-import { useLocation, useRoute, Link } from 'wouter';
+import { useLocation, Link } from 'wouter';
 import { Home, BarChart3, LineChart, Target, Settings, CircleFadingPlus } from 'lucide-react';
-import { triggerHapticFeedback, isNativePlatform } from '../../capacitor';
+import { triggerHapticFeedback } from '../../capacitor';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useMobilePlatform } from '@/hooks/use-mobile-platform';
 
 type NavItem = {
   id: string;
@@ -12,15 +13,11 @@ type NavItem = {
 
 export default function MobileBottomNav() {
   const [location] = useLocation();
-  const [isMobileDevice, setIsMobileDevice] = useState(false);
+  const isMobileViewport = useIsMobile();
+  const isMobilePlatform = useMobilePlatform();
   
-  // Check if running on a mobile device
-  useEffect(() => {
-    setIsMobileDevice(isNativePlatform());
-  }, []);
-
-  // If not on a mobile device, don't render
-  if (!isMobileDevice) {
+  // Only render on mobile viewports or native mobile platforms
+  if (!isMobileViewport && !isMobilePlatform) {
     return null;
   }
 
