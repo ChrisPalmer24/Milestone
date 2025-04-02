@@ -21,6 +21,7 @@ export default function MobileBottomNav() {
     return null;
   }
 
+  // Simplify to just what we need: very consistent layout
   const navItems: NavItem[] = [
     {
       id: 'portfolio',
@@ -61,39 +62,48 @@ export default function MobileBottomNav() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border shadow-2xl">
-      <div className="grid grid-cols-5 w-full h-14">
-        {navItems.map((item) => {
-          const isActive = location === item.path;
-          
-          return (
-            <Link 
-              key={item.id}
-              href={item.path}
-              onClick={handleNavClick}
-              className="flex flex-col items-center justify-center h-full w-full"
-            >
-              <div 
-                className={`transition-colors flex justify-center items-center h-6 w-6 ${
-                  isActive 
-                    ? 'text-[#0061ff]' 
-                    : 'text-black hover:text-[#0061ff]'
-                }`}
-              >
-                {item.icon}
-              </div>
-              <div 
-                className={`flex justify-center items-center text-xs mt-1 h-4 w-full ${
-                  isActive 
-                    ? 'text-[#0061ff] font-medium' 
-                    : 'text-black hover:text-[#0061ff]'
-                }`}
-              >
-                <span className="truncate max-w-[90%] text-center">{item.label}</span>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
+      <table className="w-full h-14 table-fixed">
+        <tbody>
+          <tr>
+            {navItems.map((item) => {
+              const isActive = location === item.path;
+              
+              return (
+                <td key={item.id} className="p-0 text-center">
+                  <Link 
+                    href={item.path}
+                    onClick={handleNavClick}
+                    className="flex flex-col items-center justify-center h-full w-full"
+                  >
+                    <div className="h-6 flex items-center justify-center">
+                      <div 
+                        className={`transition-colors ${
+                          isActive 
+                            ? 'text-[#0061ff]' 
+                            : 'text-black hover:text-[#0061ff]'
+                        }`}
+                      >
+                        {item.icon}
+                      </div>
+                    </div>
+                    <div className="h-4 flex items-center justify-center">
+                      <span 
+                        className={`text-xs ${
+                          isActive 
+                            ? 'text-[#0061ff] font-medium' 
+                            : 'text-black hover:text-[#0061ff]'
+                        }`}
+                      >
+                        {item.label}
+                      </span>
+                    </div>
+                  </Link>
+                </td>
+              );
+            })}
+          </tr>
+        </tbody>
+      </table>
     </div>
   );
 }
