@@ -45,6 +45,7 @@ import { z } from "zod";
 import { SiTradingview, SiCoinbase } from "react-icons/si";
 import { BsPiggyBank } from "react-icons/bs";
 import PortfolioChart from "@/components/ui/charts/PortfolioChart";
+import DateRangeBar from "@/components/layout/DateRangeBar";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { useToast } from "@/hooks/use-toast";
 import { Milestone } from "@shared/schema";
@@ -219,6 +220,9 @@ export default function Portfolio() {
 
   return (
     <div className="portfolio-screen max-w-5xl mx-auto px-4 pb-20">
+      {/* Date Range Control */}
+      <DateRangeBar className="mt-4 rounded-lg" />
+      
       {/* Chart Section */}
       <PortfolioChart
         className="mt-4"

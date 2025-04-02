@@ -14,18 +14,9 @@ import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { PortfolioHistory } from "@shared/schema";
 import { usePortfolio } from "@/context/PortfolioContext";
+import { useDateRange } from "@/context/DateRangeContext";
+import { DateRangeOption, getDateRange, DATE_RANGES } from "@/components/ui/DateRangeControl";
 import { Check } from "lucide-react";
-
-// Date range options for the chart
-const DATE_RANGES = [
-  { label: "W", value: "week" },
-  { label: "1M", value: "1month" },
-  { label: "3M", value: "3months" },
-  { label: "6M", value: "6months" },
-  { label: "1Y", value: "1year" },
-  { label: "YTD", value: "ytd" },
-  { label: "All", value: "all" },
-];
 
 type ChartData = {
   date: string;
@@ -42,15 +33,6 @@ type ChartData = {
     targetValue: number;
   };
 };
-
-type DateRangeOption =
-  | "week"
-  | "1month"
-  | "3months"
-  | "6months"
-  | "1year"
-  | "ytd"
-  | "all";
 
 // Helper to format currency values
 const formatCurrency = (value: number) => {
@@ -84,40 +66,6 @@ const combineDataPoints = (data: ChartData[]): ChartData[] => {
   });
 };
 
-// Helper to calculate date range
-const getDateRange = (range: DateRangeOption): { start: Date; end: Date } => {
-  const end = new Date();
-  let start = new Date();
-
-  switch (range) {
-    case "week":
-      start.setDate(end.getDate() - 7);
-      break;
-    case "1month":
-      start.setMonth(end.getMonth() - 1);
-      break;
-    case "3months":
-      start.setMonth(end.getMonth() - 3);
-      break;
-    case "6months":
-      start.setMonth(end.getMonth() - 6);
-      break;
-    case "1year":
-      start.setFullYear(end.getFullYear() - 1);
-      break;
-    case "ytd":
-      start = new Date(end.getFullYear(), 0, 1); // January 1st of current year
-      break;
-    case "all":
-      start = new Date(2019, 0, 1); // Just a distant past date
-      break;
-    default:
-      start.setMonth(end.getMonth() - 6); // Default to 6 months
-  }
-
-  return { start, end };
-};
-
 type PortfolioChartProps = {
   showMilestones?: boolean;
   nextMilestone?: number;
@@ -129,7 +77,7 @@ export default function PortfolioChart({
   nextMilestone,
   className,
 }: PortfolioChartProps) {
-  const [dateRange, setDateRange] = useState<DateRangeOption>("6months");
+  const { dateRange, setDateRange } = useDateRange();
   const [chartVisible, setChartVisible] = useState(true);
   const [showMilestonesLocal, setShowMilestonesLocal] = useState(true);
   const [selectedPoint, setSelectedPoint] = useState<ChartData | null>(null);
@@ -230,7 +178,7 @@ export default function PortfolioChart({
 
   return (
     <div className={cn("w-full md:bg-white md:border md:rounded-lg md:shadow-sm", className)}>
-      <div className="p-1 md:p-4">
+      <div className="px-[5px] py-1 md:p-4">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">Portfolio Overview</h2>
           <div className="flex space-x-3">
@@ -414,22 +362,7 @@ export default function PortfolioChart({
               </ResponsiveContainer>
             </div>
 
-            <div className="flex justify-center items-center space-x-2 mb-5">
-              {DATE_RANGES.map((range) => (
-                <button
-                  key={range.value}
-                  className={cn(
-                    "date-range-btn text-xs font-medium py-1 px-3 rounded-full transition-all",
-                    dateRange === range.value
-                      ? "bg-gray-200 text-gray-900 font-semibold"
-                      : "text-gray-600 hover:bg-gray-100"
-                  )}
-                  onClick={() => setDateRange(range.value as DateRangeOption)}
-                >
-                  {range.label}
-                </button>
-              ))}
-            </div>
+            {/* Date range controls are now provided globally by DateRangeContext */}
 
             {selectedPoint && (
               <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
