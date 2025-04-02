@@ -18,6 +18,7 @@ interface SessionState {
   error: Error | null;
   isAuthenticated: boolean;
   isInitialized: boolean;
+  profileImage: string | null;
 }
 
 // Auth actions
@@ -30,7 +31,8 @@ type SessionAction =
   | { type: "AUTH_SUCCESS"; payload: SessionUser }
   | { type: "AUTH_ERROR"; payload: Error }
   | { type: "AUTH_LOGOUT" }
-  | { type: "AUTH_INITIALIZED" };
+  | { type: "AUTH_INITIALIZED" }
+  | { type: "UPDATE_PROFILE_IMAGE"; payload: string | null };
 
 // Initial state
 const initialState: SessionState = {
@@ -41,6 +43,7 @@ const initialState: SessionState = {
   error: null,
   isAuthenticated: false,
   isInitialized: false,
+  profileImage: null,
 };
 
 // Original AuthContext type for backward compatibility
@@ -52,6 +55,7 @@ interface SessionContextType {
   isInitialUserLoadFailed: boolean;
   error: Error | null;
   isAuthenticated: boolean;
+  profileImage: string | null;
 }
 
 // Auth reducer
@@ -122,6 +126,11 @@ const sessionReducer = (
         isInitialized: true,
         isInitialUserLoading: false,
       };
+    case "UPDATE_PROFILE_IMAGE":
+      return {
+        ...state,
+        profileImage: action.payload,
+      };
     default:
       return state;
   }
@@ -138,6 +147,14 @@ const SessionContext = createContext<SessionContextType | undefined>(undefined);
 export function SessionProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [state, dispatch] = useReducer(sessionReducer, initialState);
+
+  // Initialize profile image from localStorage
+  useEffect(() => {
+    const savedProfileImage = localStorage.getItem('profileImage');
+    if (savedProfileImage) {
+      dispatch({ type: "UPDATE_PROFILE_IMAGE", payload: savedProfileImage });
+    }
+  }, []);
 
   // Remove the initial session check query since it's now handled by useUser hook
 
@@ -158,6 +175,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             isInitialUserLoadFailed: state.isInitialUserLoadFailed,
             error: state.error,
             isAuthenticated: state.isAuthenticated,
+            profileImage: state.profileImage,
           }}
         >
           {children}

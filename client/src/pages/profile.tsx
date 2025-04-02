@@ -1,4 +1,4 @@
-import { useState, useRef, ChangeEvent, useEffect } from "react";
+import { useState, useRef, ChangeEvent } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,47 +8,60 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { UserRound, Mail, Lock, Calendar, Award, Target, Upload, Camera } from "lucide-react";
+import { useSession } from "../hooks/use-session";
 
 export default function Profile() {
-  // Demo user data
-  const [user] = useState({
-    username: "demo",
-    email: "demo@example.com",
-    joinDate: "Jan 2023",
-    investmentExperience: "Intermediate",
-    accountsCount: 3,
-    milestonesAchieved: 2
-  });
+  const { user, profileImage, setProfileImage } = useSession();
+  const joinDate = user ? new Date(user.account.createdAt).toLocaleDateString('en-US', { 
+    month: 'short', 
+    year: 'numeric' 
+  }) : 'N/A';
   
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Form states
-  const [name, setName] = useState(user.username);
-  const [email, setEmail] = useState(user.email);
+  const [name, setName] = useState(user?.account.fullName || '');
+  const [email, setEmail] = useState(user?.account.email || '');
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [profileImage, setProfileImage] = useState<string | null>(null);
-  
-  // Load saved profile image from localStorage
-  useEffect(() => {
-    const savedImage = localStorage.getItem('profileImage');
-    if (savedImage) {
-      setProfileImage(savedImage);
-    }
-  }, []);
   
   // Handle profile image change
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfileImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    
+    // Size validation (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Profile image must be less than 5MB",
+        variant: "destructive"
+      });
+      return;
     }
+
+    // Type validation
+    if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload a JPG, PNG, GIF, or WebP image",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      setProfileImage(result);
+      toast({
+        title: "Profile picture updated",
+        description: "Your profile picture has been updated successfully."
+      });
+    };
+    reader.readAsDataURL(file);
   };
   
   const triggerImageUpload = () => {
@@ -58,18 +71,8 @@ export default function Profile() {
   const handleProfileUpdate = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // In a real app, we would make an API call here with the profile image
-    // const formData = new FormData();
-    // formData.append('username', name);
-    // formData.append('email', email);
-    // if (profileImage) {
-    //   formData.append('profileImage', profileImage);
-    // }
-    
-    // Save the profile image in local storage for demo purposes
-    if (profileImage) {
-      localStorage.setItem('profileImage', profileImage);
-    }
+    // In a real app, we would make an API call here to update profile info
+    // For now, we're just showing a toast notification
     
     toast({
       title: "Profile updated",
@@ -140,8 +143,8 @@ export default function Profile() {
                 />
               </div>
               
-              <h2 className="text-xl font-semibold mt-4">{user.username}</h2>
-              <p className="text-gray-500">{user.email}</p>
+              <h2 className="text-xl font-semibold mt-4">{user?.account.fullName || 'User'}</h2>
+              <p className="text-gray-500">{user?.account.email || 'Email not available'}</p>
               
               <Button 
                 variant="outline" 
@@ -161,14 +164,14 @@ export default function Profile() {
                 <Calendar className="w-5 h-5 mr-3 text-gray-500" />
                 <div>
                   <p className="text-sm text-gray-500">Member since</p>
-                  <p className="font-medium">{user.joinDate}</p>
+                  <p className="font-medium">{joinDate}</p>
                 </div>
               </div>
               <div className="flex items-center">
                 <Award className="w-5 h-5 mr-3 text-gray-500" />
                 <div>
                   <p className="text-sm text-gray-500">Experience</p>
-                  <p className="font-medium">{user.investmentExperience}</p>
+                  <p className="font-medium">Intermediate</p>
                 </div>
               </div>
               <div className="flex items-center">
@@ -176,8 +179,8 @@ export default function Profile() {
                 <div>
                   <p className="text-sm text-gray-500">Stats</p>
                   <div className="flex flex-wrap gap-2 mt-1">
-                    <Badge variant="outline">{user.accountsCount} Accounts</Badge>
-                    <Badge variant="outline">{user.milestonesAchieved} Milestones</Badge>
+                    <Badge variant="outline">3 Accounts</Badge>
+                    <Badge variant="outline">2 Milestones</Badge>
                   </div>
                 </div>
               </div>

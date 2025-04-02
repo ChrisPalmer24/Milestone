@@ -127,16 +127,7 @@ const NotificationItem = ({
 };
 
 export default function Header() {
-  const { logout, user } = useSession();
-  const [profileImage, setProfileImage] = useState<string | null>(null);
-  
-  // Load profile image from localStorage
-  useEffect(() => {
-    const savedImage = localStorage.getItem('profileImage');
-    if (savedImage) {
-      setProfileImage(savedImage);
-    }
-  }, []);
+  const { logout, user, profileImage } = useSession();
   
   // Track notification count and items
   const [notifications, setNotifications] = useState<Notification[]>([

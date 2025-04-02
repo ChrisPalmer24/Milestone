@@ -34,6 +34,15 @@ export function useSession() {
   // Use auth context state and dispatch
   const sessionState = useSessionState();
   const dispatch = useSessionDispatch();
+  
+  const setProfileImage = (image: string | null) => {
+    if (image) {
+      localStorage.setItem('profileImage', image);
+    } else {
+      localStorage.removeItem('profileImage');
+    }
+    dispatch({ type: "UPDATE_PROFILE_IMAGE", payload: image });
+  };
 
   const { user, isLoginLoading: isLoginPending, isInitialUserLoading, isInitialUserLoadFailed, error, isAuthenticated } = sessionState;
 
@@ -276,7 +285,9 @@ export function useSession() {
     isInitialUserLoadFailed, // Expose the new state
     error,
     isAuthenticated,
-
+    profileImage: sessionState.profileImage,
+    setProfileImage,
+    
     login,
     register,
     logout,
