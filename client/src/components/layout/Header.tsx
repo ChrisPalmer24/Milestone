@@ -275,7 +275,7 @@ export default function Header() {
   return (
     <header className="bg-white shadow-sm fixed top-0 left-0 right-0 z-50">
       <div className="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
-        <div className="flex items-center gap-3">
+        <div className="flex-1">
           <DropdownMenu>
             <DropdownMenuTrigger className="text-neutral-700 hover:text-neutral-900 rounded-full p-1 hover:bg-gray-100">
               <User className="w-6 h-6" />
@@ -305,11 +305,11 @@ export default function Header() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          
-          <h1 className="text-xl font-semibold text-neutral-900 mx-auto">Milestone</h1>
         </div>
-
-        <div className="relative">
+        
+        <h1 className="text-xl font-semibold text-neutral-900 flex-1 text-center">Milestone</h1>
+        
+        <div className="flex-1 flex justify-end">
           <DropdownMenu>
             <DropdownMenuTrigger className="text-neutral-700 hover:text-neutral-900 rounded-full p-1 hover:bg-gray-100">
               <Bell className="w-6 h-6" />
