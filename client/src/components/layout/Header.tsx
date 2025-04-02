@@ -107,12 +107,7 @@ const NotificationItem = ({
             {getNotificationIcon()}
           </div>
           <div className={notification.isRead ? 'opacity-70' : 'opacity-100'}>
-            <div className="flex items-center gap-1">
-              {!notification.isRead && (
-                <div className="w-2 h-2 rounded-full bg-blue-500 mr-1"></div>
-              )}
-              <p className="font-medium">{notification.title}</p>
-            </div>
+            <p className="font-medium">{notification.title}</p>
             <p className="text-gray-500 text-xs">{notification.message}</p>
           </div>
         </div>
