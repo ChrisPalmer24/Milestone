@@ -1,4 +1,4 @@
-import { User, Settings, Link as LinkIcon, LogOut, Bell } from "lucide-react";
+import { User, Settings, Link as LinkIcon, LogOut, Bell, X } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Link } from "wouter";
 import { useSession } from "@/hooks/use-session";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 // Define notification interface
 interface Notification {
@@ -17,7 +17,96 @@ interface Notification {
   message: string;
   isRead: boolean;
   isNew?: boolean;
+  isExiting?: boolean; // For exit animation when dismissing
 }
+
+// Notification Item Component
+const NotificationItem = ({ 
+  notification, 
+  onMarkAsRead, 
+  onDismiss 
+}: { 
+  notification: Notification, 
+  onMarkAsRead: (id: number | string) => void, 
+  onDismiss: (id: number | string) => void 
+}) => {
+  const notificationRef = useRef<HTMLDivElement>(null);
+  const startXRef = useRef<number | null>(null);
+  const currentXRef = useRef<number | null>(null);
+  
+  // Setup touch handlers for swipe gesture
+  const handleTouchStart = (e: React.TouchEvent) => {
+    startXRef.current = e.touches[0].clientX;
+  };
+  
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!startXRef.current) return;
+    currentXRef.current = e.touches[0].clientX;
+    
+    const diffX = currentXRef.current - startXRef.current;
+    if (Math.abs(diffX) > 10) { // Threshold to start moving
+      // Apply transform to move notification horizontally
+      if (notificationRef.current) {
+        notificationRef.current.style.transform = `translateX(${diffX}px)`;
+        
+        // Add opacity effect as it's swiped further
+        const opacity = Math.max(0, 1 - (Math.abs(diffX) / 200));
+        notificationRef.current.style.opacity = opacity.toString();
+      }
+    }
+  };
+  
+  const handleTouchEnd = () => {
+    if (!startXRef.current || !currentXRef.current) return;
+    
+    const diffX = currentXRef.current - startXRef.current;
+    
+    // If swiped far enough, dismiss the notification
+    if (Math.abs(diffX) > 100) { // Threshold to trigger dismiss
+      onDismiss(notification.id);
+    } else if (notificationRef.current) {
+      // Reset position if not dismissed
+      notificationRef.current.style.transform = '';
+      notificationRef.current.style.opacity = '1';
+    }
+    
+    // Reset refs
+    startXRef.current = null;
+    currentXRef.current = null;
+  };
+
+  return (
+    <div 
+      ref={notificationRef}
+      onClick={() => onMarkAsRead(notification.id)}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      className={`relative mb-2 p-2 rounded-md text-sm cursor-pointer transition-colors ${
+        notification.isRead 
+          ? 'bg-gray-50' 
+          : 'bg-blue-50 hover:bg-blue-100'
+      } ${notification.isNew ? 'notification-item-new' : ''}
+        ${notification.isExiting ? 'notification-item-exiting' : ''}`}
+    >
+      <div className="flex justify-between items-start">
+        <div className="flex-grow pr-6">
+          <p className="font-medium">{notification.title}</p>
+          <p className="text-gray-500 text-xs">{notification.message}</p>
+        </div>
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            onDismiss(notification.id);
+          }}
+          className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-200"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 export default function Header() {
   const { logout } = useSession();
@@ -67,6 +156,30 @@ export default function Header() {
   // Mark all notifications as read
   const markAllAsRead = () => {
     setNotifications(notifications.map(n => ({ ...n, isRead: true })));
+  };
+  
+  // Dismiss a notification with animation
+  const dismissNotification = (id: number | string) => {
+    // First set the exiting flag to trigger animation
+    setNotifications(prev => 
+      prev.map(n => n.id === id ? { ...n, isExiting: true } : n)
+    );
+    
+    // After animation completes, remove the notification
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }, 300); // Animation duration is 0.3s
+  };
+  
+  // Clear all notifications
+  const clearAllNotifications = () => {
+    // Set all to exiting for animation
+    setNotifications(prev => prev.map(n => ({ ...n, isExiting: true })));
+    
+    // After animation completes, remove all
+    setTimeout(() => {
+      setNotifications([]);
+    }, 300);
   };
   
   // Add a new notification (for testing animation)
@@ -205,20 +318,28 @@ export default function Header() {
               
               <div className="px-2 py-1 max-h-80 overflow-auto">
                 {notifications.length > 0 ? (
-                  notifications.map(notification => (
-                    <div 
-                      key={notification.id}
-                      onClick={() => markAsRead(notification.id)}
-                      className={`mb-2 p-2 rounded-md text-sm cursor-pointer transition-colors ${
-                        notification.isRead 
-                          ? 'bg-gray-50' 
-                          : 'bg-blue-50 hover:bg-blue-100'
-                      } ${notification.isNew ? 'notification-item-new' : ''}`}
-                    >
-                      <p className="font-medium">{notification.title}</p>
-                      <p className="text-gray-500 text-xs">{notification.message}</p>
+                  <>
+                    <div className="flex justify-between items-center mb-2">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          clearAllNotifications();
+                        }}
+                        className="text-xs text-gray-500 hover:text-gray-700 font-medium"
+                      >
+                        Clear all
+                      </button>
                     </div>
-                  ))
+
+                    {notifications.map((notification) => 
+                      <NotificationItem
+                        key={notification.id}
+                        notification={notification}
+                        onMarkAsRead={markAsRead}
+                        onDismiss={dismissNotification}
+                      />
+                    )}
+                  </>
                 ) : (
                   <div className="text-center py-4 text-sm text-gray-500">
                     No new notifications
