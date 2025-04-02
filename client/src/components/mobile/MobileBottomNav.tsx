@@ -48,10 +48,10 @@ export default function MobileBottomNav() {
       icon: <LineChart size={20} />,
     },
     {
-      id: 'track2',
-      path: '/track',
-      label: 'Track2',
-      icon: <LineChart size={20} />,
+      id: 'goals',
+      path: '/goals',
+      label: 'Goals',
+      icon: <Flag size={20} />,
     },
   ];
 
