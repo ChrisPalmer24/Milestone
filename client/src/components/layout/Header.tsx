@@ -80,13 +80,13 @@ const NotificationItem = ({
     const title = notification.title.toLowerCase();
     
     if (title.includes('milestone') && title.includes('portfolio')) {
-      return <Trophy className="w-4 h-4 text-blue-500 mr-2 flex-shrink-0" />;
+      return <Trophy className="w-5 h-5 text-blue-500 mr-2 flex-shrink-0" />;
     } else if (title.includes('milestone') && (title.includes('isa') || title.includes('sipp') || title.includes('lisa') || title.includes('gia'))) {
-      return <Wallet className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />;
+      return <Wallet className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" />;
     } else if (title.includes('goal') || title.includes('progress')) {
-      return <Target className="w-4 h-4 text-purple-500 mr-2 flex-shrink-0" />;
+      return <Target className="w-5 h-5 text-purple-500 mr-2 flex-shrink-0" />;
     } else {
-      return <Bell className="w-4 h-4 text-gray-500 mr-2 flex-shrink-0" />;
+      return <Bell className="w-5 h-5 text-gray-500 mr-2 flex-shrink-0" />;
     }
   };
 
@@ -104,9 +104,11 @@ const NotificationItem = ({
       } ${notification.isNew ? 'notification-item-new' : ''}
         ${notification.isExiting ? 'notification-item-exiting' : ''}`}
     >
-      <div className="flex justify-between items-start">
-        <div className="flex items-start flex-grow pr-6">
-          {getNotificationIcon()}
+      <div className="flex justify-between items-center">
+        <div className="flex items-center flex-grow pr-6">
+          <div className="flex items-center justify-center">
+            {getNotificationIcon()}
+          </div>
           <div>
             <p className="font-medium">{notification.title}</p>
             <p className="text-gray-500 text-xs">{notification.message}</p>
@@ -132,7 +134,7 @@ export default function Header() {
   const [notifications, setNotifications] = useState<Notification[]>([
     {
       id: 1,
-      title: "Total portfolio milestone! 🏆",
+      title: "Total portfolio milestone!",
       message: "Your investments have reached £350,000",
       isRead: false,
       isNew: false
@@ -146,7 +148,7 @@ export default function Header() {
     },
     {
       id: 3,
-      title: "SIPP milestone achieved! 🎉",
+      title: "SIPP milestone achieved!",
       message: "Your SIPP has reached £150,000",
       isRead: true,
       isNew: false
@@ -224,7 +226,7 @@ export default function Header() {
         const milestoneValues = [5000, 10000, 25000, 50000, 100000];
         const milestoneValue = milestoneValues[Math.floor(Math.random() * milestoneValues.length)];
         
-        title = `${accountType} milestone achieved! 🎉`;
+        title = `${accountType} milestone achieved!`;
         message = `Your ${accountType} has reached £${(milestoneValue).toLocaleString()}`;
         break;
         
@@ -233,7 +235,7 @@ export default function Header() {
         const portfolioMilestones = [100000, 150000, 200000, 250000, 300000, 350000, 400000];
         const portfolioValue = portfolioMilestones[Math.floor(Math.random() * portfolioMilestones.length)];
         
-        title = "Total portfolio milestone! 🏆";
+        title = "Total portfolio milestone!";
         message = `Your investments have reached £${(portfolioValue).toLocaleString()}`;
         break;
         
