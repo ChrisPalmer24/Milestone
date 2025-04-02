@@ -21,7 +21,7 @@ import Record from "@/pages/record";
 import { LoginPage } from "@/pages/LoginPage";
 import { RegisterPage } from "@/pages/RegisterPage";
 import { Loader2 } from "lucide-react";
-
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 function RouteWithLayout({
   component: Component,
   ...rest
@@ -148,6 +148,7 @@ function App() {
           <Toaster />
         </PortfolioProvider>
       </SessionProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
 }
