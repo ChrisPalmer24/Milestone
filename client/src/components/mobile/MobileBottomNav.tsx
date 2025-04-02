@@ -21,7 +21,7 @@ export default function MobileBottomNav() {
     return null;
   }
 
-  // Create 5 navigation items with equal widths
+  // Create 5 navigation items with equal widths - Goals moved to last position
   const navItems: NavItem[] = [
     {
       id: 'portfolio',
@@ -30,10 +30,10 @@ export default function MobileBottomNav() {
       icon: <BarChart3 size={20} />,
     },
     {
-      id: 'goals',
-      path: '/goals',
-      label: 'Goals',
-      icon: <Flag size={20} />,
+      id: 'fire',
+      path: '/fire',
+      label: 'FIRE',
+      icon: <Flame size={20} />,
     },
     {
       id: 'record',
@@ -48,10 +48,10 @@ export default function MobileBottomNav() {
       icon: <LineChart size={20} />,
     },
     {
-      id: 'fire',
-      path: '/fire',
-      label: 'FIRE',
-      icon: <Flame size={20} />,
+      id: 'goals',
+      path: '/goals',
+      label: 'Goals',
+      icon: <Flag size={20} />,
     },
   ];
 
