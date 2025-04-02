@@ -21,7 +21,7 @@ export default function MobileBottomNav() {
     return null;
   }
 
-  // Removing Goals item as it causes layout issues - using only 4 items
+  // Testing with a duplicated Track menu item instead of Goals
   const navItems: NavItem[] = [
     {
       id: 'portfolio',
@@ -45,6 +45,12 @@ export default function MobileBottomNav() {
       id: 'track',
       path: '/track',
       label: 'Track',
+      icon: <LineChart size={20} />,
+    },
+    {
+      id: 'track2',
+      path: '/track',
+      label: 'Track2',
       icon: <LineChart size={20} />,
     },
   ];
