@@ -1,5 +1,5 @@
 import { useLocation, Link } from 'wouter';
-import { Home, BarChart3, LineChart, Target, Settings, CircleFadingPlus } from 'lucide-react';
+import { BarChart3, LineChart, Target, Flame, CircleFadingPlus } from 'lucide-react';
 import { triggerHapticFeedback } from '../../capacitor';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useMobilePlatform } from '@/hooks/use-mobile-platform';
@@ -22,12 +22,6 @@ export default function MobileBottomNav() {
   }
 
   const navItems: NavItem[] = [
-    {
-      id: 'home',
-      path: '/',
-      label: 'Home',
-      icon: <Home size={24} />,
-    },
     {
       id: 'portfolio',
       path: '/portfolio',
@@ -53,10 +47,10 @@ export default function MobileBottomNav() {
       icon: <LineChart size={24} />,
     },
     {
-      id: 'settings',
-      path: '/settings',
-      label: 'Settings',
-      icon: <Settings size={24} />,
+      id: 'fire',
+      path: '/fire',
+      label: 'FIRE',
+      icon: <Flame size={24} />,
     },
   ];
 
