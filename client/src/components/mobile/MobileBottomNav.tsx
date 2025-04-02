@@ -61,7 +61,7 @@ export default function MobileBottomNav() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border shadow-2xl">
-      <div className="flex items-center justify-between px-2">
+      <div className="grid grid-cols-5 w-full">
         {navItems.map((item) => {
           const isActive = location === item.path;
           
@@ -70,10 +70,10 @@ export default function MobileBottomNav() {
               key={item.id}
               href={item.path}
               onClick={handleNavClick}
-              className="flex flex-1 flex-col items-center py-2"
+              className="flex flex-col items-center py-2 text-center"
             >
               <div 
-                className={`p-1 transition-colors ${
+                className={`transition-colors flex justify-center items-center h-6 w-6 ${
                   isActive 
                     ? 'text-[#0061ff]' 
                     : 'text-black hover:text-[#0061ff]'
@@ -82,7 +82,7 @@ export default function MobileBottomNav() {
                 {item.icon}
               </div>
               <span 
-                className={`text-xs mt-0.5 ${
+                className={`text-xs mt-0.5 block w-full ${
                   isActive 
                     ? 'text-[#0061ff] font-medium' 
                     : 'text-black hover:text-[#0061ff]'
