@@ -24,9 +24,9 @@ export default function ResponsiveLayout({ children }: ResponsiveLayoutProps) {
   // Render mobile layout for native mobile platforms or small viewports
   if (useMobileLayout) {
     return (
-      <div className="flex flex-col min-h-screen relative pb-16">
+      <div className="flex flex-col min-h-screen relative">
         <Header />
-        <main className="flex-1 px-4 py-4 overflow-auto">
+        <main className="main-content px-4 py-4">
           {children}
         </main>
         <MobileBottomNav />

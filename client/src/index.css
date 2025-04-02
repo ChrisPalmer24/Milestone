@@ -9,6 +9,25 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
-    overflow-y: scroll; /* Always show vertical scrollbar to prevent layout shifts */
+  }
+}
+
+@layer components {
+  /* Main content container with proper padding to prevent scrollbar overlap with navigation */
+  .main-content {
+    position: fixed;
+    top: 65px; /* Height of the header - adjust as needed */
+    bottom: 56px; /* Height of bottom nav */
+    left: 0;
+    right: 0;
+    overflow-y: scroll;
+    padding-bottom: 16px;
+  }
+  
+  /* Adjust for desktop/non-mobile where bottom nav isn't present */
+  @media (min-width: 768px) {
+    .main-content {
+      bottom: 0;
+    }
   }
 }

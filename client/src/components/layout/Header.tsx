@@ -21,7 +21,7 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-white shadow-sm">
+    <header className="bg-white shadow-sm fixed top-0 left-0 right-0 z-50">
       <div className="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
         <h1 className="text-xl font-semibold text-neutral-900">Milestone</h1>
 
