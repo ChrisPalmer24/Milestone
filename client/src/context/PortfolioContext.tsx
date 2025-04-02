@@ -4,9 +4,15 @@ import {
   useContext,
   useEffect,
   ReactNode,
-  useMemo,
+  useCallback,
 } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  QueryKey,
+  skipToken,
+} from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -18,8 +24,10 @@ import {
   AccountHistory,
   AccountHistoryData,
   InsertAccount,
+  SessionUser,
 } from "@shared/schema";
 import { getEndpointPathWithUserId } from "@/lib/user";
+import { useSession } from "@/hooks/use-session";
 
 type AddAccount = Omit<InsertAccount, "userId">;
 
@@ -61,24 +69,40 @@ interface PortfolioContextType {
 const PortfolioContext = createContext<PortfolioContextType | undefined>(
   undefined
 );
-
 // Provider component
 export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
+  const { user, isSessionPending, logout } = useSession();
+
   const [activeSection, setActiveSection] = useState("portfolio");
   const queryClient = useQueryClient();
 
-  const endPoints = useMemo(
-    () => ({
-      accounts: () => getEndpointPathWithUserId("/api/accounts/user/{userId}"),
-      milestones: () =>
-        getEndpointPathWithUserId("/api/milestones/user/{userId}"),
-      fireSettings: () =>
-        getEndpointPathWithUserId("/api/fire-settings/user/{userId}"),
-      portfolioValue: () => "/api/portfolio/value",
-      portfolioHistory: () => "/api/portfolio/history",
-    }),
-    []
-  );
+  const apiEnabled = !isSessionPending && !!user;
+
+  type EndPoint = {
+    path: string;
+    queryKey: QueryKey;
+  };
+
+  const getAuthQueryKey = (
+    (user: SessionUser | null) =>
+    (path: string[]): string[] => {
+      return [
+        ...path.map((p) =>
+          getEndpointPathWithUserId(p, user?.account.id ?? "none")
+        ),
+        ...(user?.account.id ? [user.account.id] : []),
+      ];
+    }
+  )(user);
+
+  const accountsQueryKey = getAuthQueryKey(["/api/accounts/user/{userId}"]);
+  const accountsHistoryQueryKey = getAuthQueryKey(["/api/account-history"]);
+  const milestonesQueryKey = getAuthQueryKey(["/api/milestones/user/{userId}"]);
+  const fireSettingsQueryKey = getAuthQueryKey([
+    "/api/fire-settings/user/{userId}",
+  ]);
+  const portfolioValueQueryKey = getAuthQueryKey(["/api/portfolio/value"]);
+  const portfolioHistoryQueryKey = getAuthQueryKey(["/api/portfolio/history"]);
 
   // Fetch accounts
   const {
@@ -86,7 +110,13 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     isLoading: isLoadingAccounts,
     isError: isAccountsError,
   } = useQuery<Account[]>({
-    queryKey: [endPoints.accounts()],
+    queryKey: accountsQueryKey,
+    queryFn: apiEnabled
+      ? async () => {
+          const response = await apiRequest("GET", accountsQueryKey[0]);
+          return response.json();
+        }
+      : skipToken,
   });
 
   // Fetch milestones
@@ -95,7 +125,13 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     isLoading: isLoadingMilestones,
     isError: isMilestonesError,
   } = useQuery({
-    queryKey: [endPoints.milestones()],
+    queryKey: milestonesQueryKey,
+    queryFn: apiEnabled
+      ? async () => {
+          const response = await apiRequest("GET", milestonesQueryKey[0]);
+          return response.json();
+        }
+      : skipToken,
   });
 
   // Fetch FIRE settings
@@ -104,18 +140,56 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     isLoading: isLoadingFireSettings,
     isError: isFireSettingsError,
   } = useQuery({
-    queryKey: [endPoints.fireSettings()],
+    queryKey: fireSettingsQueryKey,
+    queryFn: apiEnabled
+      ? async () => {
+          const response = await apiRequest("GET", fireSettingsQueryKey[0]);
+          return response.json();
+        }
+      : skipToken,
   });
+
+  const invalidateQueries = useCallback(
+    (queryKeys: string[][]) => {
+      queryKeys.forEach((queryKey) => {
+        queryClient.invalidateQueries({ queryKey: queryKey });
+      });
+    },
+    [queryClient]
+  );
+
+  const invalidateAccounts = useCallback(() => {
+    invalidateQueries([
+      accountsQueryKey,
+      portfolioValueQueryKey,
+      portfolioHistoryQueryKey,
+      accountsHistoryQueryKey,
+    ]);
+  }, [invalidateQueries, accountsQueryKey]);
+
+  const invalidateMilestones = useCallback(() => {
+    invalidateQueries([milestonesQueryKey]);
+  }, [invalidateQueries, milestonesQueryKey]);
+
+  const invalidateFireSettings = useCallback(() => {
+    invalidateQueries([fireSettingsQueryKey]);
+  }, [invalidateQueries, fireSettingsQueryKey]);
 
   // Fetch total portfolio value
   const { data: portfolioValue, isLoading: isLoadingPortfolioValue } =
     useQuery<PortfolioValue>({
-      queryKey: [endPoints.portfolioValue()],
+      queryKey: portfolioValueQueryKey,
+      queryFn: apiEnabled
+        ? async () => {
+            const response = await apiRequest("GET", portfolioValueQueryKey[0]);
+            return response.json();
+          }
+        : skipToken,
     });
   // Fetch account history for all accounts
   const { data: accountsHistory = [], isLoading: isLoadingAccountHistory } =
     useQuery<AccountHistoryData>({
-      queryKey: ["/api/account-history"],
+      queryKey: accountsHistoryQueryKey,
       queryFn: async () => {
         const data = Promise.all(
           accounts.map(async (account) => {
@@ -149,13 +223,7 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
         userId: 1,
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [endPoints.accounts()] });
-      queryClient.invalidateQueries({ queryKey: [endPoints.portfolioValue()] });
-      queryClient.invalidateQueries({
-        queryKey: [endPoints.portfolioHistory()],
-      });
-      queryClient.invalidateQueries({ queryKey: [endPoints.milestones()] });
-
+      invalidateAccounts();
       toast({
         title: "Account added",
         description: "Your investment account has been added successfully.",
@@ -175,8 +243,7 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     mutationFn: ({ id, value }: { id: Account["id"]; value: number }) =>
       apiRequest("PATCH", `/api/accounts/${id}/value`, { value }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [endPoints.accounts()] });
-      queryClient.invalidateQueries({ queryKey: [endPoints.portfolioValue()] });
+      invalidateAccounts();
       toast({
         title: "Account updated",
         description: "Account value has been updated successfully.",
@@ -196,8 +263,7 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     mutationFn: (id: Account["id"]) =>
       apiRequest("DELETE", `/api/accounts/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [endPoints.accounts()] });
-      queryClient.invalidateQueries({ queryKey: [endPoints.portfolioValue()] });
+      invalidateAccounts();
       toast({
         title: "Account deleted",
         description: "Your investment account has been deleted successfully.",
@@ -217,7 +283,7 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     mutationFn: ({ id, apiKey }: { id: Account["id"]; apiKey: string }) =>
       apiRequest("PATCH", `/api/accounts/${id}/connect-api`, { apiKey }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [endPoints.accounts()] });
+      invalidateAccounts();
       toast({
         title: "API connected",
         description:
@@ -244,7 +310,7 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
       return apiRequest("POST", "/api/milestones", newMilestone);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [endPoints.milestones()] });
+      invalidateMilestones();
       toast({
         title: "Milestone added",
         description: "Your investment milestone has been added successfully.",
@@ -265,7 +331,7 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     mutationFn: (id: Milestone["id"]) =>
       apiRequest("DELETE", `/api/milestones/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [endPoints.milestones()] });
+      invalidateMilestones();
       toast({
         title: "Milestone deleted",
         description: "Your investment milestone has been deleted successfully.",
@@ -285,9 +351,7 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     mutationFn: (settings: Partial<FireSettings>) =>
       apiRequest("PATCH", "/api/fire-settings", settings),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: [endPoints.fireSettings()],
-      });
+      invalidateFireSettings();
       toast({
         title: "FIRE settings updated",
         description:
@@ -311,9 +375,7 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
         userId: 1, // Demo user
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: [endPoints.fireSettings()],
-      });
+      invalidateFireSettings();
       toast({
         title: "FIRE settings created",
         description:
@@ -342,12 +404,7 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
         recordedAt: data.recordedAt.toISOString(),
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [endPoints.accounts()] });
-      queryClient.invalidateQueries({ queryKey: ["/api/account-history"] });
-      queryClient.invalidateQueries({ queryKey: [endPoints.portfolioValue()] });
-      queryClient.invalidateQueries({
-        queryKey: [endPoints.portfolioHistory()],
-      });
+      invalidateAccounts();
       toast({
         title: "History entry added",
         description: "Account history entry has been added successfully.",
@@ -376,12 +433,7 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
         recordedAt: data.recordedAt.toISOString(),
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [endPoints.accounts()] });
-      queryClient.invalidateQueries({ queryKey: ["/api/account-history"] });
-      queryClient.invalidateQueries({ queryKey: [endPoints.portfolioValue()] });
-      queryClient.invalidateQueries({
-        queryKey: [endPoints.portfolioHistory()],
-      });
+      invalidateAccounts();
       toast({
         title: "History entry updated",
         description: "Account history entry has been updated successfully.",
@@ -401,12 +453,7 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     mutationFn: (id: AccountHistory["id"]) =>
       apiRequest("DELETE", `/api/account-history/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [endPoints.accounts()] });
-      queryClient.invalidateQueries({ queryKey: ["/api/account-history"] });
-      queryClient.invalidateQueries({ queryKey: [endPoints.portfolioValue()] });
-      queryClient.invalidateQueries({
-        queryKey: [endPoints.portfolioHistory()],
-      });
+      invalidateAccounts();
       toast({
         title: "History entry deleted",
         description: "Account history entry has been deleted successfully.",

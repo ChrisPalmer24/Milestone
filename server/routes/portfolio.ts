@@ -6,6 +6,7 @@ import { AuthRequest, requireUser } from "server/middleware/auth";
 const router = Router();
 const services = ServiceFactory.getInstance();
 const accountService = services.getAccountService();
+
 // Get portfolio history
 router.get("/history", requireUser, async (req: AuthRequest, res) => {
   try {
@@ -14,13 +15,7 @@ router.get("/history", requireUser, async (req: AuthRequest, res) => {
     if (!start || !end) {
       return res.status(400).json({ message: "Start date and end date are required" });
     }
-    
-    // For now, hardcode userId to 1 since we don't have authentication yet
-    const userId = process.env.VITE_TEMP_USER_ID;
 
-    if (!userId) {
-      return res.status(400).json({ message: "User ID is required" });
-    }
     const response = await requireTenant(req.tenant, async (tenant) => {
   
       const history = await accountService.getPortfolioHistory(

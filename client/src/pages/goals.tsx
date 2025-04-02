@@ -44,8 +44,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import AISuggestedMilestones from "@/components/milestones/AISuggestedMilestones";
-import { getTempUserId } from "@/lib/user";
-
+import { useSession } from "@/context/SessionContext";
 // Form schema for adding a new milestone
 const milestoneSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -67,7 +66,7 @@ export default function Goals() {
     isLoading,
   } = usePortfolio();
 
-  const userId = getTempUserId();
+  const { user } = useSession();
 
   const [isAddMilestoneOpen, setIsAddMilestoneOpen] = useState(false);
   const [milestoneToDelete, setMilestoneToDelete] = useState<string | null>(
@@ -86,13 +85,17 @@ export default function Goals() {
 
   // Handle form submission
   const onSubmit = async (values: z.infer<typeof milestoneSchema>) => {
+    if (!user) {
+      throw new Error("User not found");
+    }
+
     try {
       await addMilestone({
         name: values.name,
         accountType:
           values.accountType === "ALL" ? null : (values.accountType as any),
         targetValue: values.targetValue, // Keep as string since the API expects a string
-        userId: userId, // Add userId for the demo user
+        userAccountId: user.account.id, // Add userId for the demo user
         createdAt: new Date(), // Add createdAt field
       });
       setIsAddMilestoneOpen(false);
