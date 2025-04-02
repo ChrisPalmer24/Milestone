@@ -271,6 +271,7 @@ export type RegisterInput = z.infer<typeof registerSchema>;
 export type RevokeFamilyInput = z.infer<typeof revokeFamilySchema>; 
 
 export type SessionUser = {
+  id: string;
   account: UserAccount;
   profile: UserProfile;
 }

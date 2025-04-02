@@ -162,6 +162,7 @@ export class DatabaseUserService implements IUserService {
       }
   
       return {
+        id: coreUser.id,
         account: userAccount,
         profile: userProfile
       };
@@ -185,6 +186,7 @@ export class DatabaseUserService implements IUserService {
     const { userProfile, ...rest } = userAccount;
 
     return {
+      id: userAccount.coreUserId,
       account: rest,
       profile: userProfile,
     };

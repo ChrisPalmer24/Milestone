@@ -91,27 +91,6 @@ export function timeToExpiryDate(timeValue: string): Date {
 }
 
 /**
- * Cookie options for all cookie operations
- */
-export const cookieOptions = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax" as const,
-  path: "/",
-  ...(process.env.COOKIE_DOMAIN ? { domain: process.env.COOKIE_DOMAIN } : {}),
-  maxAge: timeToCookieMaxAge(process.env.REFRESH_TOKEN_EXPIRY || "30d"),
-};
-
-/**
- * Clears all auth-related cookies
- * @param res Express response object
- */
-export function clearAuthCookies(res: Response): void {
-  res.clearCookie(AUTH_COOKIE_NAMES.ACCESS_TOKEN, cookieOptions);
-  res.clearCookie(AUTH_COOKIE_NAMES.REFRESH_TOKEN, cookieOptions);
-}
-
-/**
  * Validates all authentication-related environment variables
  * @throws {Error} If any required environment variables are missing or invalid
  */

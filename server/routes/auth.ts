@@ -4,9 +4,8 @@ import { db } from "../db";
 import { userAccounts, loginSchema, registerSchema, revokeFamilySchema } from "../../shared/schema/user-account";
 import { eq } from "drizzle-orm";
 import { AuthRequest, requireUser } from "../middleware/auth";
-import { generateAccessToken, generateRefreshToken, verifyRefreshToken, revokeRefreshTokenFamily } from "../services/auth-service";
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken, revokeRefreshTokenFamily, cookieOptions, clearAuthCookies } from "../services/auth-service";
 import { compare } from "bcrypt";
-import { cookieOptions, clearAuthCookies } from "../utils/time";
 import { AUTH_COOKIE_NAMES } from "../constants/auth";
 import { ServiceFactory } from "../services/factory";
 import { requireTenant } from "./utils";
@@ -34,16 +33,21 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    const accessToken = await generateAccessToken(user.id);
-    const refreshToken = await generateRefreshToken(user.id, req.headers["user-agent"] || "unknown");
+    const completeUser = await userService.getCompleteUserForAccount(user.id);
+
+    if (!completeUser) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    const accessToken = await generateAccessToken(completeUser.id, user.id);
+    const refreshToken = await generateRefreshToken(completeUser.id, user.id, req.headers["user-agent"] || "unknown");
 
     res.cookie(AUTH_COOKIE_NAMES.ACCESS_TOKEN, accessToken, cookieOptions);
     res.cookie(AUTH_COOKIE_NAMES.REFRESH_TOKEN, refreshToken, cookieOptions);
 
-    const completeUser = await userService.getCompleteUserForAccount(user.id);
-
     res.json({
       user: completeUser,
+      message: "Login successful"
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -75,8 +79,8 @@ router.post("/register", async (req, res) => {
     // TODO: Send verification email with emailToken
     // TODO: Send verification SMS with phoneToken if phoneNumber is provided
 
-    const accessToken = await generateAccessToken(completeUser.account.id);
-    const refreshToken = await generateRefreshToken(completeUser.account.id, req.headers["user-agent"] || "unknown");
+    const accessToken = await generateAccessToken(completeUser.id, completeUser.account.id);
+    const refreshToken = await generateRefreshToken(completeUser.id, completeUser.account.id, req.headers["user-agent"] || "unknown");
 
     res.cookie(AUTH_COOKIE_NAMES.ACCESS_TOKEN, accessToken, cookieOptions);
     res.cookie(AUTH_COOKIE_NAMES.REFRESH_TOKEN, refreshToken, cookieOptions);

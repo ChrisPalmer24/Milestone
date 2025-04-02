@@ -1,17 +1,22 @@
 import { Request, Response, NextFunction } from "express";
 import { verifyAccessToken, verifyRefreshToken, generateAccessToken, generateRefreshToken, authorizeUser } from "../services/auth-service";
-import { db } from "../db";
-import { refreshTokens } from "../../shared/schema/user-account";
-import { eq, and } from "drizzle-orm";
-import { cookieOptions, clearAuthCookies } from "../utils/time";
 import { AUTH_COOKIE_NAMES } from "../constants/auth";
 
 export type TenantType = 'user' | 'api' | 'service';
 
-export interface Tenant {
+export type Tenant = {
   id: string;
-  type: TenantType;
-}
+} & (
+  {
+    type: 'user';
+    userAccountId: string;
+    apiKey?: undefined;
+  } | {
+    type: 'api';
+    apiKey: string;
+    userAccountId?: undefined;
+  }
+)
 
 export interface AuthRequest extends Request {
   tenant?: Tenant;
@@ -33,7 +38,7 @@ const createAuthMiddleware = (allowedAuthTypes: TenantType[]) => {
         );
 
         if (authResult) {
-          req.tenant = { id: authResult.userId, type: 'user' };
+          req.tenant = { id: authResult.userId, type: 'user', userAccountId: authResult.userAccountId };
           return next();
         }
       }
@@ -46,6 +51,7 @@ const createAuthMiddleware = (allowedAuthTypes: TenantType[]) => {
           // const apiClient = await validateApiKey(apiKey);
           // req.tenant = { id: apiClient.id, type: 'api' };
           // return next();
+          throw new Error("API key validation not implemented");
         }
       }
 
