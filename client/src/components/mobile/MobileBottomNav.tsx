@@ -21,19 +21,13 @@ export default function MobileBottomNav() {
     return null;
   }
 
-  // Simplify to just what we need: very consistent layout
+  // Simplify to just what we need, removing Goals temporarily
   const navItems: NavItem[] = [
     {
       id: 'portfolio',
       path: '/portfolio',
       label: 'Portfolio',
       icon: <BarChart3 size={20} />,
-    },
-    {
-      id: 'goals',
-      path: '/goals',
-      label: 'Goals',
-      icon: <Target size={20} />,
     },
     {
       id: 'record',
