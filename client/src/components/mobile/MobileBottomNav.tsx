@@ -50,7 +50,7 @@ export default function MobileBottomNav() {
     {
       id: 'goals',
       path: '/goals',
-      label: 'Aims',
+      label: 'Goals',
       icon: <Flag size={20} />,
     },
   ];
