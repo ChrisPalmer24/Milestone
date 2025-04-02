@@ -421,7 +421,7 @@ export default function PortfolioChart({
                   className={cn(
                     "date-range-btn text-xs font-medium py-1 px-3 rounded-full transition-all",
                     dateRange === range.value
-                      ? "bg-primary text-white"
+                      ? "bg-gray-200 text-gray-900 font-semibold"
                       : "text-gray-600 hover:bg-gray-100"
                   )}
                   onClick={() => setDateRange(range.value as DateRangeOption)}
