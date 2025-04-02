@@ -26,31 +26,31 @@ export default function MobileBottomNav() {
       id: 'portfolio',
       path: '/portfolio',
       label: 'Portfolio',
-      icon: <BarChart3 size={24} />,
+      icon: <BarChart3 size={20} />,
     },
     {
       id: 'goals',
       path: '/goals',
       label: 'Goals',
-      icon: <Target size={24} />,
+      icon: <Target size={20} />,
     },
     {
       id: 'record',
       path: '/record',
       label: 'Record',
-      icon: <CircleFadingPlus size={24} />,
+      icon: <CircleFadingPlus size={20} />,
     },
     {
       id: 'track',
       path: '/track',
       label: 'Track',
-      icon: <LineChart size={24} />,
+      icon: <LineChart size={20} />,
     },
     {
       id: 'fire',
       path: '/fire',
       label: 'FIRE',
-      icon: <Flame size={24} />,
+      icon: <Flame size={20} />,
     },
   ];
 
@@ -61,7 +61,7 @@ export default function MobileBottomNav() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border shadow-2xl">
-      <div className="grid grid-cols-5 w-full">
+      <div className="grid grid-cols-5 w-full h-14">
         {navItems.map((item) => {
           const isActive = location === item.path;
           
@@ -70,7 +70,7 @@ export default function MobileBottomNav() {
               key={item.id}
               href={item.path}
               onClick={handleNavClick}
-              className="flex flex-col items-center py-2 text-center"
+              className="flex flex-col items-center justify-center h-full w-full"
             >
               <div 
                 className={`transition-colors flex justify-center items-center h-6 w-6 ${
@@ -81,15 +81,15 @@ export default function MobileBottomNav() {
               >
                 {item.icon}
               </div>
-              <span 
-                className={`text-xs mt-0.5 block w-full ${
+              <div 
+                className={`flex justify-center items-center text-xs mt-1 h-4 w-full ${
                   isActive 
                     ? 'text-[#0061ff] font-medium' 
                     : 'text-black hover:text-[#0061ff]'
                 }`}
               >
-                {item.label}
-              </span>
+                <span className="truncate max-w-[90%] text-center">{item.label}</span>
+              </div>
             </Link>
           );
         })}
