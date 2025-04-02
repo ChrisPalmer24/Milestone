@@ -25,16 +25,23 @@ export default function Header() {
   const [notifications, setNotifications] = useState<Notification[]>([
     {
       id: 1,
-      title: "Account Value Increased",
-      message: "Your ISA went up by 3.2% today",
+      title: "Total portfolio milestone! 🏆",
+      message: "Your investments have reached £350,000",
       isRead: false,
       isNew: false
     },
     {
       id: 2,
-      title: "Milestone Approaching",
-      message: "£42,861 more to reach £400k",
+      title: "Goal progress update",
+      message: "£42,861 more to reach your £400k milestone",
       isRead: false,
+      isNew: false
+    },
+    {
+      id: 3,
+      title: "SIPP milestone achieved! 🎉",
+      message: "Your SIPP has reached £150,000",
+      isRead: true,
       isNew: false
     }
   ]);
@@ -64,30 +71,62 @@ export default function Header() {
   
   // Add a new notification (for testing animation)
   const addNotification = () => {
-    // Sample notification titles and messages
-    const titles = [
-      "Portfolio milestone reached",
-      "Monthly summary available",
-      "Account growth update",
-      "Investment opportunity"
+    // Sample notification types
+    const notificationTypes = [
+      "account-milestone", 
+      "portfolio-milestone", 
+      "goal-progress"
     ];
     
-    const messages = [
-      "Your portfolio is up 5% this month",
-      "Check your monthly performance report",
-      "One of your accounts has grown significantly",
-      "Consider rebalancing your portfolio"
-    ];
+    // Choose random notification type
+    const notificationType = notificationTypes[Math.floor(Math.random() * notificationTypes.length)];
     
-    // Generate random notification
-    const randomTitle = titles[Math.floor(Math.random() * titles.length)];
-    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+    let title = "";
+    let message = "";
+    
+    // Generate content based on notification type
+    switch (notificationType) {
+      case "account-milestone":
+        // Account milestone notifications (specific accounts reaching round number values)
+        const accountTypes = ["ISA", "SIPP", "LISA", "GIA"];
+        const accountType = accountTypes[Math.floor(Math.random() * accountTypes.length)];
+        const milestoneValues = [5000, 10000, 25000, 50000, 100000];
+        const milestoneValue = milestoneValues[Math.floor(Math.random() * milestoneValues.length)];
+        
+        title = `${accountType} milestone achieved! 🎉`;
+        message = `Your ${accountType} has reached £${(milestoneValue).toLocaleString()}`;
+        break;
+        
+      case "portfolio-milestone":
+        // Portfolio total value milestones
+        const portfolioMilestones = [100000, 150000, 200000, 250000, 300000, 350000, 400000];
+        const portfolioValue = portfolioMilestones[Math.floor(Math.random() * portfolioMilestones.length)];
+        
+        title = "Total portfolio milestone! 🏆";
+        message = `Your investments have reached £${(portfolioValue).toLocaleString()}`;
+        break;
+        
+      case "goal-progress":
+        // Progress on user-defined goals
+        const goals = [
+          { name: "Retirement Fund", target: 500000, current: 357000 },
+          { name: "House Deposit", target: 50000, current: 42000 },
+          { name: "Emergency Fund", target: 15000, current: 14500 }
+        ];
+        
+        const randomGoal = goals[Math.floor(Math.random() * goals.length)];
+        const percentage = Math.round((randomGoal.current / randomGoal.target) * 100);
+        
+        title = `${randomGoal.name}: ${percentage}% complete`;
+        message = `£${randomGoal.current.toLocaleString()} of £${randomGoal.target.toLocaleString()} goal`;
+        break;
+    }
     
     // Create new notification with unique ID
     const newNotification = {
       id: Date.now(), // Use timestamp as unique ID
-      title: randomTitle,
-      message: randomMessage,
+      title,
+      message,
       isRead: false,
       isNew: true // Flag as new for animation
     };
