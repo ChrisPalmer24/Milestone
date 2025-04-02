@@ -373,7 +373,7 @@ export default function Header() {
                     }}
                     className="flex-1 py-1 px-2 text-xs text-gray-500 hover:bg-gray-100 rounded-md transition-colors"
                   >
-                    Simulate new notification
+                    Simulate new
                   </button>
                 </div>
               </div>
