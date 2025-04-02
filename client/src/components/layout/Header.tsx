@@ -97,7 +97,7 @@ const NotificationItem = ({
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className={`relative mb-2 p-2 rounded-md text-sm cursor-pointer transition-colors bg-blue-50 hover:bg-blue-100
+      className={`relative mb-2 p-2 rounded-md text-sm cursor-pointer transition-colors bg-gray-50 hover:bg-gray-100
       ${notification.isNew ? 'notification-item-new' : ''}
         ${notification.isExiting ? 'notification-item-exiting' : ''}`}
     >
