@@ -12,6 +12,7 @@ import {
   useQueryClient,
   QueryKey,
   skipToken,
+  QueryFilters,
 } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { toast } from "@/hooks/use-toast";
@@ -63,6 +64,7 @@ interface PortfolioContextType {
   ) => Promise<void>;
   deleteAccountHistory: (id: AccountHistory["id"]) => Promise<void>;
   getAccountHistory: (accountId: Account["id"]) => AccountHistory[];
+  invalidateAccounts: () => void;
 }
 
 // Create the context
@@ -77,11 +79,6 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
 
   const apiEnabled = !isSessionPending && !!user;
-
-  type EndPoint = {
-    path: string;
-    queryKey: QueryKey;
-  };
 
   const getAuthQueryKey = (
     (user: SessionUser | null) =>
@@ -102,7 +99,8 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     "/api/fire-settings/user/{userId}",
   ]);
   const portfolioValueQueryKey = getAuthQueryKey(["/api/portfolio/value"]);
-  const portfolioHistoryQueryKey = getAuthQueryKey(["/api/portfolio/history"]);
+  const portfolioHistoryPath = "/api/portfolio/history";
+  const portfolioHistoryQueryKey = getAuthQueryKey([portfolioHistoryPath]);
 
   // Fetch accounts
   const {
@@ -149,31 +147,35 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
       : skipToken,
   });
 
-  const invalidateQueries = useCallback(
-    (queryKeys: string[][]) => {
-      queryKeys.forEach((queryKey) => {
-        queryClient.invalidateQueries({ queryKey: queryKey });
-      });
-    },
-    [queryClient]
-  );
-
   const invalidateAccounts = useCallback(() => {
-    invalidateQueries([
-      accountsQueryKey,
-      portfolioValueQueryKey,
-      portfolioHistoryQueryKey,
-      accountsHistoryQueryKey,
-    ]);
-  }, [invalidateQueries, accountsQueryKey]);
+    queryClient.invalidateQueries({
+      //We need fetch all queries for the time being
+      //The portolfio chart is out of view and so would not be refetched otherwise
+      refetchType: "all",
+    });
+    //We are using all for the time being, we can refine this later
+    // [
+    //   { queryKey: accountsQueryKey },
+    //   { queryKey: accountsHistoryQueryKey },
+    //   { queryKey: portfolioValueQueryKey },
+    //   {
+    //     predicate: (query) => {
+    //       console.log("query", query);
+    //       return query.queryKey.includes(portfolioHistoryPath);
+    //     },
+    //   },
+    // ].forEach((query) => {
+    //   queryClient.invalidateQueries(query);
+    // });
+  }, []);
 
   const invalidateMilestones = useCallback(() => {
-    invalidateQueries([milestonesQueryKey]);
-  }, [invalidateQueries, milestonesQueryKey]);
+    queryClient.invalidateQueries({ queryKey: milestonesQueryKey });
+  }, [milestonesQueryKey]);
 
   const invalidateFireSettings = useCallback(() => {
-    invalidateQueries([fireSettingsQueryKey]);
-  }, [invalidateQueries, fireSettingsQueryKey]);
+    queryClient.invalidateQueries({ queryKey: fireSettingsQueryKey });
+  }, [fireSettingsQueryKey]);
 
   // Fetch total portfolio value
   const { data: portfolioValue, isLoading: isLoadingPortfolioValue } =
@@ -603,6 +605,7 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     updateAccountHistory,
     deleteAccountHistory,
     getAccountHistory,
+    invalidateAccounts,
   };
 
   return (

@@ -55,7 +55,7 @@ export type AccountHistory = typeof accountHistory.$inferSelect;
 
 export type AccountHistoryData = { accountId: string; history: AccountHistory[] }[];
 
-export type PortfolioHistoryItem = { date: Date; value: number, changes: { accountId: number; previousValue: number; newValue: number; change: number }[] };
+export type PortfolioHistoryItem = { date: Date; value: number, changes: { accountId: string; previousValue: number; newValue: number; change: number }[] };
 export type PortfolioHistory = PortfolioHistoryItem[];
 
 export interface PortfolioValue {

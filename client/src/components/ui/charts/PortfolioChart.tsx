@@ -32,7 +32,7 @@ type ChartData = {
   value: number;
   milestone?: number;
   changes?: {
-    accountId: number;
+    accountId: string;
     previousValue: number;
     newValue: number;
     change: number;
@@ -171,12 +171,9 @@ export default function PortfolioChart({
       }
       return response.json();
     },
-    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-    gcTime: 30 * 60 * 1000, // Keep data in cache for 30 minutes
-    refetchOnWindowFocus: false, // Don't refetch when window regains focus
-    refetchOnMount: false, // Don't refetch when component mounts
-    refetchOnReconnect: false, // Don't refetch when network reconnects
   });
+
+  console.log("historyData", historyData);
 
   const data: ChartData[] =
     Array.isArray(historyData) && historyData.length > 0
@@ -187,17 +184,9 @@ export default function PortfolioChart({
               ?.filter((m) => {
                 const portfolioValue = Number(item.value);
                 const milestoneValue = Number(m.targetValue);
-                console.log(
-                  `Comparing portfolio value ${portfolioValue} with milestone ${m.name} value ${milestoneValue}`
-                );
                 return portfolioValue >= milestoneValue;
               })
               .sort((a, b) => Number(b.targetValue) - Number(a.targetValue))[0];
-
-            console.log(
-              `Achieved milestone for ${item.date}:`,
-              achievedMilestone
-            );
 
             return {
               date: new Date(item.date).toLocaleDateString("en-GB", {
@@ -221,7 +210,7 @@ export default function PortfolioChart({
   const chartData = [...data];
 
   // Helper to get account type name
-  const getAccountTypeName = (accountId: number) => {
+  const getAccountTypeName = (accountId: string) => {
     const account = accounts.find((acc) => acc.id === accountId);
     return account
       ? `${account.provider} ${account.accountType}`
