@@ -2,13 +2,15 @@ import { Router } from "express";
 import { z } from "zod";
 import { ServiceFactory } from "../services/factory";
 import { insertAccountSchema } from "@shared/schema";
+import { requireUser } from "server/middleware/auth";
+import { AuthRequest } from "server/middleware/auth";
 
 const router = Router();
 const services = ServiceFactory.getInstance();
 const accountService = services.getAccountService();
 
 // Get all accounts for a user
-router.get("/user/:userAccountId", async (req, res) => {
+router.get("/user/:userAccountId", requireUser, async (req: AuthRequest, res) => {
   try {
     const userAccountId = req.params.userAccountId;
     const accounts = await accountService.getByUserAccountId(userAccountId);
@@ -19,7 +21,7 @@ router.get("/user/:userAccountId", async (req, res) => {
 });
 
 // Get account by ID
-router.get("/:id", async (req, res) => {
+router.get("/:id", requireUser, async (req: AuthRequest, res) => {
   try {
     const accountId = req.params.id;
     const account = await accountService.get(accountId);
@@ -35,7 +37,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // Create account
-router.post("/", async (req, res) => {
+router.post("/", requireUser, async (req: AuthRequest, res) => {
   try {
     const accountData = insertAccountSchema.parse(req.body);
     const account = await accountService.create(accountData);
@@ -50,7 +52,7 @@ router.post("/", async (req, res) => {
 });
 
 // Update account
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", requireUser, async (req: AuthRequest, res) => {
   try {
     const accountId = req.params.id;
     const accountData = insertAccountSchema.partial().parse(req.body);
@@ -68,7 +70,7 @@ router.patch("/:id", async (req, res) => {
 });
 
 // Delete account
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireUser, async (req: AuthRequest, res) => {
   try {
     const accountId = req.params.id;
     const success = await accountService.delete(accountId);
@@ -84,7 +86,7 @@ router.delete("/:id", async (req, res) => {
 });
 
 // Update account value
-router.patch("/:id/value", async (req, res) => {
+router.patch("/:id/value", requireUser, async (req: AuthRequest, res) => {
   try {
     const accountId = req.params.id;
     const { value } = req.body;
@@ -104,7 +106,7 @@ router.patch("/:id/value", async (req, res) => {
 });
 
 // Connect account API
-router.post("/:id/connect", async (req, res) => {
+router.post("/:id/connect", requireUser, async (req: AuthRequest, res) => {
   try {
     const accountId = req.params.id;
     const { apiKey } = req.body;

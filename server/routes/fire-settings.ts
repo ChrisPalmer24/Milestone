@@ -2,13 +2,15 @@ import { Router } from "express";
 import { z } from "zod";
 import { ServiceFactory } from "../services/factory";
 import { insertFireSettingsSchema } from "@shared/schema";
+import { requireUser } from "server/middleware/auth";
+import { AuthRequest } from "server/middleware/auth";
 
 const router = Router();
 const services = ServiceFactory.getInstance();
 const fireSettingsService = services.getFireSettingsService();
 
 // Get FIRE settings by ID
-router.get("/:id", async (req, res) => {
+router.get("/:id", requireUser, async (req: AuthRequest, res) => {
   try {
     const settingsId = req.params.id;
     const settings = await fireSettingsService.get(settingsId);
@@ -24,7 +26,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // Get FIRE settings by user account ID
-router.get("/user/:userAccountId", async (req, res) => {
+router.get("/user/:userAccountId", requireUser, async (req: AuthRequest, res) => {
   try {
     const userAccountId = req.params.userAccountId;
     const settings = await fireSettingsService.getByUserAccountId(userAccountId);
@@ -40,7 +42,7 @@ router.get("/user/:userAccountId", async (req, res) => {
 });
 
 // Create FIRE settings
-router.post("/", async (req, res) => {
+router.post("/", requireUser, async (req: AuthRequest, res) => {
   try {
     const settingsData = insertFireSettingsSchema.parse(req.body);
     const settings = await fireSettingsService.create(settingsData);
@@ -54,7 +56,7 @@ router.post("/", async (req, res) => {
 });
 
 // Update FIRE settings
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", requireUser, async (req: AuthRequest, res) => {
   try {
     const settingsId = req.params.id;
     const settingsData = insertFireSettingsSchema.partial().parse(req.body);
@@ -72,7 +74,7 @@ router.patch("/:id", async (req, res) => {
 });
 
 // Delete FIRE settings
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireUser, async (req: AuthRequest, res) => {
   try {
     const settingsId = req.params.id;
     const success = await fireSettingsService.delete(settingsId);
@@ -88,7 +90,7 @@ router.delete("/:id", async (req, res) => {
 });
 
 // Update FIRE settings by user account ID
-router.patch("/user/:userAccountId", async (req, res) => {
+router.patch("/user/:userAccountId", requireUser, async (req: AuthRequest, res) => {
   try {
     const userAccountId = req.params.userAccountId;
     const settingsData = insertFireSettingsSchema.partial().parse(req.body);

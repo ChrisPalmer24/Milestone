@@ -1,11 +1,13 @@
 import { Router } from "express";
 import { ServiceFactory } from "../services/factory";
+import { requireTenant } from "./utils";
+import { AuthRequest, requireUser } from "server/middleware/auth";
 
 const router = Router();
 const services = ServiceFactory.getInstance();
 const accountService = services.getAccountService();
 // Get portfolio history
-router.get("/history", async (req, res) => {
+router.get("/history", requireUser, async (req: AuthRequest, res) => {
   try {
     const { start, end } = req.query;
     
@@ -19,14 +21,19 @@ router.get("/history", async (req, res) => {
     if (!userId) {
       return res.status(400).json({ message: "User ID is required" });
     }
+    const response = await requireTenant(req.tenant, async (tenant) => {
+  
+      const history = await accountService.getPortfolioHistory(
+        tenant.userAccountId ?? "",
+        new Date(start as string),
+        new Date(end as string)
+      );
 
-    const history = await accountService.getPortfolioHistory(
-      userId,
-      new Date(start as string),
-      new Date(end as string)
-    );
+      return history;
 
-    res.json(history);
+    });
+
+    res.json(response);
   } catch (error) {
 
     if (error instanceof Error && error.message.includes("Invalid Date")) {
@@ -37,16 +44,14 @@ router.get("/history", async (req, res) => {
 });
 
 // Get total portfolio value
-router.get("/value", async (req, res) => {
+router.get("/value", requireUser, async (req: AuthRequest, res) => {
   try {
-    const userId = process.env.VITE_TEMP_USER_ID;
+    const response = await requireTenant(req.tenant, async (tenant) => {
+      const totalValue = await accountService.getPortfolioValue(tenant.userAccountId ?? "");
+      return totalValue;
+    });
 
-    if (!userId) {
-      return res.status(400).json({ message: "User ID is required" });
-    }
-
-    const totalValue = await accountService.getPortfolioValue(userId);
-    res.json({ totalValue });
+    res.json(response);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch portfolio value" });
   }

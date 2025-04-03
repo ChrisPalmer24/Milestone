@@ -15,7 +15,7 @@ const userService = services.getUserService();
 const router = Router();
 
 // Core User routes
-router.get("/core/:id", async (req, res) => {
+router.get("/core/:id", requireUser, async (req: AuthRequest, res) => {
   try {
     const user = await userService.getCoreUser(req.params.id);
     if (!user) {
@@ -27,7 +27,7 @@ router.get("/core/:id", async (req, res) => {
   }
 });
 
-router.post("/core", async (req, res) => {
+router.post("/core", requireUser, async (req: AuthRequest, res) => {
   try {
     const userData = insertCoreUserSchema.parse(req.body);
     const user = await userService.createCoreUser(userData);
@@ -40,7 +40,7 @@ router.post("/core", async (req, res) => {
   }
 });
 
-router.patch("/core/:id", async (req, res) => {
+router.patch("/core/:id", requireUser, async (req: AuthRequest, res) => {
   try {
     const userData = insertCoreUserSchema.partial().parse(req.body);
     const user = await userService.updateCoreUser(req.params.id, userData);
@@ -56,7 +56,7 @@ router.patch("/core/:id", async (req, res) => {
   }
 });
 
-router.delete("/core/:id", async (req, res) => {
+router.delete("/core/:id", requireUser, async (req: AuthRequest, res) => {
   try {
     const success = await userService.deleteCoreUser(req.params.id);
     if (!success) {
@@ -69,7 +69,7 @@ router.delete("/core/:id", async (req, res) => {
 });
 
 // User Account routes
-router.get("/account/:id", async (req, res) => {
+router.get("/account/:id", requireUser, async (req: AuthRequest, res) => {
   try {
     const account = await userService.getUserAccount(req.params.id);
     if (!account) {
@@ -81,7 +81,7 @@ router.get("/account/:id", async (req, res) => {
   }
 });
 
-router.post("/account", async (req, res) => {
+router.post("/account", requireUser, async (req: AuthRequest, res) => {
   try {
     const accountData = insertUserAccountSchema.parse(req.body);
     const account = await userService.createUserAccount(accountData);
@@ -94,7 +94,7 @@ router.post("/account", async (req, res) => {
   }
 });
 
-router.patch("/account/:id", async (req, res) => {
+router.patch("/account/:id", requireUser, async (req: AuthRequest, res) => {
   try {
     const accountData = insertUserAccountSchema.partial().parse(req.body);
     const account = await userService.updateUserAccount(req.params.id, accountData);
@@ -110,7 +110,7 @@ router.patch("/account/:id", async (req, res) => {
   }
 });
 
-router.delete("/account/:id", async (req, res) => {
+router.delete("/account/:id", requireUser, async (req: AuthRequest, res) => {
   try {
     const success = await userService.deleteUserAccount(req.params.id);
     if (!success) {
@@ -123,7 +123,7 @@ router.delete("/account/:id", async (req, res) => {
 });
 
 // User Profile routes
-router.get("/profile/:id", async (req, res) => {
+router.get("/profile/:id", requireUser, async (req: AuthRequest, res) => {
   try {
     const profile = await userService.getUserProfile(req.params.id);
     if (!profile) {
@@ -135,7 +135,7 @@ router.get("/profile/:id", async (req, res) => {
   }
 });
 
-router.post("/profile", async (req, res) => {
+router.post("/profile", requireUser, async (req: AuthRequest, res) => {
   try {
     const profileData = insertUserProfileSchema.parse(req.body);
     const profile = await userService.createUserProfile(profileData);
@@ -148,7 +148,7 @@ router.post("/profile", async (req, res) => {
   }
 });
 
-router.patch("/profile/:id", async (req, res) => {
+router.patch("/profile/:id", requireUser, async (req: AuthRequest, res) => {
   try {
     const profileData = insertUserProfileSchema.partial().parse(req.body);
     const profile = await userService.updateUserProfile(req.params.id, profileData);
@@ -164,7 +164,7 @@ router.patch("/profile/:id", async (req, res) => {
   }
 });
 
-router.delete("/profile/:id", async (req, res) => {
+router.delete("/profile/:id", requireUser, async (req: AuthRequest, res) => {
   try {
     const success = await userService.deleteUserProfile(req.params.id);
     if (!success) {
@@ -189,7 +189,7 @@ router.get("/me", requireUser, async (req: AuthRequest, res) => {
 });
 
 // Authentication routes
-router.post("/verify-email", async (req, res) => {
+router.post("/verify-email", requireUser, async (req: AuthRequest, res) => {
   try {
     const { token } = req.body;
     if (!token) {
@@ -207,7 +207,7 @@ router.post("/verify-email", async (req, res) => {
   }
 });
 
-router.post("/request-password-reset", async (req, res) => {
+router.post("/request-password-reset", requireUser, async (req: AuthRequest, res) => {
   try {
     const { email } = req.body;
     if (!email) {
@@ -243,7 +243,7 @@ router.post("/reset-password", async (req, res) => {
   }
 });
 
-router.post("/change-password", async (req, res) => {
+router.post("/change-password", requireUser, async (req: AuthRequest, res) => {
   try {
     const { userAccountId, currentPassword, newPassword } = req.body;
     if (!userAccountId || !currentPassword || !newPassword) {

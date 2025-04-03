@@ -2,13 +2,15 @@ import { Router } from "express";
 import { z } from "zod";
 import { ServiceFactory } from "../services/factory";
 import { insertMilestoneSchema } from "@shared/schema";
+import { requireUser } from "server/middleware/auth";
+import { AuthRequest } from "server/middleware/auth";
 
 const router = Router();
 const services = ServiceFactory.getInstance();
 const milestoneService = services.getMilestoneService();
 
 // Get all milestones for a user
-router.get("/user/:userAccountId", async (req, res) => {
+router.get("/user/:userAccountId", requireUser, async (req: AuthRequest, res) => {
   try {
     const userAccountId = req.params.userAccountId;
     const milestones = await milestoneService.getByUserAccountId(userAccountId);
@@ -19,7 +21,7 @@ router.get("/user/:userAccountId", async (req, res) => {
 });
 
 // Get milestone by ID
-router.get("/:id", async (req, res) => {
+router.get("/:id", requireUser, async (req: AuthRequest, res) => {
   try {
     const milestoneId = req.params.id;
     const milestone = await milestoneService.get(milestoneId);
@@ -35,7 +37,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // Create milestone
-router.post("/", async (req, res) => {
+router.post("/", requireUser, async (req: AuthRequest, res) => {
   try {
     const milestoneData = insertMilestoneSchema.parse(req.body);
     const milestone = await milestoneService.create(milestoneData);
@@ -49,7 +51,7 @@ router.post("/", async (req, res) => {
 });
 
 // Update milestone
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", requireUser, async (req: AuthRequest, res) => {
   try {
     const milestoneId = req.params.id;
     const milestoneData = insertMilestoneSchema.partial().parse(req.body);
@@ -67,7 +69,7 @@ router.patch("/:id", async (req, res) => {
 });
 
 // Delete milestone
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireUser, async (req: AuthRequest, res) => {
   try {
     const milestoneId = req.params.id;
     const success = await milestoneService.delete(milestoneId);
@@ -83,7 +85,7 @@ router.delete("/:id", async (req, res) => {
 });
 
 // Update milestone completion
-router.patch("/:id/completion", async (req, res) => {
+router.patch("/:id/completion", requireUser, async (req: AuthRequest, res) => {
   try {
     const milestoneId = req.params.id;
     const { isCompleted } = req.body;

@@ -50,6 +50,7 @@ router.post("/login", async (req, res) => {
       message: "Login successful"
     });
   } catch (error) {
+
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: "Invalid request" });
     }
@@ -119,7 +120,7 @@ router.post("/logout", requireUser, async (req: AuthRequest, res) => {
 router.get("/me", requireUser, async (req: AuthRequest, res) => {
   try {
     const completeUser = await requireTenant(req.tenant, async (tenant) => {
-      return userService.getCompleteUserForAccount(tenant.id);
+      return userService.getCompleteUserForAccount(tenant?.userAccountId ?? "");
     });
 
     if (!completeUser) {

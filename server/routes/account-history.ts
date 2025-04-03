@@ -2,13 +2,15 @@ import { Router } from "express";
 import { z } from "zod";
 import { ServiceFactory } from "../services/factory";
 import { insertAccountHistorySchema } from "@shared/schema";
+import { requireUser } from "server/middleware/auth";
+import { AuthRequest } from "server/middleware/auth";
 
 const router = Router();
 const services = ServiceFactory.getInstance();
 const accountHistoryService = services.getAccountHistoryService();
 
 // Get history by ID
-router.get("/:id", async (req, res) => {
+router.get("/:id", requireUser, async (req: AuthRequest, res) => {
   try {
     const historyId = req.params.id;
     const history = await accountHistoryService.get(historyId);
@@ -24,7 +26,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // Get all history for an account
-router.get("/account/:accountId", async (req, res) => {
+router.get("/account/:accountId", requireUser, async (req: AuthRequest, res) => {
   try {
     const accountId = req.params.accountId;
     const history = await accountHistoryService.getByAccountId(accountId);
@@ -35,7 +37,7 @@ router.get("/account/:accountId", async (req, res) => {
 });
 
 // Get history by date range
-router.get("/account/:accountId/range", async (req, res) => {
+router.get("/account/:accountId/range", requireUser, async (req: AuthRequest, res) => {
   try {
     const accountId = req.params.accountId;
     const { startDate, endDate } = req.query;
@@ -59,7 +61,7 @@ router.get("/account/:accountId/range", async (req, res) => {
 });
 
 // Create history entry
-router.post("/", async (req, res) => {
+router.post("/", requireUser, async (req: AuthRequest, res) => {
   try {
     const historyData = insertAccountHistorySchema.parse(req.body);
     const history = await accountHistoryService.create(historyData);
@@ -73,7 +75,7 @@ router.post("/", async (req, res) => {
 });
 
 // Update history entry
-router.put("/:id", async (req, res) => {
+router.put("/:id", requireUser, async (req: AuthRequest, res) => {
   try {
     const historyId = req.params.id;
     const historyData = insertAccountHistorySchema.partial().parse(req.body);
@@ -96,7 +98,7 @@ router.put("/:id", async (req, res) => {
 });
 
 // Delete history entry
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireUser, async (req: AuthRequest, res) => {
   try {
     const historyId = req.params.id;
     const success = await accountHistoryService.delete(historyId);
