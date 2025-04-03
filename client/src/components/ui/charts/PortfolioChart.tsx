@@ -76,10 +76,12 @@ const combineDataPoints = (data: ChartData[]): ChartData[] => {
     }
   });
 
-  // Convert map back to array and sort by date
-  return Array.from(combinedData.values()).sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-  );
+  // Convert map back to array and sort by date using proper date parsing
+  return Array.from(combinedData.values()).sort((a, b) => {
+    const dateA = new Date(a.date);
+    const dateB = new Date(b.date);
+    return dateA.getTime() - dateB.getTime();
+  });
 };
 
 // Helper to calculate date range
@@ -173,8 +175,6 @@ export default function PortfolioChart({
     },
   });
 
-  console.log("historyData", historyData);
-
   const data: ChartData[] =
     Array.isArray(historyData) && historyData.length > 0
       ? combineDataPoints(
@@ -190,6 +190,7 @@ export default function PortfolioChart({
 
             return {
               date: new Date(item.date).toLocaleDateString("en-GB", {
+                year: "numeric",
                 month: "short",
                 day: "2-digit",
               }),
