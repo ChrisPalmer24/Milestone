@@ -1,5 +1,5 @@
 import { db } from "../../server/db";
-import { users, accounts, accountHistory, fireSettings, milestones } from "../../shared/schema";
+import { coreUsers, userAccounts, userProfiles, accounts, accountHistory, fireSettings, milestones } from "../../shared/schema";
 import { readFileSync } from "fs";
 import { join } from "path";
 
@@ -50,7 +50,7 @@ interface MigrationData {
 }
 
 // Maps to store old ID -> new CUID relationships
-const userIdMap = new Map<number, string>();
+const userIdMap = new Map<number, { coreUserId: string; userAccountId: string }>();
 const accountIdMap = new Map<number, string>();
 
 async function importData() {
@@ -66,25 +66,49 @@ async function importData() {
       // 1. Import users first
       console.log("Importing users...");
       for (const user of migrationData.users) {
-        const [newUser] = await tx
-          .insert(users)
+        // Create core user
+        const [newCoreUser] = await tx
+          .insert(coreUsers)
           .values({
-            username: user.username,
-            password: user.password,
+            status: "active",
           })
           .returning();
-        
-        userIdMap.set(user.id, newUser.id);
+
+        // Create user account
+        const [newUserAccount] = await tx
+          .insert(userAccounts)
+          .values({
+            coreUserId: newCoreUser.id,
+            email: user.username, // Using username as email since that's what we have
+            passwordHash: user.password,
+            fullName: "Migrated User", // Default value since we don't have this data
+            isEmailVerified: true, // Mark as verified since these are existing users
+            isPhoneVerified: false,
+          })
+          .returning();
+
+        // Create user profile
+        await tx
+          .insert(userProfiles)
+          .values({
+            userAccountId: newUserAccount.id,
+          });
+
+        userIdMap.set(user.id, {
+          coreUserId: newCoreUser.id,
+          userAccountId: newUserAccount.id
+        });
       }
       console.log(`Imported ${migrationData.users.length} users`);
 
       // 2. Import accounts
       console.log("Importing accounts...");
       for (const account of migrationData.accounts) {
+        const userMapping = userIdMap.get(account.userId)!;
         const [newAccount] = await tx
           .insert(accounts)
           .values({
-            userId: userIdMap.get(account.userId)!,
+            userAccountId: userMapping.userAccountId,
             provider: account.provider,
             accountType: account.accountType,
             currentValue: account.currentValue,
@@ -113,8 +137,9 @@ async function importData() {
       // 4. Import FIRE settings
       console.log("Importing FIRE settings...");
       for (const setting of migrationData.fireSettings) {
+        const userMapping = userIdMap.get(setting.userId)!;
         await tx.insert(fireSettings).values({
-          userId: userIdMap.get(setting.userId)!,
+          userAccountId: userMapping.userAccountId,
           targetRetirementAge: setting.targetRetirementAge,
           annualIncomeGoal: setting.annualIncomeGoal,
           expectedAnnualReturn: setting.expectedAnnualReturn,
@@ -128,8 +153,9 @@ async function importData() {
       // 5. Import milestones
       console.log("Importing milestones...");
       for (const milestone of migrationData.milestones) {
+        const userMapping = userIdMap.get(milestone.userId)!;
         await tx.insert(milestones).values({
-          userId: userIdMap.get(milestone.userId)!,
+          userAccountId: userMapping.userAccountId,
           name: milestone.name,
           targetValue: milestone.targetValue,
           accountType: milestone.accountType,
