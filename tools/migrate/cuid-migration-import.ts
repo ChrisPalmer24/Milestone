@@ -1,7 +1,8 @@
 import { db } from "../../server/db";
 import { coreUsers, userAccounts, userProfiles, accounts, accountHistory, fireSettings, milestones } from "../../shared/schema";
-import { readFileSync } from "fs";
+import { readFileSync, readdirSync } from "fs";
 import { join } from "path";
+import readline from "readline";
 
 interface MigrationData {
   version: string;
@@ -53,11 +54,44 @@ interface MigrationData {
 const userIdMap = new Map<number, { coreUserId: string; userAccountId: string }>();
 const accountIdMap = new Map<number, string>();
 
+async function selectMigrationFile(): Promise<string> {
+  const dataDir = join(process.cwd(), "tools", "migrate", "data");
+  const files = readdirSync(dataDir).filter(file => file.endsWith('.json'));
+  
+  if (files.length === 0) {
+    console.error("No migration files found in the data directory");
+    process.exit(1);
+  }
+
+  console.log("\nAvailable migration files:");
+  files.forEach((file, index) => {
+    console.log(`${index + 1}. ${file}`);
+  });
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
+  return new Promise((resolve) => {
+    rl.question("\nEnter the number of the file to import: ", (answer) => {
+      const index = parseInt(answer) - 1;
+      if (isNaN(index) || index < 0 || index >= files.length) {
+        console.error("Invalid selection");
+        process.exit(1);
+      }
+      rl.close();
+      resolve(files[index]);
+    });
+  });
+}
+
 async function importData() {
   console.log("Starting data import...");
 
-  // Read the migration data
-  const migrationDataPath = join(process.cwd(), "tools", "migrate", "data", "cuid-migration-data.json");
+  // Select and read the migration data
+  const selectedFile = await selectMigrationFile();
+  const migrationDataPath = join(process.cwd(), "tools", "migrate", "data", selectedFile);
   const migrationData: MigrationData = JSON.parse(readFileSync(migrationDataPath, "utf-8"));
 
   try {
