@@ -43,10 +43,19 @@ interface PortfolioContextType {
   updateAccountValue: (id: Account["id"], value: number) => Promise<void>;
   deleteAccount: (id: Account["id"]) => Promise<void>;
   connectAccountApi: (id: Account["id"], apiKey: string) => Promise<void>;
-  addMilestone: (
-    milestone: Omit<Milestone, "id" | "isCompleted">
-  ) => Promise<void>;
-  deleteMilestone: (id: Milestone["id"]) => Promise<void>;
+  addMilestoneMutation: ReturnType<
+    typeof useMutation<Milestone, Error, Omit<Milestone, "id" | "isCompleted">>
+  >;
+  deleteMilestoneMutation: ReturnType<
+    typeof useMutation<void, Error, Milestone["id"]>
+  >;
+  updateMilestoneMutation: ReturnType<
+    typeof useMutation<
+      Milestone,
+      Error,
+      { id: string; data: Partial<Milestone> }
+    >
+  >;
   updateFireSettings: (settings: Partial<FireSettings>) => Promise<void>;
   createFireSettings: (
     settings: Omit<FireSettings, "id" | "userId">
@@ -306,10 +315,26 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     await connectAccountApiMutation.mutateAsync({ id, apiKey });
   };
 
-  const addMilestoneMutation = useMutation({
-    mutationFn: (newMilestone: Omit<Milestone, "id" | "isCompleted">) => {
-      console.log("Sending milestone data:", JSON.stringify(newMilestone));
-      return apiRequest("POST", "/api/milestones", newMilestone);
+  // Update milestone mutations to handle response data
+  const addMilestoneMutation = useMutation<
+    Milestone,
+    Error,
+    Omit<Milestone, "id" | "isCompleted">
+  >({
+    mutationFn: async (newMilestone) => {
+      const processedMilestone = {
+        ...newMilestone,
+        accountType:
+          newMilestone.accountType === "ALL"
+            ? null
+            : (newMilestone.accountType as Exclude<AccountType, "ALL">),
+      };
+      const response = await apiRequest(
+        "POST",
+        "/api/milestones",
+        processedMilestone
+      );
+      return response.json();
     },
     onSuccess: () => {
       invalidateMilestones();
@@ -319,7 +344,6 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
       });
     },
     onError: (error) => {
-      console.log("Error response:", error);
       toast({
         title: "Error adding milestone",
         description:
@@ -329,9 +353,10 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
-  const deleteMilestoneMutation = useMutation({
-    mutationFn: (id: Milestone["id"]) =>
-      apiRequest("DELETE", `/api/milestones/${id}`),
+  const deleteMilestoneMutation = useMutation<void, Error, Milestone["id"]>({
+    mutationFn: async (id) => {
+      await apiRequest("DELETE", `/api/milestones/${id}`);
+    },
     onSuccess: () => {
       invalidateMilestones();
       toast({
@@ -344,6 +369,31 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
         title: "Error deleting milestone",
         description:
           error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateMilestoneMutation = useMutation<
+    Milestone,
+    Error,
+    { id: string; data: Partial<Milestone> }
+  >({
+    mutationFn: async ({ id, data }) => {
+      const response = await apiRequest("PATCH", `/api/milestones/${id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      invalidateMilestones();
+      toast({
+        title: "Success",
+        description: "Milestone updated successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to update milestone: ${error.message}`,
         variant: "destructive",
       });
     },
@@ -454,13 +504,6 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
   const deleteAccountHistoryMutation = useMutation({
     mutationFn: (id: AccountHistory["id"]) =>
       apiRequest("DELETE", `/api/account-history/${id}`),
-    onSuccess: () => {
-      invalidateAccounts();
-      toast({
-        title: "History entry deleted",
-        description: "Account history entry has been deleted successfully.",
-      });
-    },
     onError: (error) => {
       toast({
         title: "Error deleting history entry",
@@ -497,24 +540,6 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteAccount = async (id: Account["id"]) => {
     await deleteAccountMutation.mutateAsync(id);
-  };
-
-  const addMilestone = async (
-    milestone: Omit<Milestone, "id" | "isCompleted">
-  ) => {
-    // Convert "ALL" accountType to null which is what the backend expects
-    const processedMilestone = {
-      ...milestone,
-      accountType:
-        milestone.accountType === "ALL"
-          ? null
-          : (milestone.accountType as Exclude<AccountType, "ALL">),
-    };
-    await addMilestoneMutation.mutateAsync(processedMilestone);
-  };
-
-  const deleteMilestone = async (id: Milestone["id"]) => {
-    await deleteMilestoneMutation.mutateAsync(id);
   };
 
   const updateFireSettings = async (settings: Partial<FireSettings>) => {
@@ -595,8 +620,9 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     updateAccountValue,
     deleteAccount,
     connectAccountApi,
-    addMilestone,
-    deleteMilestone,
+    addMilestoneMutation,
+    deleteMilestoneMutation,
+    updateMilestoneMutation,
     updateFireSettings,
     createFireSettings,
     isLoading,
