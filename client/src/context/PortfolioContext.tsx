@@ -30,7 +30,7 @@ import {
 import { getEndpointPathWithUserId } from "@/lib/user";
 import { useSession } from "@/hooks/use-session";
 
-type AddAccount = Omit<InsertAccount, "userId">;
+type AddAccount = Omit<InsertAccount, "userAccountId">;
 
 interface PortfolioContextType {
   accounts: Account[];
@@ -223,15 +223,11 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
   const totalPortfolioValue = portfolioValue?.totalValue || 0;
 
   // Mutations
-  const { mutateAsync: addAccount } = useMutation<
-    Response,
-    Error,
-    Omit<InsertAccount, "userId">
-  >({
+  const { mutateAsync: addAccount } = useMutation<Response, Error, AddAccount>({
     mutationFn: (newAccount) =>
       apiRequest("POST", "/api/accounts", {
         ...newAccount,
-        userId: 1,
+        userAccountId: 1,
       }),
     onSuccess: () => {
       invalidateAccounts();
