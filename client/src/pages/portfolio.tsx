@@ -48,9 +48,8 @@ import PortfolioChart from "@/components/ui/charts/PortfolioChart";
 import DateRangeBar from "@/components/layout/DateRangeBar";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { useToast } from "@/hooks/use-toast";
-import { Milestone } from "@shared/schema";
 import { getNextMilestone } from "@/lib/utils/milestones";
-import { calculateTotalPercentageChange } from "@/lib/utils/performance";
+import { calculateAccountChange } from "@/lib/utils/performance";
 
 // Form schema for adding a new account
 const accountSchema = z.object({
@@ -93,11 +92,13 @@ export default function Portfolio() {
         (h) => h.accountId === account.id
       );
       const history = accountHistoryData?.history || [];
-      const totalPercentageChange = calculateTotalPercentageChange(history);
+      const { currency: absoluteChange, percentage: totalPercentageChange } =
+        calculateAccountChange(history);
 
       return {
         ...account,
         totalPercentageChange,
+        absoluteChange,
       };
     });
 
@@ -114,12 +115,17 @@ export default function Portfolio() {
       (sum, account) => sum + account.totalPercentageChange,
       0
     );
+    const totalCurrencyChange = sortedAccounts.reduce(
+      (sum, account) => sum + account.absoluteChange,
+      0
+    );
 
     return {
       accountsWithPerformance: sortedAccounts,
       portfolioTotal: {
         value: totalValue,
         percentageChange: totalPercentageChange,
+        currencyChange: totalCurrencyChange,
       },
     };
   }, [accounts, accountHistory]);
@@ -222,7 +228,7 @@ export default function Portfolio() {
     <div className="portfolio-screen max-w-5xl mx-auto px-4 pb-20">
       {/* Date Range Control */}
       <DateRangeBar className="mt-4 rounded-lg" />
-      
+
       {/* Chart Section */}
       <PortfolioChart
         className="mt-4"
@@ -528,13 +534,26 @@ export default function Portfolio() {
                         </p>
                         <p
                           className={`text-sm font-medium ${
-                            account.totalPercentageChange >= 0
+                            (displayInPercentage
+                              ? account.totalPercentageChange
+                              : account.absoluteChange) >= 0
                               ? "text-green-600"
                               : "text-red-600"
                           }`}
                         >
-                          {account.totalPercentageChange >= 0 ? "+" : ""}
-                          {account.totalPercentageChange.toFixed(1)}%
+                          {displayInPercentage ? (
+                            <>
+                              {account.totalPercentageChange >= 0 ? "+" : ""}
+                              {account.totalPercentageChange.toFixed(1)}%
+                            </>
+                          ) : (
+                            <>
+                              {account.absoluteChange >= 0 ? "+" : ""}£
+                              {Math.abs(
+                                account.absoluteChange
+                              ).toLocaleString()}
+                            </>
+                          )}
                         </p>
                       </div>
                     </div>
@@ -559,8 +578,19 @@ export default function Portfolio() {
                           : "text-red-600"
                       }`}
                     >
-                      {portfolioTotal.percentageChange >= 0 ? "+" : ""}
-                      {portfolioTotal.percentageChange.toFixed(1)}%
+                      {displayInPercentage ? (
+                        <>
+                          {portfolioTotal.percentageChange >= 0 ? "+" : ""}
+                          {portfolioTotal.percentageChange.toFixed(1)}%
+                        </>
+                      ) : (
+                        <>
+                          {portfolioTotal.currencyChange >= 0 ? "+" : ""}£
+                          {Math.abs(
+                            portfolioTotal.currencyChange
+                          ).toLocaleString()}
+                        </>
+                      )}
                     </p>
                   </div>
                 </div>
