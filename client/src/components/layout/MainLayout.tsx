@@ -1,28 +1,21 @@
 import { ReactNode } from "react";
 import BottomNav from "@/components/layout/BottomNav";
-import { usePortfolio } from "@/context/PortfolioContext";
-
-// Note: Header is no longer imported here as it's moved to ResponsiveLayout
+import Header from "@/components/layout/Header";
 
 type MainLayoutProps = {
   children: ReactNode;
 };
 
 export default function MainLayout({ children }: MainLayoutProps) {
-  const { activeSection, setActiveSection } = usePortfolio();
-  
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      {/* Header component removed from here to prevent duplicate headers */}
+      <Header />
       
       <main className="main-content px-4 py-4">
         {children}
       </main>
       
-      <BottomNav 
-        activeSection={activeSection}
-        onChange={setActiveSection}
-      />
+      <BottomNav />
     </div>
   );
 }

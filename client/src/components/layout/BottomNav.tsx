@@ -1,6 +1,10 @@
-import { TrendingUp, Flag, LineChart, Flame, CircleFadingPlus } from "lucide-react";
+import { BarChart3, Flag, LineChart, Flame, CircleFadingPlus } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
 import { cn } from "@/lib/utils";
+import { usePortfolio } from "@/context/PortfolioContext";
+import { triggerHapticFeedback } from "@/capacitor";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useMobilePlatform } from "@/hooks/use-mobile-platform";
 
 type NavItem = {
   id: string;
@@ -14,44 +18,51 @@ const navItems: NavItem[] = [
     id: "portfolio",
     path: "/portfolio",
     label: "Portfolio",
-    icon: <TrendingUp className="w-6 h-6" />,
+    icon: <BarChart3 size={20} />,
   },
   {
     id: "goals",
     path: "/goals",
     label: "Goals",
-    icon: <Flag className="w-6 h-6" />,
+    icon: <Flag size={20} />,
   },
   {
     id: "record",
     path: "/record",
     label: "Record",
-    icon: <CircleFadingPlus className="w-6 h-6" />,
+    icon: <CircleFadingPlus size={20} />,
   },
   {
     id: "track",
     path: "/track",
     label: "Track",
-    icon: <LineChart className="w-6 h-6" />,
+    icon: <LineChart size={20} />,
   },
   {
     id: "fire",
     path: "/fire",
     label: "FIRE",
-    icon: <Flame className="w-6 h-6" />,
+    icon: <Flame size={20} />,
   },
 ];
 
+// Optional props for when component is used directly
 type BottomNavProps = {
-  activeSection: string;
-  onChange: (section: string) => void;
+  activeSection?: string;
+  onChange?: (section: string) => void;
 };
 
-export default function BottomNav({ activeSection, onChange }: BottomNavProps) {
+export default function BottomNav({ activeSection, onChange }: BottomNavProps = {}) {
   const [location, setLocation] = useLocation();
+  // If props are not provided, get values from context
+  const portfolio = usePortfolio();
+  const activeNav = activeSection || portfolio.activeSection;
+  const onChangeNav = onChange || portfolio.setActiveSection;
 
+  // Handle navigation with haptic feedback on mobile devices
   const handleNavigation = (item: NavItem) => {
-    onChange(item.id);
+    triggerHapticFeedback();
+    onChangeNav(item.id);
     setLocation(item.path);
   };
 
@@ -68,7 +79,7 @@ export default function BottomNav({ activeSection, onChange }: BottomNavProps) {
                 <button
                   className={cn(
                     "nav-item flex flex-col items-center pt-2 pb-1 w-full",
-                    (isActive || isActiveHome || activeSection === item.id)
+                    (isActive || isActiveHome || activeNav === item.id)
                       ? "text-[#0061ff]"
                       : ""
                   )}

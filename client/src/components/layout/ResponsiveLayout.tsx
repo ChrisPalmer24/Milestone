@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { useMobilePlatform } from '@/hooks/use-mobile-platform';
 import { useIsMobile } from '@/hooks/use-mobile';
 import MainLayout from './MainLayout';
-import MobileBottomNav from '../mobile/MobileBottomNav';
+import BottomNav from './BottomNav';
 import Header from './Header';
 
 interface ResponsiveLayoutProps {
@@ -29,7 +29,7 @@ export default function ResponsiveLayout({ children }: ResponsiveLayoutProps) {
         <main className="main-content px-4 py-4">
           {children}
         </main>
-        <MobileBottomNav />
+        <BottomNav />
       </div>
     );
   }
