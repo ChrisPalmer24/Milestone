@@ -42,11 +42,10 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { SiTradingview } from "react-icons/si";
+import { SiTradingview, SiCoinbase } from "react-icons/si";
 import { BsPiggyBank } from "react-icons/bs";
 import PortfolioChart from "@/components/ui/charts/PortfolioChart";
 import DateRangeBar from "@/components/layout/DateRangeBar";
-import InvestEngineLogo from "@/components/ui/icons/InvestEngineLogo";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { useToast } from "@/hooks/use-toast";
 import { getNextMilestone } from "@/lib/utils/milestones";
@@ -188,11 +187,11 @@ export default function Portfolio() {
         return <BsPiggyBank className="w-6 h-6" />;
       case "invest engine":
       case "investengine":
-        return <InvestEngineLogo className="w-6 h-6" />;
+        return <SiCoinbase className="w-6 h-6" />;
       case "hargreaves lansdown":
         return <BsPiggyBank className="w-6 h-6" />;
       case "aj bell":
-        return <BsPiggyBank className="w-6 h-6" />;
+        return <SiCoinbase className="w-6 h-6" />;
       default:
         return <SiTradingview className="w-6 h-6" />;
     }
