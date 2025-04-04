@@ -1,0 +1,14 @@
+---
+description: General preferred practices for all code of teh code base.
+globs: 
+alwaysApply: false
+---
+- all requested changes should be done keeping in mind small relevant and controlleed git hub commits
+- all git hub commit message should be of a user story and follow a pattern of "[subject] should [action]".
+- Never leave unused imports
+- always check packages already installed in package.json or existing architecture and library usage before presuming something should be installed.
+- always presume I am a better and I am more of a knowlodgable developer than you.
+- Never presume anything.
+- Never make changes outside of the scope that you have been asked to work on
+- Never use toast for form errors
+- Always consider git commit best practices when making changes. Commits should be small and to the point with no uneccessary changes

@@ -1,0 +1,12 @@
+---
+description: coding guidelines for server.
+globs: server/**/* db/**/*
+---
+- small modular, testable services should be used at all times when appropriate for reuse.
+- all data model operations, application logic and business logic should be modularised as services or lib modules.
+- db schema should always be modularised where possible.
+- do not do any uneccesaary optimisations to db schema unless instructed.
+- do not do any uneccessary oprimisations or changes unless instructed.
+- all database modifications should consider that we are using drizzle and migrations and the `@db/migrations` should always be checked and adhered to.
+- when creating drizzle migrations naming conventions of previous migrations should be followed.
+- when creating drizzle resource tables ensure that if the 3rd argument to pgTable is used that it returns an array

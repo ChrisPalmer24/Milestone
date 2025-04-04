@@ -1,0 +1,19 @@
+---
+description: Directio for generating reportfiles for a development sprint from github commitsu will use th
+globs: ./**/*
+alwaysApply: false
+---
+You will be given a the branch name of the previous sprint and the branch name of this sprint to report on.
+You will analyse all git commits from the head of the previous sprint to the head of this sprint
+When analysing the commits you will gain a deep understanding of all files that have been changed for the commit and why.
+You will look at each file change in each commit in depth to understand the change.
+You will be more observant in the client UI files as they take more understanding to explain the change.
+You will first generate a Markdown report in `/reports`
+You will use the existing markdown reports in `/reports` as guidance for content and naming conventions
+You will then generate a pdf of that report
+You will use markdown-pdf npm package to generate the pdf
+You will not change any of the existing reports
+When specifify the period as a header this should be the name of this sprint and not include reference to the last srpint
+Be extremely comprehensive in your report
+
+
