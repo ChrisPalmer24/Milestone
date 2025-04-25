@@ -1,4 +1,4 @@
-import { Tenant } from "server/middleware/auth";
+import { Tenant } from "./types";
 
 /**
  * Wrapper function that ensures a tenant exists before executing the given function

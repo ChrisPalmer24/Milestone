@@ -8,6 +8,13 @@
       "when": 1746501926922,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1746502796372,
+      "tag": "0001_refresh-token-tenantid",
+      "breakpoints": true
     }
   ]
 }

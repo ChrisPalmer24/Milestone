@@ -1,19 +1,24 @@
-import { Express } from "express";
-import userRoutes from "./users";
-import accountRoutes from "./accounts";
-import accountHistoryRoutes from "./account-history";
-import milestoneRoutes from "./milestones";
-import fireSettingsRoutes from "./fire-settings";
-import portfolioRoutes from "./portfolio";
-import authRoutes from "./auth";
-export async function registerRoutes(app: Express): Promise<Express> {
+import { Express, Router } from "express";
+import { registerRoutes as registerUserRoutes} from "./users";
+import { registerRoutes as registerAccountsRoutes} from "./accounts";
+import { registerRoutes as registerHistoryRoutes} from "./account-history";
+import { registerRoutes as registerMilestonesRoutes} from "./milestones";
+import { registerRoutes as registerFireRoutes} from "./fire-settings";
+import { registerRoutes as registerPortfolioRoutes} from "./portfolio";
+import { registerRoutes as registerAuthRoutes } from "./auth";
+import { registerRoutes as registerVerificationRoutes } from "./verification"
+import { AuthService } from "server/auth";
+
+
+export async function registerRoutes(router: Router, authService: AuthService): Promise<Router> {
   // Register API routes
-  app.use("/api/users", userRoutes);
-  app.use("/api/accounts", accountRoutes);
-  app.use("/api/account-history", accountHistoryRoutes);
-  app.use("/api/milestones", milestoneRoutes);
-  app.use("/api/fire-settings", fireSettingsRoutes);
-  app.use("/api/portfolio", portfolioRoutes);
-  app.use("/api/auth", authRoutes);
-  return app;
+  router.use("/users", await registerUserRoutes(router, authService));
+  router.use("/accounts", await registerAccountsRoutes(router, authService));
+  router.use("/account-history", await registerHistoryRoutes(router, authService));
+  router.use("/milestones", await registerMilestonesRoutes(router, authService));
+  router.use("/fire-settings", await registerFireRoutes(router, authService));
+  router.use("/portfolio", await registerPortfolioRoutes(router, authService));
+  router.use("/auth", await registerAuthRoutes(router, authService));
+  router.use("/verification", await registerVerificationRoutes(router, authService));
+  return router;
 } 

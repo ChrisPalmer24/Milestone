@@ -22,7 +22,7 @@ export interface IUserService {
 
   createUserComplete(user: RegisterInput): Promise<SessionUser>;
   getCompleteUserForAccount(userAccountId: string): Promise<SessionUser | null>;
-  getCompleteUser(coreUserId: string): Promise<SessionUser | null>;
+
 
   // Authentication operations
   verifyEmail(token: string): Promise<boolean>;

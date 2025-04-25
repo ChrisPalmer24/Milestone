@@ -139,6 +139,7 @@ export const userSubscriptionsRelations = relations(userSubscriptions, ({ one })
 export const refreshTokens = pgTable("refresh_tokens", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   userAccountId: uuid("user_account_id").notNull().references(() => userAccounts.id),
+  tenantId: uuid("tenant_id").notNull().references(() => coreUsers.id),
   tokenHash: text("token_hash").notNull(),
   familyId: text("family_id").notNull(),
   parentTokenHash: text("parent_token_hash"),

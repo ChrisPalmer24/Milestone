@@ -1,11 +1,12 @@
-import express, { type Request, Response, NextFunction } from "express";
+import express, { type Request, Response, NextFunction, Router } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import path from "path";
 import cookieParser from "cookie-parser";
 import { validateAuthEnvVars } from "./utils/time";
-import authRoutes from "./routes/auth";
-import verificationRoutes from "./routes/verification";
+import { registerRoutes as registerAuthRoutes} from "./routes/auth";
+import { registerRoutes as registerVerificationRoutes} from "./routes/verification";
+import authService from "./services/auth";
 
 const app = express();
 
@@ -58,12 +59,14 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   res.status(status).json({ message });
 });
 
-// Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/verification", verificationRoutes);
-
 (async () => {
-  await registerRoutes(app);
+
+  app.use("/api", await registerRoutes(Router(), authService));
+
+  //Dont allow undhandled apiu route requests to follow through
+  app.use("/api", (req, res) => {
+    res.status(404);
+  });
 
   // Setup Vite or static serving last
   if (app.get("env") === "development") {

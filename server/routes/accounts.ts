@@ -2,12 +2,17 @@ import { Router } from "express";
 import { z } from "zod";
 import { ServiceFactory } from "../services/factory";
 import { insertAccountSchema } from "@shared/schema";
-import { requireUser } from "server/middleware/auth";
-import { AuthRequest } from "server/middleware/auth";
+import { AuthRequest, AuthService } from "server/auth";
 
 const router = Router();
 const services = ServiceFactory.getInstance();
 const accountService = services.getAccountService();
+
+export async function registerRoutes(
+  router: Router,
+  authService: AuthService
+): Promise<Router> {
+  const { requireUser } = authService.getAuthMiddlewares();
 
 // Get all accounts for a user
 router.get("/user/:userAccountId", requireUser, async (req: AuthRequest, res) => {
@@ -125,4 +130,6 @@ router.post("/:id/connect", requireUser, async (req: AuthRequest, res) => {
   }
 });
 
-export default router; 
+return router;
+
+}
