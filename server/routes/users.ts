@@ -203,23 +203,6 @@ export async function registerRoutes(
     }
   });
 
-  router.get("/me", requireUser, async (req: AuthRequest, res) => {
-    try {
-      const response = await requireTenant(req.tenant, async (tenant: Tenant) => {
-        if (!tenant.userAccountId) {
-          throw new Error("must have userAccountId");
-        }
-        const completeUser = await userService.getCompleteUserForAccount(
-          tenant.userAccountId
-        );
-        return completeUser;
-      });
-      res.json(response);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to get complete user" });
-    }
-  });
-
   // Authentication routes
   router.post("/verify-email", requireUser, async (req: AuthRequest, res) => {
     try {

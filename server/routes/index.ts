@@ -12,13 +12,13 @@ import { AuthService } from "server/auth";
 
 export async function registerRoutes(router: Router, authService: AuthService): Promise<Router> {
   // Register API routes
-  router.use("/users", await registerUserRoutes(router, authService));
-  router.use("/accounts", await registerAccountsRoutes(router, authService));
-  router.use("/account-history", await registerHistoryRoutes(router, authService));
-  router.use("/milestones", await registerMilestonesRoutes(router, authService));
-  router.use("/fire-settings", await registerFireRoutes(router, authService));
-  router.use("/portfolio", await registerPortfolioRoutes(router, authService));
-  router.use("/auth", await registerAuthRoutes(router, authService));
-  router.use("/verification", await registerVerificationRoutes(router, authService));
+  router.use("/users", await registerUserRoutes(Router(), authService));
+  router.use("/accounts", await registerAccountsRoutes(Router(), authService));
+  router.use("/account-history", await registerHistoryRoutes(Router(), authService));
+  router.use("/milestones", await registerMilestonesRoutes(Router(), authService));
+  router.use("/fire-settings", await registerFireRoutes(Router(), authService));
+  router.use("/portfolio", await registerPortfolioRoutes(Router(), authService));
+  router.use("/auth", await registerAuthRoutes(Router(), authService));
+  router.use("/verification", await registerVerificationRoutes(Router(), authService));
   return router;
 } 
