@@ -2,6 +2,7 @@ import { drizzle as drizzleNeon } from "drizzle-orm/neon-serverless";
 import { drizzle as drizzleNodePostgres } from "drizzle-orm/node-postgres";
 import ws from "ws";
 import * as schema from "@shared/schema/index";
+import { sql } from "drizzle-orm";
 
 export function createDatabaseConnection() {
 
@@ -42,6 +43,12 @@ export function createDatabaseConnection() {
 // Create a singleton instance
 const { db, isLocalDb } = createDatabaseConnection();
 
-export { db, isLocalDb }; 
+const ping = async () => {
+  console.log("Pinging database...");
+  const pingResult = await db.execute(sql`SELECT 1`);
+  console.log("Database ping successful:");
+}
+
+export { db, isLocalDb, ping }; 
 
 export type Database = typeof db;
