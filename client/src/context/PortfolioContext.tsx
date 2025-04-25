@@ -24,13 +24,11 @@ import {
   PortfolioValue,
   AccountHistory,
   AccountHistoryData,
-  InsertAccount,
   SessionUser,
+  OrphanAccount,
 } from "@shared/schema";
 import { getEndpointPathWithUserId } from "@/lib/user";
 import { useSession } from "@/hooks/use-session";
-
-type AddAccount = Omit<InsertAccount, "userAccountId">;
 
 interface PortfolioContextType {
   accounts: Account[];
@@ -39,7 +37,7 @@ interface PortfolioContextType {
   totalPortfolioValue: number;
   activeSection: string;
   setActiveSection: (section: string) => void;
-  addAccount: (account: AddAccount) => Promise<Response>;
+  addAccount: (account: OrphanAccount) => Promise<Response>;
   updateAccountValue: (id: Account["id"], value: number) => Promise<void>;
   deleteAccount: (id: Account["id"]) => Promise<void>;
   connectAccountApi: (id: Account["id"], apiKey: string) => Promise<void>;
@@ -223,11 +221,15 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
   const totalPortfolioValue = portfolioValue?.totalValue || 0;
 
   // Mutations
-  const { mutateAsync: addAccount } = useMutation<Response, Error, AddAccount>({
+  const { mutateAsync: addAccount } = useMutation<
+    Response,
+    Error,
+    OrphanAccount
+  >({
     mutationFn: (newAccount) =>
       apiRequest("POST", "/api/accounts", {
         ...newAccount,
-        userAccountId: 1,
+        userAccountId: user?.account.id,
       }),
     onSuccess: () => {
       invalidateAccounts();

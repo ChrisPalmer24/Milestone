@@ -50,17 +50,8 @@ import { usePortfolio } from "@/context/PortfolioContext";
 import { useToast } from "@/hooks/use-toast";
 import { getNextMilestone } from "@/lib/utils/milestones";
 import { calculateAccountChange } from "@/lib/utils/performance";
-
-// Form schema for adding a new account
-const accountSchema = z.object({
-  provider: z.string().min(1, "Provider is required"),
-  accountType: z.string().min(1, "Account type is required"),
-  currentValue: z
-    .string()
-    .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
-      message: "Value must be a positive number",
-    }),
-});
+import AddAccountDialogue from "@/components/account/AddAccountDialogue";
+import { OrphanAccount } from "@shared/schema";
 
 export default function Portfolio() {
   const [, setLocation] = useLocation();
@@ -130,26 +121,7 @@ export default function Portfolio() {
     };
   }, [accounts, accountHistory]);
 
-  // Form for adding a new account
-  const form = useForm<z.infer<typeof accountSchema>>({
-    resolver: zodResolver(accountSchema),
-    defaultValues: {
-      provider: "",
-      accountType: "",
-      currentValue: "",
-    },
-  });
-
-  // Watch for changes to the provider field
-  const watchProvider = form.watch("provider");
-
-  // Update the selected provider when it changes
-  useEffect(() => {
-    setSelectedProvider(watchProvider);
-  }, [watchProvider]);
-
-  // Handle form submission
-  const onSubmit = async (values: z.infer<typeof accountSchema>) => {
+  const onSubmit = async (values: OrphanAccount) => {
     try {
       setIsAddingAccount(true);
       await addAccount({
@@ -158,7 +130,6 @@ export default function Portfolio() {
         currentValue: values.currentValue,
       });
       setIsAddAccountOpen(false);
-      form.reset();
       toast({
         title: "Account added successfully",
         description:
@@ -205,24 +176,6 @@ export default function Portfolio() {
 
   // Find next milestone for the portfolio if any
   const nextMilestone = getNextMilestone(milestones ?? [], totalPortfolioValue);
-
-  // Calculate total gain across all accounts
-  const calculateTotalGain = () => {
-    // In a real app, this would compare to previous values
-    // For now, let's randomly show either gain or loss for demo
-    const isPositive = Math.random() > 0.3;
-    const gainPercentage = isPositive ? 0.038 : -0.021;
-    const gain = totalPortfolioValue * Math.abs(gainPercentage);
-
-    return {
-      value: displayInPercentage
-        ? `${isPositive ? "+" : "-"}${Math.abs(gainPercentage * 100).toFixed(
-            1
-          )}%`
-        : `${isPositive ? "+" : "-"}£${gain.toLocaleString()}`,
-      isPositive,
-    };
-  };
 
   return (
     <div className="portfolio-screen max-w-5xl mx-auto px-4 pb-20">
@@ -315,136 +268,12 @@ export default function Portfolio() {
               )}
 
               {/* Add Account Dialog */}
-              <Dialog
+              <AddAccountDialogue
                 open={isAddAccountOpen}
                 onOpenChange={setIsAddAccountOpen}
-              >
-                <DialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="rounded-full w-10 h-10 flex items-center justify-center bg-black text-white border-black"
-                  >
-                    <Plus className="h-5 w-5" />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add Investment Account</DialogTitle>
-                    <DialogDescription>
-                      Enter the details of your investment account below.
-                    </DialogDescription>
-                  </DialogHeader>
-
-                  <Form {...form}>
-                    <form
-                      onSubmit={form.handleSubmit(onSubmit)}
-                      className="space-y-4"
-                    >
-                      <FormField
-                        control={form.control}
-                        name="provider"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Provider</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select provider" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="Trading 212">
-                                  Trading 212
-                                </SelectItem>
-                                <SelectItem value="Vanguard">
-                                  Vanguard
-                                </SelectItem>
-                                <SelectItem value="InvestEngine">
-                                  InvestEngine
-                                </SelectItem>
-                                <SelectItem value="Hargreaves Lansdown">
-                                  Hargreaves Lansdown
-                                </SelectItem>
-                                <SelectItem value="AJ Bell">AJ Bell</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="accountType"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Account Type</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select account type" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="ISA">ISA</SelectItem>
-                                <SelectItem value="SIPP">SIPP</SelectItem>
-                                {(selectedProvider === "Hargreaves Lansdown" ||
-                                  selectedProvider === "AJ Bell") && (
-                                  <SelectItem value="LISA">
-                                    Lifetime ISA
-                                  </SelectItem>
-                                )}
-                                <SelectItem value="GIA">
-                                  General Account
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="currentValue"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Current Value (£)</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                placeholder="0.00"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <DialogFooter>
-                        <Button type="submit" disabled={isAddingAccount}>
-                          {isAddingAccount ? (
-                            <>
-                              <span className="mr-2">Adding...</span>
-                              <span className="animate-spin">⏳</span>
-                            </>
-                          ) : (
-                            "Add Account"
-                          )}
-                        </Button>
-                      </DialogFooter>
-                    </form>
-                  </Form>
-                </DialogContent>
-              </Dialog>
+                inProgress={isAddingAccount}
+                onSubmit={onSubmit}
+              />
             </div>
           </div>
 
@@ -510,6 +339,8 @@ export default function Portfolio() {
                             ? "Lifetime ISA"
                             : account.accountType === "GIA"
                             ? "General Account"
+                            : account.accountType === "CISA"
+                            ? "Cash ISA"
                             : account.accountType}
                         </span>
                       </div>

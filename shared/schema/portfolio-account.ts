@@ -4,7 +4,7 @@ import { z } from "zod";
 import { userAccounts } from "./user-account";
 import { sql } from "drizzle-orm";
 
-export type AccountType = "ISA" | "SIPP" | "LISA" | "GIA" | "ALL";
+export type AccountType = "ISA" | "CISA" | "SIPP" | "LISA" | "GIA" | "ALL";
 
 // Account table to store investment account information
 export const accounts = pgTable("accounts", {
@@ -27,9 +27,12 @@ export const insertAccountSchema = createInsertSchema(accounts).omit({
   apiKey: true,
 });
 
-export type InsertAccount = Omit<z.infer<typeof insertAccountSchema>, "accountType"> & {
-  accountType: AccountType;
-};
+export const orphanAccountSchema = insertAccountSchema.omit({
+  userAccountId: true,
+});
+
+export type OrphanAccount = z.infer<typeof orphanAccountSchema>
+
 export type Account = typeof accounts.$inferSelect;
 
 // History table to track account value changes over time
