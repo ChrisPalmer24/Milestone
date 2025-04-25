@@ -4,8 +4,8 @@ import { setupVite, serveStatic, log } from "./vite";
 import path from "path";
 import cookieParser from "cookie-parser";
 import { validateAuthEnvVars } from "./utils/time";
-import { registerRoutes as registerAuthRoutes} from "./routes/auth";
-import { registerRoutes as registerVerificationRoutes} from "./routes/verification";
+import { registerRoutes as registerAuthRoutes } from "./routes/auth";
+import { registerRoutes as registerVerificationRoutes } from "./routes/verification";
 import authService from "./services/auth";
 import { ping } from "./db";
 
@@ -61,7 +61,6 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 });
 
 (async () => {
-
   app.use("/api", await registerRoutes(Router(), authService));
 
   //Dont allow undhandled apiu route requests to follow through
