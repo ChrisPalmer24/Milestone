@@ -135,10 +135,8 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <SessionProvider>
         <PortfolioProvider>
-          <DateRangeProvider>
-            <Router />
-            <Toaster />
-          </DateRangeProvider>
+          <Router />
+          <Toaster />
         </PortfolioProvider>
       </SessionProvider>
       <ReactQueryDevtools initialIsOpen={false} />

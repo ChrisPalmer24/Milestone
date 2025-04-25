@@ -52,8 +52,9 @@ import { getNextMilestone } from "@/lib/utils/milestones";
 import { calculateAccountChange } from "@/lib/utils/performance";
 import AddAccountDialogue from "@/components/account/AddAccountDialogue";
 import { OrphanAccount } from "@shared/schema";
+import { DateRangeProvider } from "@/context/DateRangeContext";
 
-export default function Portfolio() {
+function Portfolio() {
   const [, setLocation] = useLocation();
   const {
     accounts,
@@ -450,5 +451,13 @@ export default function Portfolio() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function PortfolioWithRangeProvider() {
+  return (
+    <DateRangeProvider>
+      <Portfolio />
+    </DateRangeProvider>
   );
 }
