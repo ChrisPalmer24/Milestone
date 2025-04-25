@@ -9,15 +9,8 @@ const createAuthMiddleware = (allowedAuthTypes: TenantType[], authoriseUser: Aut
       // Try browser session auth if allowed
       if (allowedAuthTypes.includes('user')) {
 
-        console.log("allowedAuthTypes", allowedAuthTypes);
-
-        console.log("req.cookies", req.cookies);
-
         const accessToken = req.cookies[AUTH_COOKIE_NAMES.ACCESS_TOKEN];
         const refreshToken = req.cookies[AUTH_COOKIE_NAMES.REFRESH_TOKEN];
-
-        console.log("accessToken", accessToken);
-        console.log("refreshToken", refreshToken);
 
         const authResult = await authoriseUser({
           accessToken,
@@ -25,10 +18,9 @@ const createAuthMiddleware = (allowedAuthTypes: TenantType[], authoriseUser: Aut
           userAgent: req.headers["user-agent"],
         }, res);
 
-        console.log("authResult", authResult);
-
         if (authResult) {
           req.tenant = { id: authResult.tenantId, type: 'user', userAccountId: authResult.tenantAccountId };
+          console.log("middleware next next req.tenant", req.tenant);
           return next();
         }
       }
@@ -62,12 +54,6 @@ const createAuthMiddleware = (allowedAuthTypes: TenantType[], authoriseUser: Aut
     }
   };
 };
-
-// Export convenience middleware for common auth patterns
-export const requireUser = (authoriseUser: AuthoriseUser, authoriseAPIKey: AuthoriseAPIKey) => createAuthMiddleware(['user'], authoriseUser, authoriseAPIKey);
-export const requireApiKey = (authoriseUser: AuthoriseUser, authoriseAPIKey: AuthoriseAPIKey) => createAuthMiddleware(['api'], authoriseUser, authoriseAPIKey);
-export const requireAny = (authoriseUser: AuthoriseUser, authoriseAPIKey: AuthoriseAPIKey) => createAuthMiddleware(['user', 'api'], authoriseUser, authoriseAPIKey);
-export const requireBoth = (authoriseUser: AuthoriseUser, authoriseAPIKey: AuthoriseAPIKey) => createAuthMiddleware(['user', 'api'], authoriseUser, authoriseAPIKey); // For routes that need both user and API auth
 
 // Export the factory function for custom auth requirements
 export { createAuthMiddleware }; 

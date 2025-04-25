@@ -26,7 +26,7 @@ import {
   setAuthCookies,
 } from "./token";
 import { authorizeAPIKey, authorizeUser } from "./auth";
-import { createAuthMiddleware, requireUser, requireApiKey, requireAny, requireBoth } from "./middleware";
+import { createAuthMiddleware } from "./middleware";
 
 interface AuthServiceOptions {
   accessTokenSecret: string;
@@ -106,13 +106,18 @@ export class AuthService {
   }
 
   public authorizeUser(attributes: AuthorizeUserAttributes, res: ResponseWithCookiesLike) {
+    const that = this
     return authorizeUser({
       ...attributes,
       accessTokenSecret: this.accessTokenSecret,
       refreshTokenSecret: this.refreshTokenSecret,
       accessTokenExpiry: this.accessTokenExpiry,
       refreshTokenExpiry: this.refreshTokenExpiry
-    }, this.cookieOptions, this.tokenPersistence, res);
+    }, function (res: ResponseWithCookiesLike, accessToken: string, refreshToken: string) {
+      that.setAuthCookies(res, accessToken, refreshToken);
+    }, function (res: ResponseWithCookiesLike) {
+      that.clearAuthCookies(res);
+    }, this.tokenPersistence, res);
   }
 
   public authorizeAPIKey(attributes: AuthorizeAPIKeyAttributes) {
@@ -137,22 +142,22 @@ export class AuthService {
 
     const that = this;
     return {
-      requireUser: requireUser(function (attributes: AuthorizeUserAttributes, res: ResponseWithCookiesLike) {
+      requireUser: createAuthMiddleware(['user'], function (attributes: AuthorizeUserAttributes, res: ResponseWithCookiesLike) {
         return that.authorizeUser(attributes, res);
       }, function (attributes: AuthorizeAPIKeyAttributes) {
         return that.authorizeAPIKey(attributes);
       }),
-      requireApiKey: requireApiKey(function (attributes: AuthorizeUserAttributes, res: ResponseWithCookiesLike) {
+      requireApiKey: createAuthMiddleware(['api'], function (attributes: AuthorizeUserAttributes, res: ResponseWithCookiesLike) {
         return that.authorizeUser(attributes, res);
       }, function (attributes: AuthorizeAPIKeyAttributes) {
         return that.authorizeAPIKey(attributes);
       }),
-      requireAny: requireAny(function (attributes: AuthorizeUserAttributes, res: ResponseWithCookiesLike) {
+      requireAny: createAuthMiddleware(['user', 'api'], function (attributes: AuthorizeUserAttributes, res: ResponseWithCookiesLike) {
         return that.authorizeUser(attributes, res);
       }, function (attributes: AuthorizeAPIKeyAttributes) {
         return that.authorizeAPIKey(attributes);
       }),
-      requireBoth: requireBoth(function (attributes: AuthorizeUserAttributes, res: ResponseWithCookiesLike) {
+      requireBoth: createAuthMiddleware(['user', 'api'], function (attributes: AuthorizeUserAttributes, res: ResponseWithCookiesLike) {
         return that.authorizeUser(attributes, res);
       }, function (attributes: AuthorizeAPIKeyAttributes) {
         return that.authorizeAPIKey(attributes);

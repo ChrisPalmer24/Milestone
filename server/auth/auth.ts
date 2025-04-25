@@ -7,7 +7,8 @@ import { AuthorizeAPIKeyAttributesExtended, AuthorizeUserAttributesExtended, Aut
 
 export async function authorizeUser(
   attributes: AuthorizeUserAttributesExtended,
-  cookieOptions: CookieOptions,
+  setAuthCookies: (res: ResponseWithCookiesLike, accessToken: string, refreshToken: string) => void,
+  clearAuthCookies: (res: ResponseWithCookiesLike) => void,
   tokenPersistence: TokenPersistence,
   res: ResponseWithCookiesLike
 ): Promise<AuthorizeUserResult | null> {
@@ -41,7 +42,7 @@ export async function authorizeUser(
           // });
 
           if (!persistedToken) {
-            clearAuthCookies(res, cookieOptions);
+            clearAuthCookies(res);
             return null;
           }
 
@@ -71,7 +72,7 @@ export async function authorizeUser(
             expiry: refreshTokenExpiry
           }, tokenPersistence, refreshTokenSecret);
 
-          setAuthCookies(res, cookieOptions, newAccessToken, newRefreshToken);
+          setAuthCookies(res, newAccessToken, newRefreshToken);
 
           return {
             tenantId,
@@ -80,7 +81,7 @@ export async function authorizeUser(
             refreshToken: newRefreshToken
           };
         } catch (error) {
-          clearAuthCookies(res, cookieOptions);
+          clearAuthCookies(res);
           return null;
         }
       }
