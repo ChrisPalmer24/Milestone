@@ -7,6 +7,7 @@ import { validateAuthEnvVars } from "./utils/time";
 import { registerRoutes as registerAuthRoutes} from "./routes/auth";
 import { registerRoutes as registerVerificationRoutes} from "./routes/verification";
 import authService from "./services/auth";
+import { ping } from "./db";
 
 const app = express();
 
@@ -79,11 +80,20 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = process.env.PORT || 5000;
-  app.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
+
+  try {
+    await ping();
+    app.listen(
+      {
+        port,
+        host: "0.0.0.0",
+        reusePort: true,
+      },
+      () => {
+        log(`serving on port ${port}`);
+      }
+    );
+  } catch (error) {
+    console.log("Database ping failed:", error);
+  }
 })();
