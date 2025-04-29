@@ -72,6 +72,13 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     res.status(404);
   });
 
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
+    res.status(status).json({ message });
+    throw err;
+  });
+
   // Setup Vite or static serving last
   if (app.get("env") === "development") {
     await setupVite(app);
