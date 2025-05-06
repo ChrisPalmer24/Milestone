@@ -1,6 +1,6 @@
 import { eq, and } from "drizzle-orm";
-import { coreUsers, userAccounts, userProfiles, passwordResets, passwordChangeHistory, SessionUser, RegisterInput } from "@shared/schema";
-import { CoreUser, UserAccount, UserProfile, InsertCoreUser, InsertUserAccount, InsertUserProfile } from "@shared/schema";
+import { coreUsers, userAccounts, userProfiles, passwordResets, passwordChangeHistory, InsertUserAccount, InsertUserProfile } from "@server/db/schema/user-account";
+import { CoreUser, UserAccount, UserProfile, InsertCoreUser, UserAccountInsert, UserProfileInsert, RegisterInput, SessionUser } from "@shared/schema/user-account";
 import { IUserService } from "./types";
 import { db, type Database } from "../../db/index";
 import { createId } from "@paralleldrive/cuid2";
@@ -61,7 +61,7 @@ export class DatabaseUserService implements IUserService {
     });
   }
 
-  async createUserAccount(data: InsertUserAccount): Promise<UserAccount> {
+  async createUserAccount(data: UserAccountInsert): Promise<UserAccount> {
     const [account] = await this.db.insert(userAccounts).values(data).returning();
     return account;
   }
@@ -96,7 +96,7 @@ export class DatabaseUserService implements IUserService {
     });
   }
 
-  async createUserProfile(data: InsertUserProfile): Promise<UserProfile> {
+  async createUserProfile(data: UserProfileInsert): Promise<UserProfile> {
     const [profile] = await this.db.insert(userProfiles).values(data).returning();
     return profile;
   }
@@ -194,24 +194,9 @@ export class DatabaseUserService implements IUserService {
 
   // Authentication operations
   async verifyEmail(token: string): Promise<boolean> {
-    const account = await this.db.query.userAccounts.findFirst({
-      where: and(
-        eq(userAccounts.verificationToken, token),
-        eq(userAccounts.isVerified, false)
-      ),
-    });
 
-    if (!account || !account.verificationExpiry || account.verificationExpiry < new Date()) {
-      return false;
-    }
 
-    await this.db
-      .update(userAccounts)
-      .set({
-        verificationToken: null,
-        verificationExpiry: null,
-      })
-      .where(eq(userAccounts.id, account.id));
+    throw new Error("Not implemented");
 
     return true;
   }

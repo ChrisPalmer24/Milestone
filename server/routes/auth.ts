@@ -1,8 +1,8 @@
 import { NextFunction, Router } from "express";
 import { z } from "zod";
 import { db } from "../db";
+import { userAccounts } from "../db/schema/user-account";
 import {
-  userAccounts,
   loginSchema,
   registerSchema,
   revokeFamilySchema,

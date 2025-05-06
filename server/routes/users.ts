@@ -2,9 +2,9 @@ import { Router } from "express";
 import { z } from "zod";
 import { ServiceFactory } from "../services/factory";
 import {
-  insertCoreUserSchema,
-  insertUserAccountSchema,
-  insertUserProfileSchema,
+  coreUserInsertSchema,
+  userAccountInsertSchema,
+  userProfileInsertSchema,
 } from "@shared/schema";
 import { AuthRequest, AuthService, requireTenant, Tenant } from "../auth";
 
@@ -32,7 +32,7 @@ export async function registerRoutes(
 
   router.post("/core", requireUser, async (req: AuthRequest, res) => {
     try {
-      const userData = insertCoreUserSchema.parse(req.body);
+      const userData = coreUserInsertSchema.parse(req.body);
       const user = await userService.createCoreUser(userData);
       res.status(201).json(user);
     } catch (error) {
@@ -47,7 +47,7 @@ export async function registerRoutes(
 
   router.patch("/core/:id", requireUser, async (req: AuthRequest, res) => {
     try {
-      const userData = insertCoreUserSchema.partial().parse(req.body);
+      const userData = coreUserInsertSchema.partial().parse(req.body);
       const user = await userService.updateCoreUser(req.params.id, userData);
       res.json(user);
     } catch (error) {
@@ -90,7 +90,7 @@ export async function registerRoutes(
 
   router.post("/account", requireUser, async (req: AuthRequest, res) => {
     try {
-      const accountData = insertUserAccountSchema.parse(req.body);
+      const accountData = userAccountInsertSchema.parse(req.body);
       const account = await userService.createUserAccount(accountData);
       res.status(201).json(account);
     } catch (error) {
@@ -105,7 +105,7 @@ export async function registerRoutes(
 
   router.patch("/account/:id", requireUser, async (req: AuthRequest, res) => {
     try {
-      const accountData = insertUserAccountSchema.partial().parse(req.body);
+      const accountData = userAccountInsertSchema.partial().parse(req.body);
       const account = await userService.updateUserAccount(
         req.params.id,
         accountData
@@ -154,7 +154,7 @@ export async function registerRoutes(
 
   router.post("/profile", requireUser, async (req: AuthRequest, res) => {
     try {
-      const profileData = insertUserProfileSchema.parse(req.body);
+      const profileData = userProfileInsertSchema.parse(req.body);
       const profile = await userService.createUserProfile(profileData);
       res.status(201).json(profile);
     } catch (error) {
@@ -169,7 +169,7 @@ export async function registerRoutes(
 
   router.patch("/profile/:id", requireUser, async (req: AuthRequest, res) => {
     try {
-      const profileData = insertUserProfileSchema.partial().parse(req.body);
+      const profileData = userProfileInsertSchema.partial().parse(req.body);
       const profile = await userService.updateUserProfile(
         req.params.id,
         profileData

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { ServiceFactory } from "../services/factory";
-import { insertFireSettingsSchema } from "@shared/schema";
+import { fireSettingsInsertSchema } from "@shared/schema";
 import { AuthRequest, AuthService } from "../auth";
 
 const router = Router();
@@ -55,7 +55,7 @@ export async function registerRoutes(
   // Create FIRE settings
   router.post("/", requireUser, async (req: AuthRequest, res) => {
     try {
-      const settingsData = insertFireSettingsSchema.parse(req.body);
+      const settingsData = fireSettingsInsertSchema.parse(req.body);
       const settings = await fireSettingsService.create(settingsData);
       res.status(201).json(settings);
     } catch (error) {
@@ -75,7 +75,7 @@ export async function registerRoutes(
   router.patch("/:id", requireUser, async (req: AuthRequest, res) => {
     try {
       const settingsId = req.params.id;
-      const settingsData = insertFireSettingsSchema.partial().parse(req.body);
+      const settingsData = fireSettingsInsertSchema.partial().parse(req.body);
       const settings = await fireSettingsService.update(
         settingsId,
         settingsData
@@ -123,7 +123,7 @@ export async function registerRoutes(
     async (req: AuthRequest, res) => {
       try {
         const userAccountId = req.params.userAccountId;
-        const settingsData = insertFireSettingsSchema.partial().parse(req.body);
+        const settingsData = fireSettingsInsertSchema.partial().parse(req.body);
         const settings = await fireSettingsService.updateByUserAccountId(
           userAccountId,
           settingsData

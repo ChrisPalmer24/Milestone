@@ -1,4 +1,4 @@
-import { refreshTokens } from "@shared/schema";
+import { refreshTokens } from "@server/db/schema/user-account";
 import { AuthService } from "../../auth";
 import { and, eq } from "drizzle-orm";
 import { db } from "../../db";

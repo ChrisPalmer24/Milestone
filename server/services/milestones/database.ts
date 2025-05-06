@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
-import { milestones, CoreUser, UserAccount } from "@shared/schema";
-import { Milestone, InsertMilestone } from "@shared/schema";
+import { InsertMilestone, milestones } from "@server/db/schema/portfolio-milestone";
+import { Milestone, MilestoneInsert, CoreUser, UserAccount } from "@shared/schema";
 import { IMilestoneService } from "./types";
 import { type Database } from "../../db/index";
 
@@ -24,7 +24,7 @@ export class DatabaseMilestoneService implements IMilestoneService {
     });
   }
 
-  async create(data: InsertMilestone): Promise<Milestone> {
+  async create(data: MilestoneInsert): Promise<Milestone> {
     const [milestone] = await this.db.insert(milestones).values(data).returning();
     return milestone;
   }

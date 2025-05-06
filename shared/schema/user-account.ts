@@ -1,278 +1,160 @@
-import { pgTable, text, boolean, timestamp, uuid } from "drizzle-orm/pg-core";
-import { relations, sql } from "drizzle-orm";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
-import { timestampColumns } from "./utils";
+import { z, ZodType } from "zod";
+import {
+  SelectCoreUser as DBCoreUser,
+  SelectUserAccount as DBUserAccount,
+  SelectUserProfile as DBUserProfile,
+  SelectPasswordReset as DBPasswordReset,
+  SelectPasswordChangeHistory as DBPasswordChangeHistory,
+  SelectUserSubscription as DBUserSubscription,
+  SelectRefreshToken as DBRefreshToken,
+  SelectEmailVerification as DBEmailVerification,
+  SelectPhoneVerification as DBPhoneVerification,
+  InsertCoreUser as DBInsertCoreUser,
+  InsertUserAccount as DBInsertUserAccount,
+  InsertUserProfile as DBInsertUserProfile,
+  InsertPasswordReset as DBInsertPasswordReset,
+  InsertPasswordChangeHistory as DBInsertPasswordChangeHistory,
+  InsertUserSubscription as DBInsertUserSubscription,
+  InsertRefreshToken as DBInsertRefreshToken,
+  InsertEmailVerification as DBInsertEmailVerification,
+  InsertPhoneVerification as DBInsertPhoneVerification,
+  InsertUserAccount,
+} from "@server/db/schema/user-account";
+import { IfConstructorEquals } from "./utils";
 
-// Core User table
-export const coreUsers = pgTable("core_users", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  status: text("status", { enum: ["active", "inactive", "suspended"] }).notNull().default("active"),
-  ...timestampColumns(),
+// Core schemas
+export const coreUserInsertSchema = z.object({
+  status: z.enum(["active", "inactive", "suspended"]).optional(),
 });
 
-export const coreUsersRelations = relations(coreUsers, ({ one, many }) => ({
-  userAccounts: many(userAccounts),
-}));
+type ZodCoreUser = z.infer<typeof coreUserInsertSchema>;
+export type InsertCoreUser = IfConstructorEquals<ZodCoreUser, DBInsertCoreUser, never>;
+coreUserInsertSchema satisfies ZodType<InsertCoreUser>;
+export type CoreUser = DBCoreUser;
 
-// User Account table
-export const userAccounts = pgTable("user_accounts", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  coreUserId: uuid("core_user_id").notNull().references(() => coreUsers.id),
-  email: text("email").notNull().unique(),
-  phoneNumber: text("phone_number").unique(),
-  passwordHash: text("password_hash").notNull(),
-  fullName: text("full_name").notNull(),
-  isEmailVerified: boolean("is_email_verified").notNull().default(false),
-  isPhoneVerified: boolean("is_phone_verified").notNull().default(false),
-  ...timestampColumns(),
+export const userAccountInsertSchema = z.object({
+  coreUserId: z.string(),
+  email: z.string().email(),
+  phoneNumber: z.string().nullable().optional(),
+  passwordHash: z.string(),
+  fullName: z.string(),
+  isEmailVerified: z.boolean().optional(),
+  isPhoneVerified: z.boolean().optional()
 });
 
-// Email Verification table
-export const emailVerifications = pgTable("email_verifications", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userAccountId: uuid("user_account_id").notNull().references(() => userAccounts.id),
-  token: text("token").notNull(),
-  isCompleted: boolean("is_completed").notNull().default(false),
-  completedAt: timestamp("completed_at"),
-  expiresAt: timestamp("expires_at").notNull(),
-  ...timestampColumns(),
+type ZodUserAccount = z.infer<typeof userAccountInsertSchema>;
+export type UserAccountInsert = IfConstructorEquals<ZodUserAccount, DBInsertUserAccount, never>;
+userAccountInsertSchema satisfies ZodType<InsertUserAccount>;
+export type UserAccount = DBUserAccount;
+
+export const userProfileInsertSchema = z.object({
+  userAccountId: z.string(),
+  avatarUrl: z.string().nullable().optional(),
 });
 
-// Phone Verification table
-export const phoneVerifications = pgTable("phone_verifications", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userAccountId: uuid("user_account_id").notNull().references(() => userAccounts.id),
-  token: text("token").notNull(),
-  isCompleted: boolean("is_completed").notNull().default(false),
-  completedAt: timestamp("completed_at"),
-  expiresAt: timestamp("expires_at").notNull(),
-  ...timestampColumns(),
+type ZodUserProfile = z.infer<typeof userProfileInsertSchema>;
+export type UserProfileInsert = IfConstructorEquals<ZodUserProfile, DBInsertUserProfile, never>;
+userProfileInsertSchema satisfies ZodType<UserProfileInsert>;
+export type UserProfile = DBUserProfile;
+export const passwordResetInsertSchema = z.object({
+  userAccountId: z.string(),
+  token: z.string(),
+  expiresAt: z.date(),
 });
 
-export const userAccountsRelations = relations(userAccounts, ({ one, many }) => ({
-  coreUser: one(coreUsers, {
-    fields: [userAccounts.coreUserId],
-    references: [coreUsers.id],
-  }),
-  userProfile: one(userProfiles, {
-    fields: [userAccounts.id],
-    references: [userProfiles.userAccountId],
-  }),
-  passwordResets: many(passwordResets),
-  passwordChangeHistory: many(passwordChangeHistory),
-  refreshTokens: many(refreshTokens),
-  emailVerifications: many(emailVerifications),
-  phoneVerifications: many(phoneVerifications),
-  userSubscriptions: many(userSubscriptions),
-}));
+type ZodPasswordReset = z.infer<typeof passwordResetInsertSchema>;
+export type PasswordResetInsert = IfConstructorEquals<ZodPasswordReset, DBInsertPasswordReset, never>;
+passwordResetInsertSchema satisfies ZodType<PasswordResetInsert>;
+export type PasswordReset = DBPasswordReset;
 
-// User Profile table
-export const userProfiles = pgTable("user_profiles", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userAccountId: uuid("user_account_id").notNull().references(() => userAccounts.id),
-  avatarUrl: text("avatar_url"),
-  // Add profile fields as needed
-  ...timestampColumns(),
+export const passwordChangeHistoryInsertSchema = z.object({
+  userAccountId: z.string(),
+  passwordHash: z.string(),
+  changedAt: z.date(),
 });
 
-export const userProfilesRelations = relations(userProfiles, ({ one }) => ({
-  userAccount: one(userAccounts, {
-    fields: [userProfiles.userAccountId],
-    references: [userAccounts.id],
-  }),
-}));
+type ZodPasswordChangeHistory = z.infer<typeof passwordChangeHistoryInsertSchema>;
+export type PasswordChangeHistoryInsert = IfConstructorEquals<ZodPasswordChangeHistory, DBInsertPasswordChangeHistory, never>;
+passwordChangeHistoryInsertSchema satisfies ZodType<PasswordChangeHistoryInsert>;
+export type PasswordChangeHistory = DBPasswordChangeHistory;
 
-// Password Reset table
-export const passwordResets = pgTable("password_resets", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userAccountId: uuid("user_account_id").notNull().references(() => userAccounts.id),
-  token: text("token").notNull(),
-  isCompleted: boolean("is_completed").notNull().default(false),
-  completedAt: timestamp("completed_at"),
-  expiresAt: timestamp("expires_at").notNull(),
-  ...timestampColumns(),
+export const userSubscriptionInsertSchema = z.object({
+  userAccountId: z.string(),
+  plan: z.string(),
+  status: z.enum(["active", "cancelled", "expired"]),
+  startDate: z.date(),
+  endDate: z.date().nullable().optional(),
 });
 
-export const passwordResetsRelations = relations(passwordResets, ({ one }) => ({
-  userAccount: one(userAccounts, {
-    fields: [passwordResets.userAccountId],
-    references: [userAccounts.id],
-  }),
-}));
-
-// Password Change History table
-export const passwordChangeHistory = pgTable("password_change_history", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userAccountId: uuid("user_account_id").notNull().references(() => userAccounts.id),
-  passwordHash: text("password_hash").notNull(),
-  changedAt: timestamp("changed_at").notNull(),
-  ...timestampColumns(),
+type ZodUserSubscription = z.infer<typeof userSubscriptionInsertSchema>;
+export type UserSubscriptionInsert = IfConstructorEquals<ZodUserSubscription, DBInsertUserSubscription, never>;
+userSubscriptionInsertSchema satisfies ZodType<UserSubscriptionInsert>;
+export type UserSubscription = DBUserSubscription;
+export const refreshTokenInsertSchema = z.object({
+  tenantId: z.string(),
+  userAccountId: z.string(),
+  tokenHash: z.string(),
+  familyId: z.string(),
+  parentTokenHash: z.string().nullable().optional(),
+  deviceInfo: z.string().nullable().optional(),
+  lastUsedAt: z.date(),
+  expiresAt: z.date(),
 });
 
-export const passwordChangeHistoryRelations = relations(passwordChangeHistory, ({ one }) => ({
-  userAccount: one(userAccounts, {
-    fields: [passwordChangeHistory.userAccountId],
-    references: [userAccounts.id],
-  }),
-}));
-
-// User Subscription table
-export const userSubscriptions = pgTable("user_subscriptions", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userAccountId: uuid("user_account_id").notNull().references(() => userAccounts.id),
-  plan: text("plan").notNull(),
-  status: text("status", { enum: ["active", "cancelled", "expired"] }).notNull().default("active"),
-  startDate: timestamp("start_date").notNull(),
-  endDate: timestamp("end_date"),
-  ...timestampColumns(),
+type ZodRefreshToken = z.infer<typeof refreshTokenInsertSchema>;
+export type RefreshTokenInsert = IfConstructorEquals<ZodRefreshToken, DBInsertRefreshToken, never>;
+refreshTokenInsertSchema satisfies ZodType<RefreshTokenInsert>;
+export type RefreshToken = DBRefreshToken;
+export const emailVerificationInsertSchema = z.object({
+  userAccountId: z.string(),
+  token: z.string(),
+  expiresAt: z.date(),
 });
 
-export const userSubscriptionsRelations = relations(userSubscriptions, ({ one }) => ({
-  userAccount: one(userAccounts, {
-    fields: [userSubscriptions.userAccountId],
-    references: [userAccounts.id],
-  }),
-}));
+type ZodEmailVerification = z.infer<typeof emailVerificationInsertSchema>;
+export type EmailVerificationInsert = IfConstructorEquals<ZodEmailVerification, DBInsertEmailVerification, never>;
+emailVerificationInsertSchema satisfies ZodType<EmailVerificationInsert>;
+export type EmailVerification = DBEmailVerification;
 
-// Refresh Token table
-export const refreshTokens = pgTable("refresh_tokens", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userAccountId: uuid("user_account_id").notNull().references(() => userAccounts.id),
-  tenantId: uuid("tenant_id").notNull().references(() => coreUsers.id),
-  tokenHash: text("token_hash").notNull(),
-  familyId: text("family_id").notNull(),
-  parentTokenHash: text("parent_token_hash"),
-  deviceInfo: text("device_info"),
-  lastUsedAt: timestamp("last_used_at").notNull(),
-  expiresAt: timestamp("expires_at").notNull(),
-  isRevoked: boolean("is_revoked").notNull().default(false),
-  ...timestampColumns(),
+export const phoneVerificationInsertSchema = z.object({
+  userAccountId: z.string(),
+  token: z.string(),
+  expiresAt: z.date(),
 });
 
-export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({
-  userAccount: one(userAccounts, {
-    fields: [refreshTokens.userAccountId],
-    references: [userAccounts.id],
-  }),
-}));
-
-// Insert schemas
-export const insertCoreUserSchema = createInsertSchema(coreUsers).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertUserAccountSchema = createInsertSchema(userAccounts).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  isEmailVerified: true,
-  isPhoneVerified: true,
-});
-
-export const insertUserProfileSchema = createInsertSchema(userProfiles).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertPasswordResetSchema = createInsertSchema(passwordResets).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  isCompleted: true,
-  completedAt: true,
-});
-
-export const insertPasswordChangeHistorySchema = createInsertSchema(passwordChangeHistory).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertUserSubscriptionSchema = createInsertSchema(userSubscriptions).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertRefreshTokenSchema = createInsertSchema(refreshTokens).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  isRevoked: true,
-});
-
-export const insertEmailVerificationSchema = createInsertSchema(emailVerifications).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  isCompleted: true,
-  completedAt: true,
-});
-
-export const insertPhoneVerificationSchema = createInsertSchema(phoneVerifications).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  isCompleted: true,
-  completedAt: true,
-});
-
+type ZodPhoneVerification = z.infer<typeof phoneVerificationInsertSchema>;
+export type PhoneVerificationInsert = IfConstructorEquals<ZodPhoneVerification, DBInsertPhoneVerification, never>;
+phoneVerificationInsertSchema satisfies ZodType<PhoneVerificationInsert>;
+export type PhoneVerification = DBPhoneVerification;
 // Auth schemas
-export const loginSchema = createInsertSchema(userAccounts).pick({
-  email: true,
-  passwordHash: true,
-}).extend({
+export const loginSchema = z.object({
+  email: z.string().email(),
   password: z.string(),
-}).omit({
-  passwordHash: true,
 });
 
-export const registerSchema = createInsertSchema(userAccounts).pick({
-  email: true,
-  fullName: true,
-  phoneNumber: true,
-}).extend({
+export type LoginInput = z.infer<typeof loginSchema>;
+
+export const registerSchema = z.object({
+  email: z.string().email(),
+  fullName: z.string(),
+  phoneNumber: z.string().optional(),
   password: z.string().min(8),
 }).transform(data => ({
   ...data,
   phoneNumber: data.phoneNumber === "" ? null : data.phoneNumber
 }));
 
+export type RegisterInput = z.infer<typeof registerSchema>;
+
 export const revokeFamilySchema = z.object({
   familyId: z.string(),
 });
 
-// Types
-export type CoreUser = typeof coreUsers.$inferSelect;
-export type UserAccount = typeof userAccounts.$inferSelect;
-export type UserProfile = typeof userProfiles.$inferSelect;
-export type PasswordReset = typeof passwordResets.$inferSelect;
-export type PasswordChangeHistory = typeof passwordChangeHistory.$inferSelect;
-export type UserSubscription = typeof userSubscriptions.$inferSelect;
-export type RefreshToken = typeof refreshTokens.$inferSelect;
-export type EmailVerification = typeof emailVerifications.$inferSelect;
-export type PhoneVerification = typeof phoneVerifications.$inferSelect;
+export type ZodRevokeFamily = z.infer<typeof revokeFamilySchema>;
 
-export type InsertCoreUser = z.infer<typeof insertCoreUserSchema>;
-export type InsertUserAccount = z.infer<typeof insertUserAccountSchema>;
-export type InsertUserProfile = z.infer<typeof insertUserProfileSchema>;
-export type InsertPasswordReset = z.infer<typeof insertPasswordResetSchema>;
-export type InsertPasswordChangeHistory = z.infer<typeof insertPasswordChangeHistorySchema>;
-export type InsertUserSubscription = z.infer<typeof insertUserSubscriptionSchema>;
-export type InsertRefreshToken = z.infer<typeof insertRefreshTokenSchema>;
-export type InsertEmailVerification = z.infer<typeof insertEmailVerificationSchema>;
-export type InsertPhoneVerification = z.infer<typeof insertPhoneVerificationSchema>;
-
-export type LoginInput = z.infer<typeof loginSchema>;
-export type RegisterInput = z.infer<typeof registerSchema>;
-export type RevokeFamilyInput = z.infer<typeof revokeFamilySchema>; 
 
 export type SessionUser = {
   id: string;
-  account: UserAccount;
-  profile: UserProfile;
-}
+  account: DBUserAccount;
+  profile: DBUserProfile;
+};

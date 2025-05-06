@@ -1,5 +1,4 @@
-import { CoreUser, UserAccount, UserProfile, InsertCoreUser, InsertUserAccount, InsertUserProfile, RegisterInput, SessionUser } from "@shared/schema";
-
+import { CoreUser, UserAccount, UserProfile, InsertCoreUser, UserAccountInsert, UserProfileInsert, RegisterInput, SessionUser } from "@shared/schema/user-account";
 export interface IUserService {
   // Core User operations
   getCoreUser(id: CoreUser["id"]): Promise<CoreUser | undefined>;
@@ -10,14 +9,14 @@ export interface IUserService {
   // User Account operations
   getUserAccount(id: UserAccount["id"]): Promise<UserAccount | undefined>;
   getUserAccountByEmail(email: string): Promise<UserAccount | undefined>;
-  createUserAccount(data: InsertUserAccount): Promise<UserAccount>;
-  updateUserAccount(id: UserAccount["id"], data: Partial<InsertUserAccount>): Promise<UserAccount>;
+  createUserAccount(data: UserAccountInsert): Promise<UserAccount>;
+  updateUserAccount(id: UserAccount["id"], data: Partial<UserAccountInsert>): Promise<UserAccount>;
   deleteUserAccount(id: UserAccount["id"]): Promise<boolean>;
 
   // User Profile operations
   getUserProfile(id: UserProfile["id"]): Promise<UserProfile | undefined>;
-  createUserProfile(data: InsertUserProfile): Promise<UserProfile>;
-  updateUserProfile(id: UserProfile["id"], data: Partial<InsertUserProfile>): Promise<UserProfile>;
+  createUserProfile(data: UserProfileInsert): Promise<UserProfile>;
+  updateUserProfile(id: UserProfile["id"], data: Partial<UserProfileInsert>): Promise<UserProfile>;
   deleteUserProfile(id: UserProfile["id"]): Promise<boolean>;
 
   createUserComplete(user: RegisterInput): Promise<SessionUser>;

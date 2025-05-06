@@ -1,25 +1,26 @@
-import { pgTable, text, numeric, timestamp, boolean, uuid } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
-import { userAccounts } from "./user-account";
-import { sql } from "drizzle-orm";
-// Milestones table to track investment goals
-export const milestones = pgTable("milestones", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  userAccountId: uuid("user_account_id").notNull().references(() => userAccounts.id),
-  name: text("name").notNull(),
-  targetValue: numeric("target_value").notNull(),
-  accountType: text("account_type"), // Optional, can be specific to an account type (ISA, SIPP, LISA, GIA) or null for total portfolio
-  isCompleted: boolean("is_completed").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+import { z, ZodType } from "zod";
+import { InsertMilestone as DBInsertMilestone, SelectMilestone as DBMilestone } from "@server/db/schema/portfolio-milestone";
+import { IfConstructorEquals, Orphan } from "./utils";
+
+export const milestoneOrphanInsertSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  targetValue: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+    message: "Target value must be a positive number",
+  }),
+  accountType: z.string().optional().nullable(),
 });
 
-export const insertMilestoneSchema = createInsertSchema(milestones).omit({
-  id: true,
-  isCompleted: true,
-  createdAt: true,
+type ZodMilestoneOrphan = z.infer<typeof milestoneOrphanInsertSchema>;
+export type MilestoneOrphanInsert = IfConstructorEquals<ZodMilestoneOrphan, Orphan<DBInsertMilestone>, never>;
+milestoneOrphanInsertSchema satisfies ZodType<MilestoneOrphanInsert>;
+
+export const milestoneInsertSchema = milestoneOrphanInsertSchema.extend({
+  userAccountId: z.string(),
 });
 
-export type InsertMilestone = z.infer<typeof insertMilestoneSchema>;
-export type Milestone = typeof milestones.$inferSelect;
+type ZodMilestone = z.infer<typeof milestoneInsertSchema>;
+export type MilestoneInsert = IfConstructorEquals<ZodMilestone, DBInsertMilestone, never>;
+milestoneInsertSchema satisfies ZodType<MilestoneInsert>;
+
+export type Milestone = DBMilestone;
 

@@ -4,8 +4,6 @@ import { setupVite, serveStatic, log } from "./vite";
 import path from "path";
 import cookieParser from "cookie-parser";
 import { validateAuthEnvVars } from "./utils/time";
-import { registerRoutes as registerAuthRoutes } from "./routes/auth";
-import { registerRoutes as registerVerificationRoutes } from "./routes/verification";
 import authService from "./services/auth";
 import { ping } from "./db";
 import helmet from "helmet";
@@ -16,9 +14,9 @@ const app = express();
 validateAuthEnvVars();
 
 // Basic middleware
-app.use(helmet({
-  //TODO Configure
-}));
+// app.use(helmet({
+//   //TODO Configure
+// }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser(process.env.COOKIE_SECRET || "your-cookie-secret"));

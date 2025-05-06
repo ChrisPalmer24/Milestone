@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
-import { fireSettings, UserAccount } from "@shared/schema";
-import { FireSettings, InsertFireSettings } from "@shared/schema";
+import { fireSettings, InsertFireSettings } from "@server/db/schema/portfolio-fire";
+import { FireSettings, FireSettingsInsert, UserAccount } from "@shared/schema";
 import { IFireSettingsService } from "./types";
 import { type Database } from "../../db/index";
 
@@ -23,7 +23,7 @@ export class DatabaseFireSettingsService implements IFireSettingsService {
     });
   }
 
-  async create(data: InsertFireSettings): Promise<FireSettings> {
+  async create(data: FireSettingsInsert): Promise<FireSettings> {
     const [settings] = await this.db.insert(fireSettings).values(data).returning();
     return settings;
   }

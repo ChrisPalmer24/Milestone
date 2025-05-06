@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { ServiceFactory } from "../services/factory";
-import { insertMilestoneSchema } from "@shared/schema";
+import { milestoneInsertSchema } from "@shared/schema";
 import { AuthRequest, AuthService } from "../auth";
 
 const services = ServiceFactory.getInstance();
@@ -49,7 +49,7 @@ export async function registerRoutes(
   // Create milestone
   router.post("/", requireUser, async (req: AuthRequest, res) => {
     try {
-      const milestoneData = insertMilestoneSchema.parse(req.body);
+      const milestoneData = milestoneInsertSchema.parse(req.body);
       const milestone = await milestoneService.create(milestoneData);
       res.status(201).json(milestone);
     } catch (error) {
@@ -66,7 +66,7 @@ export async function registerRoutes(
   router.patch("/:id", requireUser, async (req: AuthRequest, res) => {
     try {
       const milestoneId = req.params.id;
-      const milestoneData = insertMilestoneSchema.partial().parse(req.body);
+      const milestoneData = milestoneInsertSchema.partial().parse(req.body);
       const milestone = await milestoneService.update(
         milestoneId,
         milestoneData

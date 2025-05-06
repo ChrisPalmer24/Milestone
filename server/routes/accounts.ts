@@ -1,12 +1,15 @@
 import { Router } from "express";
 import { z } from "zod";
 import { ServiceFactory } from "../services/factory";
-import { insertAccountSchema } from "@shared/schema";
+import { insertAccountSchema } from "@server/db/schema/portfolio-account";
 import { AuthRequest, AuthService } from "server/auth";
 
 const router = Router();
 const services = ServiceFactory.getInstance();
 const accountService = services.getAccountService();
+
+
+
 
 export async function registerRoutes(
   router: Router,
@@ -17,6 +20,8 @@ export async function registerRoutes(
 // Get all accounts for a user
 router.get("/user/:userAccountId", requireUser, async (req: AuthRequest, res) => {
   try {
+
+
     const userAccountId = req.params.userAccountId;
     const accounts = await accountService.getByUserAccountId(userAccountId);
     res.json(accounts);

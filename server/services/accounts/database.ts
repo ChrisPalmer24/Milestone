@@ -1,10 +1,14 @@
 import { eq, and, inArray, gte, lte } from "drizzle-orm";
-import { accounts, accountHistory } from "@shared/schema";
-import type { Account, InsertAccount, UserAccount } from "@shared/schema";
+import { accounts, accountHistory } from "@server/db/schema/portfolio-account";
+import type { Account, AccountInsert, UserAccount } from "@shared/schema";
 import type { IAccountService } from "./types";
 import { type Database } from "../../db/index";
-import { IAccountHistoryService } from "../account-history/types";
-import { DatabaseAccountHistoryService } from "../account-history/database";
+import { IAccountHistoryService } from "../asset-history/types";
+import { DatabaseAccountHistoryService } from "../asset-history/database";
+
+/**
+ * @deprecated Use IAssetService instead  
+ */
 export class DatabaseAccountService implements IAccountService {
 
   accountHistoryService: IAccountHistoryService;

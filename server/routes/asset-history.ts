@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { ServiceFactory } from "../services/factory";
-import { insertAccountHistorySchema } from "@shared/schema";
+import { insertAccountHistorySchema } from "@server/db/schema/portfolio-account";
 import { AuthRequest, AuthService } from "../auth";
 
 const services = ServiceFactory.getInstance();
@@ -29,9 +29,9 @@ export async function registerRoutes(
     }
   });
 
-  // Get all history for an account
+  // Get all history for an asset
   router.get(
-    "/account/:accountId",
+    "/asset/:assetId",
     requireUser,
     async (req: AuthRequest, res) => {
       try {
@@ -46,7 +46,7 @@ export async function registerRoutes(
 
   // Get history by date range
   router.get(
-    "/account/:accountId/range",
+    "/asset/:assetId/range",
     requireUser,
     async (req: AuthRequest, res) => {
       try {
