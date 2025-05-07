@@ -15,11 +15,11 @@ import { FireSettingsInsert } from "shared/schema";
 
 export default function Fire() {
   const {
-    totalPortfolioValue,
     fireSettings,
     updateFireSettings,
     isLoading,
     createFireSettings,
+    portfolioOverview,
   } = usePortfolio();
   const { toast } = useToast();
 
@@ -74,7 +74,7 @@ export default function Fire() {
 
   // Calculate years to reach FIRE
   const yearsToFire = calculateYearsToTarget(
-    totalPortfolioValue,
+    portfolioOverview?.value ?? 0,
     formState.monthlyInvestment,
     formState.expectedReturn,
     fireNumber
@@ -82,7 +82,7 @@ export default function Fire() {
 
   // Calculate the impact of changing monthly investment
   const increaseImpact = calculateContributionImpact({
-    currentAmount: totalPortfolioValue,
+    currentAmount: portfolioOverview?.value ?? 0,
     currentMonthlyInvestment: formState.monthlyInvestment,
     newMonthlyInvestment: formState.monthlyInvestment + 100,
     expectedReturn: formState.expectedReturn,
@@ -91,7 +91,7 @@ export default function Fire() {
   });
 
   const decreaseImpact = calculateContributionImpact({
-    currentAmount: totalPortfolioValue,
+    currentAmount: portfolioOverview?.value ?? 0,
     currentMonthlyInvestment: formState.monthlyInvestment,
     newMonthlyInvestment: formState.monthlyInvestment - 100,
     expectedReturn: formState.expectedReturn,
@@ -295,7 +295,7 @@ export default function Fire() {
           {/* Chart */}
           <FireChart
             currentAge={fireSettings.currentAge}
-            currentAmount={totalPortfolioValue}
+            currentAmount={portfolioOverview?.value ?? 0}
             monthlyInvestment={formState.monthlyInvestment}
             targetAmount={fireNumber}
             expectedReturn={formState.expectedReturn}
@@ -308,7 +308,7 @@ export default function Fire() {
             <div className="flex justify-between items-center mb-1">
               <span className="text-sm text-gray-600">Current portfolio:</span>
               <span className="font-medium">
-                £{totalPortfolioValue.toLocaleString()}
+                £{portfolioOverview?.value?.toLocaleString() ?? 0}
               </span>
             </div>
             <div className="flex justify-between items-center mb-1">
