@@ -64,7 +64,7 @@ export default function Goals() {
   const {
     brokerAssets,
     milestones,
-    totalPortfolioValue,
+    portfolioOverview,
     addMilestone,
     deleteMilestone,
     isLoading,
@@ -90,8 +90,9 @@ export default function Goals() {
   const [milestoneToDelete, setMilestoneToDelete] = useState<string | null>(
     null
   );
-  const [milestoneToEdit, setMilestoneToEdit] =
-    useState<MilestoneOrphanInsert | null>(null);
+  const [milestoneToEdit, setMilestoneToEdit] = useState<Milestone | null>(
+    null
+  );
 
   // Form for adding a new milestone
   const form = useForm<z.infer<typeof milestoneSchema>>({
@@ -117,6 +118,7 @@ export default function Goals() {
             ? null
             : (values.accountType as AccountType),
         targetValue: values.targetValue,
+        userAccountId: user.account.id,
       });
       setIsAddMilestoneOpen(false);
       form.reset();
@@ -168,7 +170,7 @@ export default function Goals() {
       );
     } else {
       // Use total portfolio value for general milestones
-      currentValue = totalPortfolioValue;
+      currentValue = portfolioOverview?.value ?? 0;
     }
 
     const targetValue = Number(milestone.targetValue);
@@ -193,7 +195,7 @@ export default function Goals() {
       );
     } else {
       // Use total portfolio value for general milestones
-      currentValue = totalPortfolioValue;
+      currentValue = portfolioOverview?.value ?? 0;
     }
 
     const targetValue = Number(milestone.targetValue);

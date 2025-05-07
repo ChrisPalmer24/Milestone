@@ -25,8 +25,9 @@ import {
   AssetValueInsert,
   MilestoneOrphanInsert,
   FireSettingsInsert,
-  FireSettingsOrphan,
   BrokerProviderAssetWithAccountChange,
+  MilestoneInsert,
+  FireSettingsOrphan,
 } from "@shared/schema";
 import { getEndpointPathWithUserId } from "@/lib/user";
 import { useSession } from "@/hooks/use-session";
@@ -420,7 +421,7 @@ export const usePortfolio = (startDate?: Date, endDate?: Date) => {
   });
 
   // Update milestone mutations to handle response data
-  const addMilestone = useMutation<Milestone, Error, MilestoneOrphanInsert>({
+  const addMilestone = useMutation<Milestone, Error, MilestoneInsert>({
     mutationFn: async (newMilestone) => {
       const processedMilestone = {
         ...newMilestone,
@@ -454,7 +455,7 @@ export const usePortfolio = (startDate?: Date, endDate?: Date) => {
 
   const deleteMilestone = useMutation<void, Error, Milestone["id"]>({
     mutationFn: async (id) => {
-      await apiRequest("DELETE", `/api/milestones/${id}`);
+      return apiRequest("DELETE", `/api/milestones/${id}`);
     },
     onSuccess: () => {
       invalidateMilestones();
