@@ -91,11 +91,14 @@ export async function registerRoutes(
       const milestoneId = req.params.id;
       const success = await milestoneService.delete(milestoneId);
 
+      console.log("success", success);
+
       if (!success) {
         return res.status(404).json({ message: "Milestone not found" });
       }
-
-      res.status(204).send();
+      res.status(200).json({
+        deleted: true,
+      });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete milestone" });
     }
