@@ -38,7 +38,11 @@ import { z } from "zod";
 import { SiTradingview, SiCoinbase } from "react-icons/si";
 import { BsPiggyBank } from "react-icons/bs";
 import { usePortfolio } from "@/context/PortfolioContext";
-import { Account } from "@shared/schema";
+import { AssetValue, BrokerProviderAsset } from "shared/schema";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { getProviderName } from "@/lib/broker";
+import { useBrokerProviders } from "@/hooks/use-broker-providers";
 
 // Form schema for history entry
 const historySchema = z.object({
@@ -52,24 +56,46 @@ const historySchema = z.object({
 
 export default function AccountPage() {
   const params = useParams();
-  const accountId: Account["id"] | undefined = params?.id;
+  const assetId: BrokerProviderAsset["id"] | undefined = params?.id;
+
   const {
-    accounts,
-    getAccountHistory,
-    addAccountHistory,
-    updateAccountHistory,
-    deleteAccountHistory,
-    isLoading,
+    addBrokerAssetValue,
+    updateBrokerAssetValue,
+    deleteBrokerAssetValue,
   } = usePortfolio();
+
+  const { data: providers, isLoading: isProvidersLoading } =
+    useBrokerProviders();
 
   const [isAddHistoryOpen, setIsAddHistoryOpen] = useState(false);
   const [isEditHistoryOpen, setIsEditHistoryOpen] = useState(false);
   const [historyToDelete, setHistoryToDelete] = useState<string | null>(null);
   const [historyToEdit, setHistoryToEdit] = useState<any>(null);
 
-  // Get account and history data
-  const account = accounts.find((acc) => acc.id === accountId);
-  const history = accountId ? getAccountHistory(accountId) : [];
+  const {
+    data: asset,
+    isLoading: isAssetLoading,
+    isError: isAssetError,
+    error: assetError,
+  } = useQuery<BrokerProviderAsset>({
+    queryKey: ["broker-asset", assetId],
+    queryFn: () =>
+      apiRequest<BrokerProviderAsset>("GET", `/api/assets/broker/${assetId}`),
+  });
+
+  console.log("assetError", assetError);
+  console.log("asset", asset);
+
+  const { data: history, isLoading: isHistoryLoading } = useQuery<AssetValue[]>(
+    {
+      queryKey: ["broker-asset-history", assetId],
+      queryFn: () =>
+        apiRequest<AssetValue[]>(
+          "GET",
+          `/api/assets/broker/${assetId}/history`
+        ),
+    }
+  );
 
   // Form for adding/editing history
   const form = useForm<z.infer<typeof historySchema>>({
@@ -81,12 +107,12 @@ export default function AccountPage() {
   });
 
   const handleCreateHistory = async (values: z.infer<typeof historySchema>) => {
-    if (!accountId) return;
+    if (!assetId) return;
 
     try {
-      await addAccountHistory({
-        accountId,
-        value: values.value,
+      await addBrokerAssetValue.mutateAsync({
+        assetId: assetId,
+        value: Number(values.value),
         recordedAt: new Date(values.recordedAt),
       });
       setIsAddHistoryOpen(false);
@@ -97,11 +123,12 @@ export default function AccountPage() {
   };
 
   const handleEditHistory = async (values: z.infer<typeof historySchema>) => {
-    if (!historyToEdit) return;
-
+    if (!historyToEdit || !assetId) return;
     try {
-      await updateAccountHistory(historyToEdit.id, {
-        value: values.value,
+      await updateBrokerAssetValue.mutateAsync({
+        historyId: historyToEdit.id,
+        assetId: assetId,
+        value: Number(values.value),
         recordedAt: new Date(values.recordedAt),
       });
       setIsEditHistoryOpen(false);
@@ -116,7 +143,11 @@ export default function AccountPage() {
     if (!historyToDelete) return;
 
     try {
-      await deleteAccountHistory(historyToDelete);
+      if (!assetId) return;
+      await deleteBrokerAssetValue.mutateAsync({
+        assetId: assetId,
+        historyId: historyToDelete,
+      });
       setHistoryToDelete(null);
     } catch (error) {
       console.error("Error deleting history:", error);
@@ -143,7 +174,7 @@ export default function AccountPage() {
     }
   };
 
-  if (isLoading) {
+  if (isAssetLoading || isHistoryLoading) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-8">
         <Card>
@@ -171,7 +202,7 @@ export default function AccountPage() {
     );
   }
 
-  if (!account) {
+  if (!asset) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-8">
         <Card>
@@ -190,16 +221,20 @@ export default function AccountPage() {
           {/* Account Header */}
           <div className="flex items-center mb-6">
             <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center mr-3">
-              {getProviderLogo(account.provider)}
+              {getProviderLogo(
+                getProviderName(asset.providerId, providers ?? [])
+              )}
             </div>
             <div>
-              <h1 className="text-xl font-semibold">{account.provider}</h1>
+              <h1 className="text-xl font-semibold">
+                {getProviderName(asset.providerId, providers ?? [])}
+              </h1>
               <span className="text-sm text-gray-600">
-                {account.accountType === "LISA"
+                {asset.accountType === "LISA"
                   ? "Lifetime ISA"
-                  : account.accountType === "GIA"
+                  : asset.accountType === "GIA"
                   ? "General Account"
-                  : account.accountType}
+                  : asset.accountType}
               </span>
             </div>
           </div>
@@ -208,7 +243,7 @@ export default function AccountPage() {
           <div className="mb-6">
             <h2 className="text-lg font-medium mb-2">Current Value</h2>
             <p className="text-2xl font-bold">
-              £{Number(account.currentValue).toLocaleString()}
+              £{Number(asset.currentValue).toLocaleString()}
             </p>
           </div>
 
@@ -287,7 +322,7 @@ export default function AccountPage() {
 
             {/* History List */}
             <div className="space-y-4">
-              {history.map((entry) => (
+              {history?.map((entry) => (
                 <div
                   key={entry.id}
                   className="flex justify-between items-center p-4 bg-gray-50 rounded-lg"
@@ -312,7 +347,7 @@ export default function AccountPage() {
                       onClick={() => {
                         setHistoryToEdit(entry);
                         form.reset({
-                          value: entry.value,
+                          value: entry.value.toString(),
                           recordedAt: new Date(entry.recordedAt)
                             .toISOString()
                             .split("T")[0],

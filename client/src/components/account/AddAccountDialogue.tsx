@@ -25,14 +25,22 @@ import { Select } from "../ui/select";
 import { SelectValue } from "@radix-ui/react-select";
 import { Input } from "../ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { orphanAccountSchema, OrphanAccount } from "@shared/schema";
+import { z } from "zod";
+import { BrokerProviderAssetOrphanInsert } from "shared/schema";
+import { useBrokerProviders } from "@/hooks/use-broker-providers";
 
 type AddAccountDialogueProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   inProgress: boolean;
-  onSubmit: (data: OrphanAccount) => void;
+  onSubmit: (data: BrokerProviderAssetOrphanInsert) => void;
 };
+
+const brokerProviderAssetOrphanInsertSchema = z.object({
+  name: z.string().min(1, "Asset name is required"),
+  providerId: z.string().min(1, "Provider is required"),
+  accountType: z.string().min(1, "Account type is required"),
+});
 
 const AddAccountDialogue: React.FC<AddAccountDialogueProps> = ({
   open,
@@ -40,21 +48,27 @@ const AddAccountDialogue: React.FC<AddAccountDialogueProps> = ({
   inProgress,
   onSubmit,
 }) => {
-  const form = useForm<OrphanAccount>({
-    resolver: zodResolver(orphanAccountSchema),
+  const { data: brokerProviders, isLoading: isLoadingBrokerProviders } =
+    useBrokerProviders();
+
+  const form = useForm<BrokerProviderAssetOrphanInsert>({
+    resolver: zodResolver(brokerProviderAssetOrphanInsertSchema),
     defaultValues: {
-      provider: "",
+      name: "",
+      providerId: "",
       accountType: "",
-      currentValue: "",
     },
   });
 
-  const handleSubmit = (data: OrphanAccount) => {
+  const handleSubmit = (data: BrokerProviderAssetOrphanInsert) => {
     onSubmit(data);
     form.reset();
   };
 
-  const selectedProvider = form.watch("provider");
+  const selectedProviderId = form.watch("providerId");
+  const selectedProvider = brokerProviders?.find(
+    (p) => p.id === selectedProviderId
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -82,13 +96,27 @@ const AddAccountDialogue: React.FC<AddAccountDialogueProps> = ({
           >
             <FormField
               control={form.control}
-              name="provider"
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Asset Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. My Trading 212 ISA" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="providerId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Provider</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
+                    disabled={isLoadingBrokerProviders}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -96,13 +124,11 @@ const AddAccountDialogue: React.FC<AddAccountDialogueProps> = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Trading 212">Trading 212</SelectItem>
-                      <SelectItem value="Vanguard">Vanguard</SelectItem>
-                      <SelectItem value="InvestEngine">InvestEngine</SelectItem>
-                      <SelectItem value="Hargreaves Lansdown">
-                        Hargreaves Lansdown
-                      </SelectItem>
-                      <SelectItem value="AJ Bell">AJ Bell</SelectItem>
+                      {brokerProviders?.map((provider) => (
+                        <SelectItem key={provider.id} value={provider.id}>
+                          {provider.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -119,6 +145,7 @@ const AddAccountDialogue: React.FC<AddAccountDialogueProps> = ({
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
+                    disabled={!selectedProvider}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -126,30 +153,14 @@ const AddAccountDialogue: React.FC<AddAccountDialogueProps> = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="ISA">ISA</SelectItem>
-                      <SelectItem value="CISA">Cash ISA</SelectItem>
-                      <SelectItem value="SIPP">SIPP</SelectItem>
-                      {(selectedProvider === "Hargreaves Lansdown" ||
-                        selectedProvider === "AJ Bell") && (
-                        <SelectItem value="LISA">Lifetime ISA</SelectItem>
-                      )}
-                      <SelectItem value="GIA">General Account</SelectItem>
+                      {selectedProvider &&
+                        selectedProvider.supportedAccountTypes.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="currentValue"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Current Value (£)</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="0.00" {...field} />
-                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

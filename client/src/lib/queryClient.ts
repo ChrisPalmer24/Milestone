@@ -7,11 +7,12 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-export async function apiRequest(
+export async function apiRequest<T extends unknown>(
   method: string,
   url: string,
   data?: unknown | undefined,
-): Promise<Response> {
+): Promise<T> {
+  
   const res = await fetch(url, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
@@ -20,7 +21,12 @@ export async function apiRequest(
   });
 
   await throwIfResNotOk(res);
-  return res;
+  try {
+    return res.json() as Promise<T>;
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
 }
 
 export const queryClient = new QueryClient({

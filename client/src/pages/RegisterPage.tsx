@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useSession } from "../hooks/use-session";
-import { RegisterInput } from "@shared/schema";
+import { RegisterInput } from "server/db/schema";
 
 export function RegisterPage() {
   const [, setLocation] = useLocation();

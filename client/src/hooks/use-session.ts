@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { toast } from "./use-toast";
 import { useSessionState, useSessionDispatch } from "../context/SessionContext";
-import { SessionUser } from "@shared/schema";
+import { SessionUser } from "@shared/schema/";
 import { apiRequest } from "@/lib/queryClient";
 
 interface LoginData {
@@ -54,12 +54,15 @@ export function useSession() {
 
       try {
 
-        const res = await apiRequest("GET", "/api/auth/me");
-        const data = (await res.json()) as SessionResponse;
+        const responseData = await apiRequest<SessionResponse>("GET", "/api/auth/me");
 
-        dispatch({ type: "INITIAL_USER_LOADED", payload: data.user });
+        queryClient.setQueryData(["user"], responseData.user);
+        dispatch({ type: "INITIAL_USER_LOADED", payload: responseData.user });
+        
+        console.log("Initial user load successful:", responseData.user);
 
-        return data;
+        return responseData;
+
       } catch (error) {
 
         console.log("Initial user load failed:", error);
@@ -68,6 +71,7 @@ export function useSession() {
         throw error;
       }
     },
+
     // Don't retry on auth errors
     // retry: (failureCount, error) => {
     //   if (error instanceof Error && error.message === "Not authenticated") {
@@ -85,20 +89,12 @@ export function useSession() {
 
   // Extract user and loading state from auth context
 
-  const { mutate: login } = useMutation({
+  const { mutate: login } = useMutation<SessionResponse, Error, LoginData>({
     mutationFn: async (data: LoginData) => {
       console.log("Attempting login...");
       dispatch({ type: "LOGIN_LOADING" });
       
-      const res = await apiRequest("POST", "/api/auth/login", data);
-
-      console.log("Login response:", {
-        status: res.status,
-        statusText: res.statusText,
-        headers: Object.fromEntries(res.headers.entries()),
-      });
-
-      const responseData = (await res.json()) as SessionResponse;
+      const responseData = await apiRequest<SessionResponse>("POST", "/api/auth/login", data);
       console.log("Login successful, cookies should be set");
       return responseData;
     },
@@ -131,9 +127,9 @@ export function useSession() {
     mutationFn: async (data: RegisterData) => {
       dispatch({ type: "LOGIN_LOADING" });
       
-      const res = await apiRequest("POST", "/api/auth/register", data);
+      const responseData = await apiRequest<SessionResponse>("POST", "/api/auth/register", data);
 
-      return (await res.json()) as SessionResponse;
+      return responseData;
     },
     onSuccess: (data) => {
       // Update both query cache and auth context
@@ -165,9 +161,9 @@ export function useSession() {
       dispatch({ type: "LOGIN_LOADING" });
       dispatch({ type: "INITIAL_USER_LOADING" });
       
-      const res = await apiRequest("POST", "/api/auth/logout");
+      const responseData = await apiRequest("POST", "/api/auth/logout");
 
-      return res.json();
+      return responseData;
     },
     onSuccess: () => {
       // Update both query cache and auth context
@@ -192,9 +188,9 @@ export function useSession() {
   const resendVerificationMutation = useMutation({
     mutationFn: async (data: { email: string }) => {
       
-      const res = await apiRequest("POST", "/api/resend-verification", data);
+      const responseData = await apiRequest<SessionResponse>("POST", "/api/resend-verification", data);
 
-      return res.json();
+      return responseData;
     },
     onSuccess: (data) => {
       // Update both query cache and auth context
@@ -224,8 +220,8 @@ export function useSession() {
   // Password reset request mutation
   const requestPasswordResetMutation = useMutation({
     mutationFn: async (email: string) => {
-      const res = await apiRequest("POST", "/api/forgot-password", { email });
-      return res.json();
+      const responseData = await apiRequest<SessionResponse>("POST", "/api/forgot-password", { email });
+      return responseData;
     },
     onSuccess: (data) => {
       toast({
@@ -245,18 +241,18 @@ export function useSession() {
   // Validate reset token mutation
   const validateResetTokenMutation = useMutation({
     mutationFn: async (token: string) => {
-      const res = await apiRequest("GET", `/api/validate-reset-token?token=${encodeURIComponent(token)}`);
+      const responseData = await apiRequest<SessionResponse>("GET", `/api/validate-reset-token?token=${encodeURIComponent(token)}`);
 
-      return res.json();
+      return responseData;
     },
   });
 
   // Reset password mutation
   const resetPasswordMutation = useMutation({
     mutationFn: async ({ token, password }: { token: string; password: string }) => {
-      const res = await apiRequest("POST", "/api/reset-password", { token, password });
+      const responseData = await apiRequest<SessionResponse>("POST", "/api/reset-password", { token, password });
 
-      return res.json();
+      return responseData;
     },
     onSuccess: (data) => {
       toast({
@@ -309,7 +305,7 @@ export function useSession() {
     validateResetToken: async (token: string) => {
       try {
         const result = await validateResetTokenMutation.mutateAsync(token);
-        return { ok: true, email: result.email };
+        return { ok: true, email: result.user.account.email };
       } catch (error) {
         return { ok: false, message: error instanceof Error ? error.message : "Invalid or expired token" };
       }

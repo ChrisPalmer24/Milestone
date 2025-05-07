@@ -1,5 +1,5 @@
 import { usePortfolio } from "@/context/PortfolioContext";
-import { Milestone } from "@shared/schema";
+import { Milestone } from "server/db/schema";
 
 
 // Use the same Account type from PortfolioContext

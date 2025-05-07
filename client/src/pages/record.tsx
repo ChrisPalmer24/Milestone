@@ -27,7 +27,7 @@ import {
 import { History, Edit, Check, X } from "lucide-react";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { useToast } from "@/hooks/use-toast";
-import { AccountHistory } from "@shared/schema";
+import { AccountHistory } from "server/db/schema";
 import DateRangeBar from "@/components/layout/DateRangeBar";
 
 type AccountFormData = {

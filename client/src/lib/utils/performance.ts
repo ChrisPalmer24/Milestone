@@ -1,4 +1,4 @@
-import { AccountHistory } from "@shared/schema";
+import { AccountHistory } from "server/db/schema";
 
 type AccountChnage = {
   currency: number;

@@ -317,9 +317,16 @@ export async function registerRoutes(
     const response = await requireTenantWithUserAccountId(
       req.tenant,
       async (tenant) => {
-        const value =
-          await assetService.getPortfolioOverviewForUserForDateRange(
-            tenant.userAccountId
+        const startDate = req.query?.start
+          ? new Date(req.query.start as string)
+          : null;
+        const endDate = req.query?.end
+            ? new Date(req.query.end as string)
+            : null;
+          const value = await assetService.getPortfolioOverviewForUserForDateRange(
+            tenant.userAccountId,
+            startDate,
+            endDate
           );
         return value;
       }

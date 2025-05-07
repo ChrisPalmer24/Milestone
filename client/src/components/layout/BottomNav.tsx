@@ -1,10 +1,15 @@
-import { BarChart3, Flag, LineChart, Flame, CircleFadingPlus } from "lucide-react";
+import {
+  TrendingUp,
+  Flag,
+  LineChart,
+  Flame,
+  CircleFadingPlus,
+  BarChart3,
+} from "lucide-react";
 import { useLocation, useRoute } from "wouter";
 import { cn } from "@/lib/utils";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { triggerHapticFeedback } from "@/capacitor";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useMobilePlatform } from "@/hooks/use-mobile-platform";
 
 type NavItem = {
   id: string;
@@ -46,23 +51,14 @@ const navItems: NavItem[] = [
   },
 ];
 
-// Optional props for when component is used directly
-type BottomNavProps = {
-  activeSection?: string;
-  onChange?: (section: string) => void;
-};
-
-export default function BottomNav({ activeSection, onChange }: BottomNavProps = {}) {
+export default function BottomNav() {
   const [location, setLocation] = useLocation();
   // If props are not provided, get values from context
   const portfolio = usePortfolio();
-  const activeNav = activeSection || portfolio.activeSection;
-  const onChangeNav = onChange || portfolio.setActiveSection;
 
   // Handle navigation with haptic feedback on mobile devices
   const handleNavigation = (item: NavItem) => {
     triggerHapticFeedback();
-    onChangeNav(item.id);
     setLocation(item.path);
   };
 
@@ -72,6 +68,7 @@ export default function BottomNav({ activeSection, onChange }: BottomNavProps = 
         <ul className="flex justify-between">
           {navItems.map((item) => {
             const [isActive] = useRoute(item.path);
+            console.log(isActive);
             const isActiveHome = location === "/" && item.id === "portfolio";
 
             return (
@@ -79,9 +76,13 @@ export default function BottomNav({ activeSection, onChange }: BottomNavProps = 
                 <button
                   className={cn(
                     "nav-item flex flex-col items-center pt-2 pb-1 w-full",
-                    (isActive || isActiveHome || activeNav === item.id)
+                    item.id === "record"
+                      ? isActive
+                        ? "bg-[#0061ff] text-white mx-1"
+                        : "bg-black text-white mx-1"
+                      : isActive || isActiveHome
                       ? "text-[#0061ff]"
-                      : ""
+                      : "text-gray-500"
                   )}
                   onClick={() => handleNavigation(item)}
                   aria-label={item.label}

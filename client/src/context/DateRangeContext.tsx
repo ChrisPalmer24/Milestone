@@ -6,7 +6,10 @@ interface DateRangeContextType {
   setDateRange: (range: DateRangeOption) => void;
 }
 
-const DateRangeContext = createContext<DateRangeContextType | undefined>(undefined);
+const DateRangeContext = createContext<DateRangeContextType>({
+  dateRange: "6months",
+  setDateRange: () => {},
+});
 
 interface DateRangeProviderProps {
   children: ReactNode;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
@@ -27,7 +27,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, X, Pencil } from "lucide-react";
+import { Plus, X, Pencil, AlertCircle } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -46,7 +46,8 @@ import {
 import AISuggestedMilestones from "@/components/milestones/AISuggestedMilestones";
 import { useSession } from "@/context/SessionContext";
 import { EditMilestoneDialog } from "@/components/milestones/EditMilestoneDialog";
-import { Milestone } from "@shared/schema";
+import { Milestone, MilestoneOrphanInsert, AccountType } from "shared/schema";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Form schema for adding a new milestone
 const milestoneSchema = z.object({
@@ -61,23 +62,36 @@ const milestoneSchema = z.object({
 
 export default function Goals() {
   const {
-    accounts,
+    brokerAssets,
     milestones,
     totalPortfolioValue,
-    addMilestoneMutation,
-    deleteMilestoneMutation,
+    addMilestone,
+    deleteMilestone,
     isLoading,
   } = usePortfolio();
 
   const { user } = useSession();
 
+  // Get the unique account types that exist in the user's portfolio
+  const availableAccountTypes = useMemo(() => {
+    const types = new Set<AccountType | "ALL">();
+    types.add("ALL"); // Always include "ALL" as an option
+
+    brokerAssets.forEach((asset) => {
+      if (asset.accountType) {
+        types.add(asset.accountType as AccountType);
+      }
+    });
+
+    return Array.from(types);
+  }, [brokerAssets]);
+
   const [isAddMilestoneOpen, setIsAddMilestoneOpen] = useState(false);
   const [milestoneToDelete, setMilestoneToDelete] = useState<string | null>(
     null
   );
-  const [milestoneToEdit, setMilestoneToEdit] = useState<Milestone | null>(
-    null
-  );
+  const [milestoneToEdit, setMilestoneToEdit] =
+    useState<MilestoneOrphanInsert | null>(null);
 
   // Form for adding a new milestone
   const form = useForm<z.infer<typeof milestoneSchema>>({
@@ -96,12 +110,13 @@ export default function Goals() {
     }
 
     try {
-      await addMilestoneMutation.mutateAsync({
+      await addMilestone.mutateAsync({
         name: values.name,
         accountType:
-          values.accountType === "ALL" ? null : (values.accountType as any),
+          values.accountType === "ALL"
+            ? null
+            : (values.accountType as AccountType),
         targetValue: values.targetValue,
-        userAccountId: user.account.id,
       });
       setIsAddMilestoneOpen(false);
       form.reset();
@@ -114,7 +129,7 @@ export default function Goals() {
   const handleDeleteMilestone = async () => {
     if (milestoneToDelete !== null) {
       try {
-        await deleteMilestoneMutation.mutateAsync(milestoneToDelete);
+        await deleteMilestone.mutateAsync(milestoneToDelete);
         setMilestoneToDelete(null);
       } catch (error) {
         console.error("Error deleting milestone:", error);
@@ -144,10 +159,10 @@ export default function Goals() {
 
     if (milestone.accountType) {
       // Sum values of accounts with matching type
-      currentValue = accounts.reduce(
-        (sum, account) =>
-          account.accountType === milestone.accountType
-            ? sum + Number(account.currentValue)
+      currentValue = brokerAssets.reduce(
+        (sum, asset) =>
+          asset.accountType === milestone.accountType
+            ? sum + Number(asset.currentValue)
             : sum,
         0
       );
@@ -169,10 +184,10 @@ export default function Goals() {
 
     if (milestone.accountType) {
       // Sum values of accounts with matching type
-      currentValue = accounts.reduce(
-        (sum, account) =>
-          account.accountType === milestone.accountType
-            ? sum + Number(account.currentValue)
+      currentValue = brokerAssets.reduce(
+        (sum, asset) =>
+          asset.accountType === milestone.accountType
+            ? sum + Number(asset.currentValue)
             : sum,
         0
       );
@@ -236,35 +251,47 @@ export default function Goals() {
                       )}
                     />
 
-                    <FormField
-                      control={form.control}
-                      name="accountType"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Account Type (Optional)</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="All accounts (portfolio)" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="ALL">
-                                All accounts (portfolio)
-                              </SelectItem>
-                              <SelectItem value="ISA">ISA</SelectItem>
-                              <SelectItem value="SIPP">SIPP</SelectItem>
-                              <SelectItem value="LISA">LISA</SelectItem>
-                              <SelectItem value="GIA">GIA</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {brokerAssets.length === 0 ? (
+                      <Alert variant="destructive" className="mb-4">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>
+                          Please add at least one account in the Portfolio
+                          section before creating milestones.
+                        </AlertDescription>
+                      </Alert>
+                    ) : (
+                      <FormField
+                        control={form.control}
+                        name="accountType"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Account Type (Optional)</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                              disabled={brokerAssets.length === 0}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="All accounts (portfolio)" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {/* Only show account types that exist in the user's portfolio */}
+                                {availableAccountTypes.map((type) => (
+                                  <SelectItem key={type} value={type}>
+                                    {type === "ALL"
+                                      ? "All accounts (portfolio)"
+                                      : type}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
 
                     <FormField
                       control={form.control}
@@ -285,7 +312,18 @@ export default function Goals() {
                     />
 
                     <DialogFooter>
-                      <Button type="submit">Add Milestone</Button>
+                      <Button
+                        type="submit"
+                        disabled={
+                          brokerAssets.length === 0 || addMilestone.isPending
+                        }
+                      >
+                        {addMilestone.isPending
+                          ? "Adding..."
+                          : brokerAssets.length === 0
+                          ? "Add accounts first"
+                          : "Add Milestone"}
+                      </Button>
                     </DialogFooter>
                   </form>
                 </Form>
@@ -409,7 +447,7 @@ export default function Goals() {
       {/* Edit Milestone Dialog */}
       {milestoneToEdit && (
         <EditMilestoneDialog
-          milestone={milestoneToEdit}
+          milestone={milestoneToEdit as Milestone}
           isOpen={!!milestoneToEdit}
           onClose={() => setMilestoneToEdit(null)}
         />

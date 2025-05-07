@@ -7,7 +7,7 @@ import {
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 //import { setAuthenticated } from "../lib/query-client";
-import { SessionUser } from "@shared/schema";
+import { SessionUser } from "shared/schema";
 
 // Auth state interface
 interface SessionState {
@@ -150,7 +150,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   // Initialize profile image from localStorage
   useEffect(() => {
-    const savedProfileImage = localStorage.getItem('profileImage');
+    const savedProfileImage = localStorage.getItem("profileImage");
     if (savedProfileImage) {
       dispatch({ type: "UPDATE_PROFILE_IMAGE", payload: savedProfileImage });
     }

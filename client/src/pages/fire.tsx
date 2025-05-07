@@ -10,8 +10,8 @@ import {
   calculateContributionImpact,
 } from "@/lib/utils/finance";
 import FireChart from "@/components/ui/charts/FireChart";
-import { FireSettings } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { FireSettingsInsert } from "shared/schema";
 
 export default function Fire() {
   const {
@@ -24,7 +24,7 @@ export default function Fire() {
   const { toast } = useToast();
 
   // Default values if fireSettings is not loaded yet
-  const defaultSettings: Omit<FireSettings, "id" | "userId"> = {
+  const defaultSettings: Omit<FireSettingsInsert, "id" | "userAccountId"> = {
     targetRetirementAge: 60,
     annualIncomeGoal: "48000",
     expectedAnnualReturn: "7",
@@ -127,7 +127,7 @@ export default function Fire() {
 
   // Handle form submission
   const handleSaveSettings = async () => {
-    const settings: Omit<FireSettings, "id" | "userId"> = {
+    const settings: Omit<FireSettingsInsert, "id" | "userAccountId"> = {
       targetRetirementAge: defaultSettings.targetRetirementAge,
       annualIncomeGoal: formState.annualIncome.toString(),
       expectedAnnualReturn: formState.expectedReturn.toString(),

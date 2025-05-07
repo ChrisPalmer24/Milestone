@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, Redirect } from "wouter";
 import { useSession } from "../hooks/use-session";
-import { LoginInput } from "@shared/schema";
+import { LoginInput } from "shared/schema";
 
 export function LoginPage() {
   const { login, isLoginPending, error, isAuthenticated } = useSession();

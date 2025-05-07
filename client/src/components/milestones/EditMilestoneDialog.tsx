@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Milestone } from "@shared/schema";
+import { AccountType, Milestone } from "@shared/schema";
 import { usePortfolio } from "@/context/PortfolioContext";
 import {
   Dialog,
@@ -29,7 +29,9 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-
+import { Alert } from "../ui/alert";
+import { AlertDescription } from "../ui/alert";
+import { AlertCircle } from "lucide-react";
 const editMilestoneSchema = z.object({
   name: z.string().min(1, "Name is required"),
   accountType: z.string().optional(),
@@ -53,7 +55,21 @@ export function EditMilestoneDialog({
   isOpen,
   onClose,
 }: EditMilestoneDialogProps) {
-  const { updateMilestoneMutation } = usePortfolio();
+  const { updateMilestone, brokerAssets } = usePortfolio();
+
+  // Get the unique account types that exist in the user's portfolio
+  const availableAccountTypes = useMemo(() => {
+    const types = new Set<AccountType | "ALL">();
+    types.add("ALL"); // Always include "ALL" as an option
+
+    brokerAssets.forEach((asset) => {
+      if (asset.accountType) {
+        types.add(asset.accountType as AccountType);
+      }
+    });
+
+    return Array.from(types);
+  }, [brokerAssets]);
 
   const form = useForm<EditMilestoneFormData>({
     resolver: zodResolver(editMilestoneSchema),
@@ -66,13 +82,11 @@ export function EditMilestoneDialog({
 
   const onSubmit = async (values: EditMilestoneFormData) => {
     try {
-      await updateMilestoneMutation.mutateAsync({
+      await updateMilestone.mutateAsync({
         id: milestone.id,
-        data: {
-          name: values.name,
-          accountType: values.accountType === "ALL" ? null : values.accountType,
-          targetValue: values.targetValue,
-        },
+        name: values.name,
+        accountType: values.accountType === "ALL" ? null : values.accountType,
+        targetValue: values.targetValue,
       });
       onClose();
     } catch (error) {
@@ -104,33 +118,45 @@ export function EditMilestoneDialog({
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="accountType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Account Type</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select account type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="ALL">All Accounts</SelectItem>
-                      <SelectItem value="ISA">ISA</SelectItem>
-                      <SelectItem value="SIPP">SIPP</SelectItem>
-                      <SelectItem value="LISA">LISA</SelectItem>
-                      <SelectItem value="GIA">GIA</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {brokerAssets.length === 0 ? (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Please add at least one account in the Portfolio section
+                  before creating milestones.
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <FormField
+                control={form.control}
+                name="accountType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Account Type</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      disabled={brokerAssets.length === 0}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select account type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {/* Only show account types that exist in the user's portfolio */}
+                        {availableAccountTypes.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type === "ALL" ? "All accounts (portfolio)" : type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <FormField
               control={form.control}
               name="targetValue"
@@ -159,10 +185,14 @@ export function EditMilestoneDialog({
               </Button>
               <Button
                 type="submit"
-                disabled={updateMilestoneMutation.isPending}
+                disabled={
+                  updateMilestone.isPending || brokerAssets.length === 0
+                }
               >
-                {updateMilestoneMutation.isPending
+                {updateMilestone.isPending
                   ? "Saving..."
+                  : brokerAssets.length === 0
+                  ? "Add accounts first"
                   : "Save Changes"}
               </Button>
             </DialogFooter>

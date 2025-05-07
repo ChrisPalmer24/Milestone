@@ -1,15 +1,6 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,28 +11,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2 } from "lucide-react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { Pencil, Trash2 } from "lucide-react";
 import { SiTradingview, SiCoinbase } from "react-icons/si";
 import { BsPiggyBank } from "react-icons/bs";
 import PortfolioChart from "@/components/ui/charts/PortfolioChart";
@@ -49,23 +21,41 @@ import DateRangeBar from "@/components/layout/DateRangeBar";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { useToast } from "@/hooks/use-toast";
 import { getNextMilestone } from "@/lib/utils/milestones";
-import { calculateAccountChange } from "@/lib/utils/performance";
 import AddAccountDialogue from "@/components/account/AddAccountDialogue";
-import { OrphanAccount } from "@shared/schema";
-import { DateRangeProvider } from "@/context/DateRangeContext";
+import { BrokerProviderAssetOrphanInsert } from "shared/schema";
+import { DateRangeProvider, useDateRange } from "@/context/DateRangeContext";
+
+import {
+  getDateRange,
+  DateRangeOption,
+} from "@/components/ui/DateRangeControl";
+import { useBrokerProviders } from "@/hooks/use-broker-providers";
+import { getProviderName } from "@/lib/broker";
 
 function Portfolio() {
+  const { dateRange } = useDateRange();
+
+  const { start: startDate, end: endDate } = useMemo(() => {
+    return getDateRange(dateRange as DateRangeOption);
+  }, [dateRange]);
+
+  const { data: brokerProviders, isLoading: isLoadingBrokerProviders } =
+    useBrokerProviders();
+
   const [, setLocation] = useLocation();
   const {
-    accounts,
-    accountsHistory: accountHistory,
+    brokerAssets,
     milestones,
     totalPortfolioValue,
-    addAccount,
-    deleteAccount,
+    deleteBrokerAsset,
     isLoading,
-  } = usePortfolio();
+    addBrokerAsset,
+    portfolioOverview,
+  } = usePortfolio(startDate, endDate);
+
   const { toast } = useToast();
+
+  // Get start and end dates based on the selected date range
 
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -74,84 +64,9 @@ function Portfolio() {
   const [accountToDelete, setAccountToDelete] = useState<string | null>(null);
   const [isAddingAccount, setIsAddingAccount] = useState(false);
 
-  // State to track the selected provider for conditional account type display
-  const [selectedProvider, setSelectedProvider] = useState<string>("");
-
-  // Memoize accounts with their percentage changes and portfolio totals
-  const { accountsWithPerformance, portfolioTotal } = useMemo(() => {
-    const accountsWithPct = accounts.map((account) => {
-      const accountHistoryData = accountHistory.find(
-        (h) => h.accountId === account.id
-      );
-      const history = accountHistoryData?.history || [];
-      const { currency: absoluteChange, percentage: totalPercentageChange } =
-        calculateAccountChange(history);
-
-      return {
-        ...account,
-        totalPercentageChange,
-        absoluteChange,
-      };
-    });
-
-    // Sort accounts from largest to smallest balance
-    const sortedAccounts = [...accountsWithPct].sort(
-      (a, b) => Number(b.currentValue) - Number(a.currentValue)
-    );
-
-    const totalValue = sortedAccounts.reduce(
-      (sum, account) => sum + Number(account.currentValue),
-      0
-    );
-    const totalPercentageChange = sortedAccounts.reduce(
-      (sum, account) => sum + account.totalPercentageChange,
-      0
-    );
-    const totalCurrencyChange = sortedAccounts.reduce(
-      (sum, account) => sum + account.absoluteChange,
-      0
-    );
-
-    return {
-      accountsWithPerformance: sortedAccounts,
-      portfolioTotal: {
-        value: totalValue,
-        percentageChange: totalPercentageChange,
-        currencyChange: totalCurrencyChange,
-      },
-    };
-  }, [accounts, accountHistory]);
-
-  const onSubmit = async (values: OrphanAccount) => {
-    try {
-      setIsAddingAccount(true);
-      await addAccount({
-        provider: values.provider,
-        accountType: values.accountType as any,
-        currentValue: values.currentValue,
-      });
-      setIsAddAccountOpen(false);
-      toast({
-        title: "Account added successfully",
-        description:
-          "Your new investment account has been added to your portfolio.",
-      });
-    } catch (error) {
-      console.error("Error adding account:", error);
-      toast({
-        title: "Error adding account",
-        description:
-          "There was a problem adding your account. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsAddingAccount(false);
-    }
-  };
-
   // Helper to get logo for provider
-  const getProviderLogo = (provider: string) => {
-    switch (provider.toLowerCase()) {
+  const getProviderLogo = (providerName: string) => {
+    switch (providerName.toLowerCase()) {
       case "trading 212":
       case "trading212":
         return <SiTradingview className="w-6 h-6" />;
@@ -177,6 +92,29 @@ function Portfolio() {
 
   // Find next milestone for the portfolio if any
   const nextMilestone = getNextMilestone(milestones ?? [], totalPortfolioValue);
+
+  const onSubmit = async (values: BrokerProviderAssetOrphanInsert) => {
+    try {
+      setIsAddingAccount(true);
+      await addBrokerAsset.mutateAsync(values);
+      setIsAddAccountOpen(false);
+      toast({
+        title: "Account added successfully",
+        description:
+          "Your new investment account has been added to your portfolio.",
+      });
+    } catch (error) {
+      console.error("Error adding account:", error);
+      toast({
+        title: "Error adding account",
+        description:
+          "There was a problem adding your account. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAddingAccount(false);
+    }
+  };
 
   return (
     <div className="portfolio-screen max-w-5xl mx-auto px-4 pb-20">
@@ -240,7 +178,7 @@ function Portfolio() {
                       className="bg-red-600 hover:bg-red-700"
                       onClick={async () => {
                         if (accountToDelete) {
-                          await deleteAccount(accountToDelete);
+                          await deleteBrokerAsset.mutateAsync(accountToDelete);
                           setAccountToDelete(null);
                           setIsEditMode(false);
                         }
@@ -253,7 +191,7 @@ function Portfolio() {
               </AlertDialog>
 
               {/* Edit Mode Toggle Button - Only shown when accounts exist */}
-              {accounts.length > 0 && (
+              {brokerAssets.length > 0 && (
                 <Button
                   variant="outline"
                   size="icon"
@@ -299,7 +237,7 @@ function Portfolio() {
                   </div>
                 </div>
               ))
-          ) : accounts.length === 0 ? (
+          ) : brokerAssets.length === 0 ? (
             <div className="py-8 text-center">
               <p className="text-gray-500 mb-4">
                 No investment accounts added yet.
@@ -314,84 +252,102 @@ function Portfolio() {
           ) : (
             // List of accounts
             <>
-              {accountsWithPerformance.map((account) => (
-                <div
-                  key={account.id}
-                  className="border-b border-gray-200 py-3 cursor-pointer hover:bg-gray-50 transition-colors relative"
-                  onClick={(e) => {
-                    if (!isEditMode) {
-                      setLocation(`/account/${account.id}`);
-                    }
-                  }}
-                >
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center mr-3">
-                        {getProviderLogo(account.provider)}
+              {brokerAssets.map((asset) => {
+                const providerName = getProviderName(
+                  asset.providerId,
+                  brokerProviders ?? []
+                );
+                return (
+                  <div
+                    key={asset.id}
+                    className="border-b border-gray-200 py-3 cursor-pointer hover:bg-gray-50 transition-colors relative"
+                    onClick={(e) => {
+                      if (!isEditMode) {
+                        setLocation(`/asset/broker/${asset.id}`);
+                      }
+                    }}
+                  >
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center mr-3">
+                          {getProviderLogo(providerName)}
+                        </div>
+                        <div>
+                          <h3 className="font-medium">{providerName}</h3>
+                          <span
+                            className={`text-sm ${getAccountTypeColor(
+                              asset.accountType
+                            )}`}
+                          >
+                            {asset.accountType === "LISA"
+                              ? "Lifetime ISA"
+                              : asset.accountType === "GIA"
+                              ? "General Account"
+                              : asset.accountType === "CISA"
+                              ? "Cash ISA"
+                              : asset.accountType}
+                          </span>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-medium">{account.provider}</h3>
-                        <span
-                          className={`text-sm ${getAccountTypeColor(
-                            account.accountType
-                          )}`}
-                        >
-                          {account.accountType === "LISA"
-                            ? "Lifetime ISA"
-                            : account.accountType === "GIA"
-                            ? "General Account"
-                            : account.accountType === "CISA"
-                            ? "Cash ISA"
-                            : account.accountType}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center">
-                      {isEditMode && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="mr-2 text-red-600 hover:text-red-800 hover:bg-red-50"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setAccountToDelete(account.id);
-                          }}
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </Button>
-                      )}
-                      <div className="text-right">
-                        <p className="font-semibold">
-                          £{Number(account.currentValue).toLocaleString()}
-                        </p>
-                        <p
-                          className={`text-sm font-medium ${
-                            (displayInPercentage
-                              ? account.totalPercentageChange
-                              : account.absoluteChange) >= 0
-                              ? "text-green-600"
-                              : "text-red-600"
-                          }`}
-                        >
-                          {displayInPercentage ? (
-                            <>
-                              {account.totalPercentageChange >= 0 ? "+" : ""}
-                              {account.totalPercentageChange.toFixed(1)}%
-                            </>
+                      <div className="flex items-center">
+                        {isEditMode && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="mr-2 text-red-600 hover:text-red-800 hover:bg-red-50"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setAccountToDelete(asset.id);
+                            }}
+                          >
+                            <Trash2 className="h-5 w-5" />
+                          </Button>
+                        )}
+                        <div className="text-right">
+                          <p className="font-semibold">
+                            £{Number(asset.currentValue).toLocaleString()}
+                          </p>
+                          {asset.accountChange ? (
+                            <p
+                              className={`text-sm font-medium ${
+                                (displayInPercentage
+                                  ? asset.accountChange.percentageChange
+                                  : asset.accountChange.currencyChange) >= 0
+                                  ? "text-green-600"
+                                  : "text-red-600"
+                              }`}
+                            >
+                              {displayInPercentage ? (
+                                <>
+                                  {asset.accountChange.percentageChange >= 0
+                                    ? "+"
+                                    : ""}
+                                  {asset.accountChange.percentageChange.toFixed(
+                                    1
+                                  )}
+                                  %
+                                </>
+                              ) : (
+                                <>
+                                  {asset.accountChange.currencyChange >= 0
+                                    ? "+"
+                                    : ""}
+                                  £
+                                  {Math.abs(
+                                    asset.accountChange.currencyChange
+                                  ).toLocaleString()}
+                                </>
+                              )}
+                            </p>
                           ) : (
-                            <>
-                              {account.absoluteChange >= 0 ? "+" : ""}£
-                              {Math.abs(
-                                account.absoluteChange
-                              ).toLocaleString()}
-                            </>
+                            <p className="text-gray-500">No change</p>
                           )}
-                        </p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
               {/* Portfolio Total */}
               <div className="pt-4 border-t border-gray-200">
@@ -400,30 +356,41 @@ function Portfolio() {
                     <h3 className="font-semibold text-lg">Portfolio Total</h3>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-lg">
-                      £{portfolioTotal.value.toLocaleString()}
-                    </p>
-                    <p
-                      className={`text-sm font-medium ${
-                        portfolioTotal.percentageChange >= 0
-                          ? "text-green-600"
-                          : "text-red-600"
-                      }`}
-                    >
-                      {displayInPercentage ? (
-                        <>
-                          {portfolioTotal.percentageChange >= 0 ? "+" : ""}
-                          {portfolioTotal.percentageChange.toFixed(1)}%
-                        </>
-                      ) : (
-                        <>
-                          {portfolioTotal.currencyChange >= 0 ? "+" : ""}£
-                          {Math.abs(
-                            portfolioTotal.currencyChange
-                          ).toLocaleString()}
-                        </>
-                      )}
-                    </p>
+                    {portfolioOverview ? (
+                      <>
+                        <p className="font-bold text-lg">
+                          £{portfolioOverview.value.toLocaleString()}
+                        </p>
+                        <p
+                          className={`text-sm font-medium ${
+                            portfolioOverview.percentageChange >= 0
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }`}
+                        >
+                          {displayInPercentage ? (
+                            <>
+                              {portfolioOverview.percentageChange >= 0
+                                ? "+"
+                                : ""}
+                              {portfolioOverview.percentageChange.toFixed(1)}%
+                            </>
+                          ) : (
+                            <>
+                              {portfolioOverview.currencyChange >= 0 ? "+" : ""}
+                              £
+                              {Math.abs(
+                                portfolioOverview.currencyChange
+                              ).toLocaleString()}
+                            </>
+                          )}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="font-bold text-lg">
+                        Loading portfolio total...
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

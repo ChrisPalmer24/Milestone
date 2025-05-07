@@ -8,26 +8,22 @@ import {
   CartesianGrid,
   ReferenceLine,
 } from "recharts";
-import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
-import { PortfolioHistory } from "@shared/schema";
+import { PortfolioHistoryTimePoint } from "shared/schema";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { useDateRange } from "@/context/DateRangeContext";
-import { DateRangeOption, getDateRange, DATE_RANGES } from "@/components/ui/DateRangeControl";
+import {
+  DateRangeOption,
+  getDateRange,
+} from "@/components/ui/DateRangeControl";
 import { Check } from "lucide-react";
+import { getDateUrlParams } from "@/lib/date";
 
-type ChartData = {
+type ChartData = Omit<PortfolioHistoryTimePoint, "date"> & {
   date: string;
-  value: number;
   milestone?: number;
-  changes?: {
-    accountId: string;
-    previousValue: number;
-    newValue: number;
-    change: number;
-  }[];
   achievedMilestone?: {
     name: string;
     targetValue: number;
@@ -81,7 +77,7 @@ export default function PortfolioChart({
   const [chartVisible, setChartVisible] = useState(true);
   const [showMilestonesLocal, setShowMilestonesLocal] = useState(true);
   const [selectedPoint, setSelectedPoint] = useState<ChartData | null>(null);
-  const { accounts, milestones } = usePortfolio();
+  const { brokerAssets, milestones } = usePortfolio();
 
   // Update local state when prop changes
   useEffect(() => {
@@ -107,14 +103,24 @@ export default function PortfolioChart({
   };
 
   // Calculate date range for API request
-  const { start, end } = getDateRange(dateRange);
+  const { start: startDate, end: endDate } = useMemo(() => {
+    return getDateRange(dateRange as DateRangeOption);
+  }, [dateRange]);
+
+  console.log("start", startDate);
+  console.log("end", endDate);
 
   // Fetch portfolio history data
-  const { data: historyData, isLoading } = useQuery<PortfolioHistory>({
-    queryKey: ["/api/portfolio/history", dateRange],
+  const { data: historyData, isLoading } = useQuery<
+    PortfolioHistoryTimePoint[]
+  >({
+    queryKey: ["/api/assets/portfolio-value/history", startDate, endDate],
     queryFn: async () => {
       const response = await fetch(
-        `/api/portfolio/history?start=${start.toISOString()}&end=${end.toISOString()}`
+        `/api/assets/portfolio-value/history?${getDateUrlParams(
+          startDate,
+          endDate
+        )}`
       );
       if (!response.ok) {
         throw new Error("Failed to fetch portfolio history");
@@ -123,10 +129,14 @@ export default function PortfolioChart({
     },
   });
 
+  console.log("historyData", historyData);
+
+  //Mopve to utility
   const data: ChartData[] =
     Array.isArray(historyData) && historyData.length > 0
       ? combineDataPoints(
           historyData.map((item) => {
+            const itemDate = new Date(item.date);
             // Find the highest milestone achieved at this point
             const achievedMilestone = milestones
               ?.filter((m) => {
@@ -136,8 +146,11 @@ export default function PortfolioChart({
               })
               .sort((a, b) => Number(b.targetValue) - Number(a.targetValue))[0];
 
+            console.log("item.date", item.date);
+            console.log("item.date", typeof item.date);
+
             return {
-              date: new Date(item.date).toLocaleDateString("en-GB", {
+              date: itemDate.toLocaleDateString("en-GB", {
                 year: "numeric",
                 month: "short",
                 day: "2-digit",
@@ -155,20 +168,27 @@ export default function PortfolioChart({
         )
       : [];
 
+  console.log("data", data);
+
   // Add milestone data if enabled
   const chartData = [...data];
 
   // Helper to get account type name
   const getAccountTypeName = (accountId: string) => {
-    const account = accounts.find((acc) => acc.id === accountId);
+    const account = brokerAssets.find((acc) => acc.id === accountId);
     return account
-      ? `${account.provider} ${account.accountType}`
+      ? `${account.providerId} ${account.accountType}`
       : `Account ${accountId}`;
   };
 
   if (isLoading) {
     return (
-      <div className={cn("w-full md:bg-white md:border md:rounded-lg md:shadow-sm", className)}>
+      <div
+        className={cn(
+          "w-full md:bg-white md:border md:rounded-lg md:shadow-sm",
+          className
+        )}
+      >
         <div className="p-2 md:p-4 h-[300px] flex items-center justify-center">
           <p className="text-muted-foreground">Loading chart data...</p>
         </div>
@@ -177,7 +197,12 @@ export default function PortfolioChart({
   }
 
   return (
-    <div className={cn("w-full md:bg-white md:border md:rounded-lg md:shadow-sm", className)}>
+    <div
+      className={cn(
+        "w-full md:bg-white md:border md:rounded-lg md:shadow-sm",
+        className
+      )}
+    >
       <div className="px-[5px] py-1 md:p-4">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">Portfolio Overview</h2>
@@ -409,7 +434,7 @@ export default function PortfolioChart({
                           className="flex justify-between items-center text-sm"
                         >
                           <span className="text-gray-600 font-medium">
-                            {getAccountTypeName(change.accountId)}
+                            {getAccountTypeName(change.assetId)}
                           </span>
                           <div className="flex items-center space-x-2">
                             <span className="text-gray-500">
