@@ -20,7 +20,6 @@ const createAuthMiddleware = (allowedAuthTypes: TenantType[], authoriseUser: Aut
 
         if (authResult) {
           req.tenant = { id: authResult.tenantId, type: 'user', userAccountId: authResult.tenantAccountId };
-          console.log("middleware next next req.tenant", req.tenant);
           return next();
         }
       }

@@ -13,7 +13,7 @@ export const requireTenant = async <T>(tenant: Tenant | undefined, fn: (tenant: 
 
 export const requireTenantWithUserAccountId = async <T>(tenant: Tenant | undefined, fn: (tenant: Tenant & { id: string, userAccountId: string }) => Promise<T>) => {
 
-  requireTenant(tenant, async (tenant) => {
+  return requireTenant(tenant, async (tenant) => {
 
     if(!tenant.userAccountId) {
       throw new Error("User account ID not found on tenant");
