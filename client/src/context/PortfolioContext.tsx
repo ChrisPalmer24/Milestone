@@ -38,7 +38,6 @@ export type PortfolioContextType = {
   brokerAssets: BrokerProviderAsset[];
   milestones: Milestone[];
   fireSettings: FireSettings | null;
-  totalPortfolioValue: number;
   activeSection: string;
   portfolioOverview: AssetsChange;
 };
@@ -74,7 +73,6 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     brokerAssets: [],
     milestones: [],
     fireSettings: null,
-    totalPortfolioValue: 0,
     activeSection: "portfolio",
     portfolioOverview: {
       value: 0,
