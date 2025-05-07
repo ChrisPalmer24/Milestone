@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
@@ -27,7 +27,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, X, Pencil, AlertCircle } from "lucide-react";
+import { Plus, X, Pencil } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -43,11 +43,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import AISuggestedMilestones from "@/components/milestones/AISuggestedMilestones";
 import { useSession } from "@/context/SessionContext";
 import { EditMilestoneDialog } from "@/components/milestones/EditMilestoneDialog";
-import { Milestone, AccountType } from "@shared/schema";
+import { Milestone } from "@shared/schema";
 
 // Form schema for adding a new milestone
 const milestoneSchema = z.object({
@@ -71,20 +70,6 @@ export default function Goals() {
   } = usePortfolio();
 
   const { user } = useSession();
-  
-  // Get the unique account types that exist in the user's portfolio
-  const availableAccountTypes = useMemo(() => {
-    const types = new Set<AccountType | "ALL">();
-    types.add("ALL"); // Always include "ALL" as an option
-    
-    accounts.forEach(account => {
-      if (account.accountType) {
-        types.add(account.accountType as AccountType);
-      }
-    });
-    
-    return Array.from(types);
-  }, [accounts]);
 
   const [isAddMilestoneOpen, setIsAddMilestoneOpen] = useState(false);
   const [milestoneToDelete, setMilestoneToDelete] = useState<string | null>(
@@ -114,10 +99,9 @@ export default function Goals() {
       await addMilestoneMutation.mutateAsync({
         name: values.name,
         accountType:
-          values.accountType === "ALL" ? null : (values.accountType as AccountType),
+          values.accountType === "ALL" ? null : (values.accountType as any),
         targetValue: values.targetValue,
         userAccountId: user.account.id,
-        createdAt: new Date(), // Add the required createdAt field
       });
       setIsAddMilestoneOpen(false);
       form.reset();
@@ -252,44 +236,35 @@ export default function Goals() {
                       )}
                     />
 
-                    {accounts.length === 0 ? (
-                      <Alert variant="destructive" className="mb-4">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription>
-                          Please add at least one account in the Portfolio section before creating milestones.
-                        </AlertDescription>
-                      </Alert>
-                    ) : (
-                      <FormField
-                        control={form.control}
-                        name="accountType"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Account Type (Optional)</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                              disabled={accounts.length === 0}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="All accounts (portfolio)" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {/* Only show account types that exist in the user's portfolio */}
-                                {availableAccountTypes.map(type => (
-                                  <SelectItem key={type} value={type}>
-                                    {type === "ALL" ? "All accounts (portfolio)" : type}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
+                    <FormField
+                      control={form.control}
+                      name="accountType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Account Type (Optional)</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="All accounts (portfolio)" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="ALL">
+                                All accounts (portfolio)
+                              </SelectItem>
+                              <SelectItem value="ISA">ISA</SelectItem>
+                              <SelectItem value="SIPP">SIPP</SelectItem>
+                              <SelectItem value="LISA">LISA</SelectItem>
+                              <SelectItem value="GIA">GIA</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
                     <FormField
                       control={form.control}
@@ -310,16 +285,7 @@ export default function Goals() {
                     />
 
                     <DialogFooter>
-                      <Button 
-                        type="submit"
-                        disabled={accounts.length === 0 || addMilestoneMutation.isPending}
-                      >
-                        {addMilestoneMutation.isPending 
-                          ? "Adding..." 
-                          : accounts.length === 0 
-                            ? "Add accounts first" 
-                            : "Add Milestone"}
-                      </Button>
+                      <Button type="submit">Add Milestone</Button>
                     </DialogFooter>
                   </form>
                 </Form>
@@ -372,7 +338,7 @@ export default function Goals() {
                             milestone.accountType
                           )}`}
                         >
-                          {milestone.accountType || "All accounts (portfolio)"}
+                          {milestone.accountType || "All Accounts"}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
