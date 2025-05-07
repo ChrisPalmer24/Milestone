@@ -46,7 +46,6 @@ function Portfolio() {
   const {
     brokerAssets,
     milestones,
-    totalPortfolioValue,
     deleteBrokerAsset,
     isLoading,
     addBrokerAsset,
@@ -91,7 +90,10 @@ function Portfolio() {
   };
 
   // Find next milestone for the portfolio if any
-  const nextMilestone = getNextMilestone(milestones ?? [], totalPortfolioValue);
+  const nextMilestone = getNextMilestone(
+    milestones ?? [],
+    portfolioOverview?.value ?? 0
+  );
 
   const onSubmit = async (values: BrokerProviderAssetOrphanInsert) => {
     try {
@@ -115,6 +117,9 @@ function Portfolio() {
       setIsAddingAccount(false);
     }
   };
+
+  console.log("portfolioOverview", portfolioOverview);
+  console.log("brokerAssets", brokerAssets);
 
   return (
     <div className="portfolio-screen max-w-5xl mx-auto px-4 pb-20">

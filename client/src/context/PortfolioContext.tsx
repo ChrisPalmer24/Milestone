@@ -78,6 +78,7 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
       value: 0,
       currencyChange: 0,
       percentageChange: 0,
+      startValue: 0,
       startDate: new Date(),
       endDate: new Date(),
     },
@@ -92,8 +93,6 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
 
 // Custom hook to use the portfolio context
 export const usePortfolio = (startDate?: Date, endDate?: Date) => {
-  console.log("usePortfolio", startDate, endDate);
-
   const context = useContext(PortfolioContext);
 
   if (context === undefined) {

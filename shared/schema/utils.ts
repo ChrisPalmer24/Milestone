@@ -73,6 +73,7 @@ export type ExtractCommonFields<T, U> = Pick<T, {
 export type AssetsChange = {
   startDate: Date;
   endDate: Date;
+  startValue: number;
   value: number;
   currencyChange: number;
   percentageChange: number;
