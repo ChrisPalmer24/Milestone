@@ -18,7 +18,7 @@ import { AssetsChange, AssetValue } from "@shared/schema";
 
 export const calculateAssetsChange = (history: AssetValue[]): AssetsChange => {
   
-  if (history.length < 2) return { startDate: new Date(), endDate: new Date(), value: 0, currencyChange: 0, percentageChange: 0 };
+  if (history.length < 2) return { startDate: new Date(), endDate: new Date(), startValue: 0, value: 0, currencyChange: 0, percentageChange: 0 };
   
   // Create a sorted copy of the history array by date
   const sortedHistory = [...history].sort((a, b) => 
@@ -43,6 +43,7 @@ export const calculateAssetsChange = (history: AssetValue[]): AssetsChange => {
   return {
     startDate: sortedHistory[0].recordedAt,
     endDate: sortedHistory[sortedHistory.length - 1].recordedAt,
+    startValue: firstValue,
     value: lastValue,
     currencyChange: currency,
     percentageChange: percentage,

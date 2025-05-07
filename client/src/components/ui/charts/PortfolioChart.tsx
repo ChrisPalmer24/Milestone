@@ -107,9 +107,6 @@ export default function PortfolioChart({
     return getDateRange(dateRange as DateRangeOption);
   }, [dateRange]);
 
-  console.log("start", startDate);
-  console.log("end", endDate);
-
   // Fetch portfolio history data
   const { data: historyData, isLoading } = useQuery<
     PortfolioHistoryTimePoint[]
@@ -129,8 +126,6 @@ export default function PortfolioChart({
     },
   });
 
-  console.log("historyData", historyData);
-
   //Mopve to utility
   const data: ChartData[] =
     Array.isArray(historyData) && historyData.length > 0
@@ -145,10 +140,6 @@ export default function PortfolioChart({
                 return portfolioValue >= milestoneValue;
               })
               .sort((a, b) => Number(b.targetValue) - Number(a.targetValue))[0];
-
-            console.log("item.date", item.date);
-            console.log("item.date", typeof item.date);
-
             return {
               date: itemDate.toLocaleDateString("en-GB", {
                 year: "numeric",
@@ -167,8 +158,6 @@ export default function PortfolioChart({
           })
         )
       : [];
-
-  console.log("data", data);
 
   // Add milestone data if enabled
   const chartData = [...data];
@@ -297,12 +286,6 @@ export default function PortfolioChart({
                   <Tooltip
                     formatter={(value: number, name: string, props: any) => {
                       const data = props.payload as ChartData;
-                      console.log("Tooltip data:", data);
-                      console.log(
-                        "Achieved milestone:",
-                        data.achievedMilestone
-                      );
-
                       const items = [
                         [`£${value.toLocaleString()}`, "Portfolio Value"],
                       ];

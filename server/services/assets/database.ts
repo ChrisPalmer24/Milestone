@@ -379,37 +379,43 @@ export class DatabaseAssetService implements IAssetService {
     return assetValuesToCalculate;
   }
 
-  private async getAssetValuesForDateRangeWithStartValue(assetIds: Asset["id"][], startDate?: Date | null, endDate?: Date | null): Promise<AssetValue[]> {
-
-    const assetValuesToCalculate = await this.getPortfolioAssetValuesForAssetsForDateRange(assetIds, startDate, endDate);
-
-    const lastValueBeforeStart = startDate
-    ? await this.db.query.assetValues.findFirst({
-      where: and(lte(assetValues.recordedAt, startDate)),
-      orderBy: [desc(assetValues.recordedAt)],
-    })
-    : null;
-
-    const startValue: AssetValue | null = lastValueBeforeStart
-    ? {
-      ...lastValueBeforeStart,
-      recordedAt: startDate ?? new Date(),
-    }
-    : null;
-
-    const valuesForRange = startValue ? [startValue, ...assetValuesToCalculate] : assetValuesToCalculate;
-
-    return valuesForRange
-
-  }
-
   async getPortfolioOverviewForUserForDateRange(userAccountId: UserAccount["id"], startDate?: Date | null, endDate?: Date | null): Promise<AssetsChange> {
 
     const assetsToCalculate = await this.getCombinedAssetsForUser(userAccountId);
 
-    const assetValuesForRange = await this.getAssetValuesForDateRangeWithStartValue(assetsToCalculate.map(asset => asset.id), startDate, endDate);
+    const assetsValueChnages = await Promise.all(assetsToCalculate.map(async (asset) => {
+      const assetValuesForRange = await this.getPortfolioAssetValuesForAssetsForDateRange([asset.id], startDate, endDate);
+      const withStartValue = startDate ? await this.addStartValueToAssetValues(startDate, assetValuesForRange) : assetValuesForRange;
+      return calculateAssetsChange(withStartValue);
+    }));
 
-    return calculateAssetsChange(assetValuesForRange);
+    const assetsValueChanges = assetsValueChnages.reduce((acc: AssetsChange, asset) => {
+
+      const startDate = asset.startDate < acc.startDate ? asset.startDate : acc.startDate;
+      const endDate = asset.endDate > acc.endDate ? asset.endDate : acc.endDate;
+      const startValue = asset.startDate < acc.startDate
+        ? asset.startValue
+        : asset.startDate > acc.startDate
+        ? acc.startValue
+        : asset.startDate === acc.startDate
+        ? acc.startValue + asset.startValue
+        : acc.startValue;
+
+      const value = acc.value + asset.value;
+      const currencyChange = value - startValue;
+      const percentageChange = (currencyChange / startValue) * 100;
+      
+      return {
+        startDate,
+        endDate,
+        startValue,
+        value,
+        currencyChange,
+        percentageChange
+      }
+    });
+
+    return assetsValueChanges;
   }
 
   async getPortfolioValueHistoryForUserForDateRange(userAccountId: UserAccount["id"], startDate?: Date | null, endDate?: Date | null): Promise<PortfolioHistoryTimePoint[]> {
@@ -430,7 +436,11 @@ export class DatabaseAssetService implements IAssetService {
 
     const assetsToCalculate = await this.getCombinedAssetsForUser(userAccountId);
 
-    const assetValuesForRange = await this.getAssetValuesForDateRangeWithStartValue(assetsToCalculate.map(asset => asset.id), startDate, endDate);
+    const assetValuesToCalculate = await this.getPortfolioAssetValuesForAssetsForDateRange(assetsToCalculate.map(asset => asset.id), startDate, endDate);
+
+    const assetValuesForRange = startDate
+      ? await this.addStartValueToAssetValues(startDate, assetValuesToCalculate)
+      : assetValuesToCalculate;
 
 
     [...assetValuesForRange.sort((a, b) => a.recordedAt.getTime() - b.recordedAt.getTime())].forEach(entry => {
@@ -487,6 +497,34 @@ export class DatabaseAssetService implements IAssetService {
    * Utility methods
    */
 
+  private async getLastAssetValueBeforeDate(startDate: Date, assetIds?: Asset["id"][]): Promise<AssetValue | null> {
+    const lastValueBeforeStart = await this.db.query.assetValues.findFirst({
+      where: assetIds 
+        ? and(lte(assetValues.recordedAt, startDate), inArray(assetValues.assetId, assetIds))
+        : and(lte(assetValues.recordedAt, startDate)),
+      orderBy: [desc(assetValues.recordedAt)],
+    })
+    const startValue: AssetValue | null = lastValueBeforeStart
+    ? {
+      ...lastValueBeforeStart,
+      recordedAt: startDate ?? new Date(),
+    }
+    : null;
+    return startValue;
+  }
+
+  private async addStartValueToAssetValues(startDate: Date, assetValues: AssetValue[]): Promise<AssetValue[]> {
+
+    const c = assetValues.map(assetValue => assetValue.assetId);
+    const ids = new Set(c);
+
+    const startValue = await this.getLastAssetValueBeforeDate(startDate, Array.from(ids));
+
+    const valuesForRange = startValue ? [startValue, ...assetValues] : assetValues;
+
+    return valuesForRange;
+  }
+
   private async resolveAssetsWithChange<T extends { id: string }>(assets: T[], query: QueryParts): Promise<WithAccountChange<T>[]> {
 
     const startDate = query?.start
@@ -498,18 +536,9 @@ export class DatabaseAssetService implements IAssetService {
 
     return assets.reduce(async (acc: Promise<WithAccountChange<T>[]>, asset): Promise<WithAccountChange<T>[]> => {
       const assets = await acc;
-      //const { where, orderBy, limit, offset } = query;
 
-      // const start = query.start ? new Date(query.start as string) : null;
-      // const end = query.end ? new Date(query.end as string) : null;
-
-      // const whereDates = start && end ? [between(assetValues.recordedAt, start, end)] : start ? [gte(assetValues.recordedAt, start)] : end ? [lte(assetValues.recordedAt, end)] : [];
-
-      // const queryWithDates = { ...query, where: and(where, ...whereDates) };
-
-      ////const assetHistory = await this.getBrokerProviderAssetHistory(asset.id, queryWithDates);
-
-      const assetHistory = await this.getAssetValuesForDateRangeWithStartValue([asset.id], startDate, endDate);
+      const assetValuesForRange = await this.getPortfolioAssetValuesForAssetsForDateRange([asset.id], startDate, endDate);
+      const assetHistory = startDate ? await this.addStartValueToAssetValues(startDate, assetValuesForRange) : assetValuesForRange;
 
       return [...assets, { ...asset, accountChange: calculateAssetsChange(assetHistory) }];
     }, Promise.resolve([]));
