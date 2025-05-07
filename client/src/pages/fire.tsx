@@ -112,8 +112,13 @@ export default function Fire() {
       Number(formState.monthlyInvestment) + adjustment;
 
     try {
-      await updateFireSettings({
+      await updateFireSettings.mutateAsync({
         monthlyInvestment: newMonthlyInvestment.toString(),
+        targetRetirementAge: fireSettings.targetRetirementAge,
+        annualIncomeGoal: fireSettings.annualIncomeGoal,
+        expectedAnnualReturn: fireSettings.expectedAnnualReturn,
+        safeWithdrawalRate: fireSettings.safeWithdrawalRate,
+        currentAge: fireSettings.currentAge,
       });
 
       setFormState((prev) => ({
@@ -138,9 +143,9 @@ export default function Fire() {
 
     try {
       if (!fireSettings) {
-        await createFireSettings(settings);
+        await createFireSettings.mutateAsync(settings);
       } else {
-        await updateFireSettings(settings);
+        await updateFireSettings.mutateAsync(settings);
       }
       toast({
         title: "Settings saved",

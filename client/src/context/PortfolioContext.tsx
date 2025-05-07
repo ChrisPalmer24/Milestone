@@ -501,10 +501,15 @@ export const usePortfolio = (startDate?: Date, endDate?: Date) => {
     FireSettingsOrphan
   >({
     mutationFn: (settings) => {
-      return apiRequest("POST", "/api/fire-settings", {
+      if (!user?.account.id) {
+        throw new Error("User account ID is required");
+      }
+      const processedSettings: FireSettingsInsert = {
         ...settings,
-        accountId: user?.account.id,
-      });
+        userAccountId: user.account.id,
+      };
+
+      return apiRequest("POST", "/api/fire-settings", processedSettings);
     },
     onSuccess: () => {
       invalidateFireSettings();

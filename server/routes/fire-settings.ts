@@ -59,6 +59,7 @@ export async function registerRoutes(
       const settings = await fireSettingsService.create(settingsData);
       res.status(201).json(settings);
     } catch (error) {
+
       if (error instanceof z.ZodError) {
         return res
           .status(400)
