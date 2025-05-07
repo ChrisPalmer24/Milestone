@@ -141,10 +141,7 @@ export async function registerRoutes(
       const data = assetValueOrphanInsertSchema.parse(req.body);
       const history = await assetService.createBrokerProviderAssetValueHistory(
         req.params.assetId,
-        {
-          ...data,
-          assetId: req.params.assetId,
-        }
+        data
       );
       res.json(history);
     }

@@ -1,4 +1,4 @@
-import { AssetDebitInsert, AssetValueInsert, AssetValue, BrokerProviderAsset, BrokerProviderAssetInsert, GeneralAsset, GeneralAssetInsert, UserAccount, AssetDebit, PortfolioHistoryTimePoint, BrokerProviderAssetAPIKeyConnection, BrokerProvider, BrokerProviderAssetWithAccountChange, GeneralAssetWithAccountChange, AssetsChange } from "@shared/schema";
+import { AssetDebitInsert, AssetValueInsert, AssetValue, BrokerProviderAsset, BrokerProviderAssetInsert, GeneralAsset, GeneralAssetInsert, UserAccount, AssetDebit, PortfolioHistoryTimePoint, BrokerProviderAssetAPIKeyConnection, BrokerProvider, BrokerProviderAssetWithAccountChange, GeneralAssetWithAccountChange, AssetsChange, AssetValueOrphanInsert, AssetDebitOrphanInsert } from "@shared/schema";
 import { QueryParts } from "@server/utils/resource-query-builder";
 
 export interface IAssetService {
@@ -11,10 +11,10 @@ export interface IAssetService {
   updateBrokerProviderAsset(id: BrokerProviderAsset["id"], data: BrokerProviderAssetInsert): Promise<BrokerProviderAsset>;
   deleteBrokerProviderAsset(id: BrokerProviderAsset["id"]): Promise<boolean>;
   getBrokerProviderAssetHistory(id: BrokerProviderAsset["id"], query: QueryParts): Promise<AssetValue[]>;
-  createBrokerProviderAssetValueHistory(id: BrokerProviderAsset["id"], data: AssetValueInsert): Promise<AssetValue>;
-  createBrokerProviderAssetDebitHistory(id: BrokerProviderAsset["id"], data: AssetDebitInsert): Promise<AssetDebit>;
-  updateBrokerProviderAssetValueHistory(id: BrokerProviderAsset["id"], assetValueId: AssetValue["id"], data: AssetValueInsert): Promise<AssetValue>;
-  updateBrokerProviderAssetDebitHistory(id: BrokerProviderAsset["id"], assetDebitId: AssetDebit["id"], data: AssetDebitInsert): Promise<AssetDebit>;
+  createBrokerProviderAssetValueHistory(id: BrokerProviderAsset["id"], data: AssetValueOrphanInsert): Promise<AssetValue>;
+  createBrokerProviderAssetDebitHistory(id: BrokerProviderAsset["id"], data: AssetDebitOrphanInsert): Promise<AssetDebit>;
+  updateBrokerProviderAssetValueHistory(id: BrokerProviderAsset["id"], assetValueId: AssetValue["id"], data: AssetValueOrphanInsert): Promise<AssetValue>;
+  updateBrokerProviderAssetDebitHistory(id: BrokerProviderAsset["id"], assetDebitId: AssetDebit["id"], data: AssetDebitOrphanInsert): Promise<AssetDebit>;
   deleteBrokerProviderAssetValueHistory(id: BrokerProviderAsset["id"], assetValueId: AssetValue["id"]): Promise<boolean>;
   deleteBrokerProviderAssetDebitHistory(id: BrokerProviderAsset["id"], assetDebitId: AssetDebit["id"]): Promise<boolean>;
   setBrokerProviderAPIKey(id: BrokerProviderAsset["id"], apiKey: string): Promise<BrokerProviderAssetAPIKeyConnection>;
@@ -27,11 +27,11 @@ export interface IAssetService {
   updateGeneralAsset(id: GeneralAsset["id"], data: GeneralAssetInsert): Promise<GeneralAsset>;
   deleteGeneralAsset(id: GeneralAsset["id"]): Promise<boolean>;
   getGeneralAssetHistory(assetId: GeneralAsset["id"], query: QueryParts): Promise<GeneralAsset[]>;
-  createGeneralAssetValueHistory(assetId: GeneralAsset["id"], data: AssetValueInsert): Promise<AssetValue>;
-  createGeneralAssetDebitHistory(id: GeneralAsset["id"], data: AssetDebitInsert): Promise<AssetDebit>;
-  updateGeneralAssetValueHistory(id: GeneralAsset["id"], assetValueId: AssetValue["id"], data: AssetValueInsert): Promise<AssetValue>;
-  updateGeneralAssetDebitHistory(id: GeneralAsset["id"], assetDebitId: AssetDebit["id"], data: AssetDebitInsert): Promise<AssetDebit>;
-  deleteGeneralAssetValueHistory(id: GeneralAsset["id"], assetValueId: AssetValue["id"]): Promise<boolean>;
+  createGeneralAssetValueHistory(assetId: GeneralAsset["id"], data: AssetValueOrphanInsert): Promise<AssetValue>;
+  createGeneralAssetDebitHistory(assetId: GeneralAsset["id"], data: AssetDebitOrphanInsert): Promise<AssetDebit>;
+  updateGeneralAssetValueHistory(assetId: GeneralAsset["id"], assetValueId: AssetValue["id"], data: AssetValueOrphanInsert): Promise<AssetValue>;
+  updateGeneralAssetDebitHistory(assetId: GeneralAsset["id"], assetDebitId: AssetDebit["id"], data: AssetDebitOrphanInsert): Promise<AssetDebit>;
+  deleteGeneralAssetValueHistory(assetId: GeneralAsset["id"], assetValueId: AssetValue["id"]): Promise<boolean>;
   deleteGeneralAssetDebitHistory(id: GeneralAsset["id"], assetDebitId: AssetDebit["id"]): Promise<boolean>;
 
   getPortfolioOverviewForUserForDateRange(userAccountId: UserAccount["id"]): Promise<AssetsChange>;

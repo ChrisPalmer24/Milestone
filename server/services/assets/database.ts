@@ -154,15 +154,21 @@ export class DatabaseAssetService implements IAssetService {
     return this.db.query.brokerProviderAssets.findMany({ with: { provider: true }, where: and(eq(brokerProviderAssets.userAccountId, userId), where), orderBy, limit, offset });
   }
 
-  async createBrokerProviderAssetValueHistory(id: BrokerProviderAsset["id"], data: AssetValueInsert): Promise<AssetValue> {
+  async createBrokerProviderAssetValueHistory(id: BrokerProviderAsset["id"], data: AssetValueOrphanInsert): Promise<AssetValue> {
     return this.withValueTransaction(async (tx: Transaction) => {
-      const [insertedAssetValue] = await tx.insert(assetValues).values(data).returning();
+      const [insertedAssetValue] = await tx.insert(assetValues).values({
+        ...data,
+        assetId: id
+      }).returning();
       return insertedAssetValue;
     }, "broker", id);
   }
 
-  async createBrokerProviderAssetDebitHistory(id: BrokerProviderAsset["id"], data: AssetDebitInsert): Promise<AssetDebit> {
-    const [insertedAssetDebit] = await this.db.insert(assetDebits).values(parsedData).returning();
+  async createBrokerProviderAssetDebitHistory(id: BrokerProviderAsset["id"], data: AssetDebitOrphanInsert): Promise<AssetDebit> {
+    const [insertedAssetDebit] = await this.db.insert(assetDebits).values({
+      ...data,
+      assetId: id
+    }).returning();
     return insertedAssetDebit;
   }
 
