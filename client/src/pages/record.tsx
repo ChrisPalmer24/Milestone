@@ -325,9 +325,6 @@ export default function Record() {
                                 ? "Cash ISA"
                                 : asset.accountType}
                             </span>
-                            <div className="text-sm font-semibold mt-1">
-                              £{Number(asset.currentValue).toLocaleString()}
-                            </div>
                           </div>
                         </div>
 
@@ -340,7 +337,7 @@ export default function Record() {
                             <Input
                               type="number"
                               className="pl-7"
-                              placeholder={Number(asset.currentValue).toLocaleString()}
+                              placeholder={`Current: ${Number(asset.currentValue).toLocaleString()}`}
                               value={accountValues[asset.id] || ""}
                               onChange={(e) =>
                                 handleAccountValueChange(
@@ -356,7 +353,7 @@ export default function Record() {
                   ))}
                 </div>
 
-                <div className="mt-6 flex justify-center">
+                <div className="mt-6 flex justify-end">
                   <Button
                     onClick={handleSubmitAll}
                     disabled={
@@ -364,7 +361,7 @@ export default function Record() {
                       isLoading ||
                       Object.keys(accountValues).length === 0
                     }
-                    className="md:w-1/2 w-full bg-black hover:bg-gray-800 text-white"
+                    className="md:w-1/3 w-full bg-black hover:bg-gray-800 text-white"
                   >
                     {submitting ? (
                       <>
