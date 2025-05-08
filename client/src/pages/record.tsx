@@ -258,27 +258,29 @@ export default function Record() {
       <Card className="mt-4">
         <CardHeader className="relative">
           <div className="flex justify-between items-center">
-            <CardTitle className="text-lg font-semibold">
-              Record Account Values
-            </CardTitle>
+            <div>
+              <CardTitle className="text-lg font-semibold">
+                Record Account Values
+              </CardTitle>
+              <CardDescription className="mt-1">
+                Update the value of your accounts to keep track of your investments.
+              </CardDescription>
+            </div>
+            <div className="flex flex-col items-end">
+              <label htmlFor="date" className="block text-sm font-medium mb-1">
+                Date
+              </label>
+              <Input
+                id="date"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-40 md:w-44"
+              />
+            </div>
           </div>
-          <CardDescription>
-            Update the value of your accounts to keep track of your investments.
-          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="mb-4">
-            <label htmlFor="date" className="block text-sm font-medium mb-1">
-              Date for All Entries
-            </label>
-            <Input
-              id="date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full md:w-1/3"
-            />
-          </div>
           {brokerAssets.length === 0 ? (
             <div className="text-center py-6">
               <p className="text-muted-foreground">
