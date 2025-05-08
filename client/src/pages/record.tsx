@@ -272,7 +272,8 @@ export default function Record() {
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-32 py-1 px-1 border border-gray-300 rounded-md shadow-sm text-sm"
+                className="w-32 py-1 px-1 border border-gray-300 rounded-md shadow-sm text-sm text-center"
+                style={{ textAlign: "center" }}
               />
             </div>
           </div>
