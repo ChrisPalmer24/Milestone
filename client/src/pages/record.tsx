@@ -27,21 +27,29 @@ import {
 import { History, Edit, Check, X } from "lucide-react";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { useToast } from "@/hooks/use-toast";
-import { AccountHistory } from "server/db/schema";
 import DateRangeBar from "@/components/layout/DateRangeBar";
-
+import { getProviderName } from "@/lib/broker";
+import { BrokerProviderAsset, AssetValue } from "shared/schema";
+import { useBrokerProviders } from "@/hooks/use-broker-providers";
 type AccountFormData = {
-  [key: string]: string;
+  [key: string]: number | undefined;
+};
+
+const assetWithValeGuard = (
+  formValue: [string, number | undefined]
+): formValue is [string, number] => {
+  return formValue[1] !== undefined && !isNaN(formValue[1]);
 };
 
 export default function Record() {
   const {
-    accounts,
-    addAccountHistory,
+    addBrokerAssetValue,
     isLoading,
-    accountsHistory,
-    updateAccountHistory,
+    updateBrokerAssetValue,
+    brokerAssets,
   } = usePortfolio();
+
+  const { data: brokerProviders } = useBrokerProviders();
 
   const { toast } = useToast();
   const [accountValues, setAccountValues] = useState<AccountFormData>({});
@@ -52,39 +60,26 @@ export default function Record() {
   const [updatingAccounts, setUpdatingAccounts] = useState<string[]>([]);
 
   // History dialog states
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const [editHistoryRecord, setEditHistoryRecord] =
-    useState<AccountHistory | null>(null);
+  const [editHistoryRecord, setEditHistoryRecord] = useState<AssetValue | null>(
+    null
+  );
   const [editValue, setEditValue] = useState<string>("");
-  const [allHistory, setAllHistory] = useState<AccountHistory[]>([]);
-
-  // Flatten all account history into a single array for the history dialog
-  useEffect(() => {
-    if (accountsHistory) {
-      const flattenedHistory = accountsHistory.flatMap(
-        (account) => account.history
-      );
-      // Sort by most recent first
-      flattenedHistory.sort(
-        (a, b) =>
-          new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime()
-      );
-      setAllHistory(flattenedHistory);
-    }
-  }, [accountsHistory]);
 
   // Find account name by ID
-  const getAccountName = (accountId: string) => {
-    const account = accounts.find((acc) => acc.id === accountId);
-    return account
-      ? `${account.provider} (${account.accountType})`
+  const getAssetName = (assetId: string) => {
+    const asset = brokerAssets.find((acc) => acc.id === assetId);
+
+    return asset
+      ? `${getProviderName(asset.providerId, brokerProviders ?? [])} (${
+          asset.assetType
+        })`
       : "Unknown Account";
   };
 
   // Start editing a history record
-  const handleEditRecord = (record: AccountHistory) => {
+  const handleEditRecord = (record: AssetValue) => {
     setEditHistoryRecord(record);
-    setEditValue(record.value);
+    setEditValue(record.value.toString());
   };
 
   // Cancel editing
@@ -93,15 +88,19 @@ export default function Record() {
     setEditValue("");
   };
 
+  console.log("brokerAssets", brokerAssets);
+
   // Save edited record
   const handleSaveEdit = async () => {
     if (!editHistoryRecord) return;
 
     try {
       // Use the updateAccountHistory function to update the record
-      await updateAccountHistory(editHistoryRecord.id, {
-        value: editValue,
+      await updateBrokerAssetValue.mutateAsync({
+        assetId: editHistoryRecord.assetId,
+        value: Number(editValue),
         recordedAt: new Date(editHistoryRecord.recordedAt),
+        historyId: editHistoryRecord.id,
       });
 
       setEditHistoryRecord(null);
@@ -117,16 +116,16 @@ export default function Record() {
   };
 
   // Handle input change for account values
-  const handleAccountValueChange = (accountId: string, value: string) => {
+  const handleAccountValueChange = (assetId: string, value: string) => {
     setAccountValues((prev) => ({
       ...prev,
-      [accountId]: value,
+      [assetId]: value === "" ? undefined : Number(value),
     }));
   };
 
   // Handle form submission for a single account
-  const handleSubmitAccount = async (accountId: string) => {
-    const value = accountValues[accountId];
+  const handleSubmitAccount = async (assetId: string) => {
+    const value = accountValues[assetId];
 
     if (!value || !date) {
       toast({
@@ -137,11 +136,11 @@ export default function Record() {
       return;
     }
 
-    setUpdatingAccounts((prev) => [...prev, accountId]);
+    setUpdatingAccounts((prev) => [...prev, assetId]);
 
     try {
-      await addAccountHistory({
-        accountId,
+      await addBrokerAssetValue.mutateAsync({
+        assetId,
         value,
         recordedAt: new Date(date),
       });
@@ -154,7 +153,7 @@ export default function Record() {
       // Clear the value for this account
       setAccountValues((prev) => {
         const newValues = { ...prev };
-        delete newValues[accountId];
+        delete newValues[assetId];
         return newValues;
       });
     } catch (error) {
@@ -165,19 +164,26 @@ export default function Record() {
         variant: "destructive",
       });
     } finally {
-      setUpdatingAccounts((prev) => prev.filter((id) => id !== accountId));
+      setUpdatingAccounts((prev) => prev.filter((id) => id !== assetId));
     }
+  };
+
+  const getFullAssetName = (asset: BrokerProviderAsset) => {
+    return `${getProviderName(asset.providerId, brokerProviders ?? [])} (${
+      asset.accountType
+    })`;
   };
 
   // Handle submission of all accounts at once
   const handleSubmitAll = async () => {
-    const accountsToUpdate = Object.entries(accountValues)
-      .filter(([_, value]) => value.trim() !== "")
-      .map(([id, value]) => ({
-        accountId: id,
-        value,
-        recordedAt: new Date(date),
-      }));
+    const dataWithValues: [string, number][] =
+      Object.entries(accountValues).filter(assetWithValeGuard);
+
+    const accountsToUpdate = dataWithValues.map(([id, value]) => ({
+      assetId: id,
+      value: value,
+      recordedAt: new Date(date),
+    }));
 
     if (accountsToUpdate.length === 0) {
       toast({
@@ -191,10 +197,11 @@ export default function Record() {
     setSubmitting(true);
 
     try {
-      // Update each account sequentially
-      for (const accountData of accountsToUpdate) {
-        await addAccountHistory(accountData);
-      }
+      await Promise.all(
+        accountsToUpdate.map(async (accountData) => {
+          await addBrokerAssetValue.mutateAsync(accountData);
+        })
+      );
 
       toast({
         title: "Values recorded",
@@ -226,14 +233,6 @@ export default function Record() {
             <CardTitle className="text-lg font-semibold">
               Record Account Values
             </CardTitle>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setHistoryOpen(true)}
-              title="View History"
-            >
-              <History className="h-5 w-5" />
-            </Button>
           </div>
           <CardDescription>
             Update the value of your accounts to keep track of your investments.
@@ -252,8 +251,7 @@ export default function Record() {
               className="w-full md:w-1/3"
             />
           </div>
-
-          {accounts.length === 0 ? (
+          {brokerAssets.length === 0 ? (
             <div className="text-center py-6">
               <p className="text-muted-foreground">
                 You don't have any accounts yet. Add accounts in the Portfolio
@@ -263,21 +261,23 @@ export default function Record() {
           ) : (
             <>
               <div className="space-y-4">
-                {[...accounts]
+                {[...brokerAssets]
                   .sort(
                     (a, b) => Number(b.currentValue) - Number(a.currentValue)
                   )
-                  .map((account) => (
+                  .map((asset) => (
                     <div
-                      key={account.id}
+                      key={asset.id}
                       className="p-4 border rounded-lg bg-card"
                     >
                       <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
                         {/* Column 1: Account Information */}
                         <div>
-                          <h3 className="font-medium">{account.provider}</h3>
+                          <h3 className="font-medium">
+                            {getFullAssetName(asset)}
+                          </h3>
                           <p className="text-sm text-muted-foreground">
-                            {account.accountType}
+                            {asset.assetType}
                           </p>
                         </div>
 
@@ -285,7 +285,7 @@ export default function Record() {
                         <div className="text-center">
                           <h3 className="font-medium">Current Value</h3>
                           <p className="text-sm text-muted-foreground">
-                            £{parseInt(account.currentValue).toLocaleString()}
+                            £{asset.currentValue}
                           </p>
                         </div>
 
@@ -299,30 +299,15 @@ export default function Record() {
                               type="number"
                               className="pl-7"
                               placeholder="Enter new value"
-                              value={accountValues[account.id] || ""}
+                              value={accountValues[asset.id] || ""}
                               onChange={(e) =>
                                 handleAccountValueChange(
-                                  account.id,
+                                  asset.id,
                                   e.target.value
                                 )
                               }
                             />
                           </div>
-
-                          <Button
-                            onClick={() => handleSubmitAccount(account.id)}
-                            disabled={
-                              !accountValues[account.id] ||
-                              updatingAccounts.includes(account.id) ||
-                              isLoading
-                            }
-                            className="whitespace-nowrap"
-                            size="sm"
-                          >
-                            {updatingAccounts.includes(account.id)
-                              ? "Updating..."
-                              : "Update"}
-                          </Button>
                         </div>
                       </div>
                     </div>
@@ -353,98 +338,6 @@ export default function Record() {
           </div>
         </CardContent>
       </Card>
-
-      {/* History Dialog */}
-      <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
-        <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Account Value History</DialogTitle>
-            <DialogDescription>
-              View and manage all recorded account values.
-            </DialogDescription>
-          </DialogHeader>
-
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Account</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Value</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {allHistory.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center">
-                    No history records found.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                allHistory.map((record) => (
-                  <TableRow key={record.id}>
-                    <TableCell>{getAccountName(record.accountId)}</TableCell>
-                    <TableCell>
-                      {new Date(record.recordedAt).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      {editHistoryRecord?.id === record.id ? (
-                        <div className="relative flex-1">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span className="text-gray-500">£</span>
-                          </div>
-                          <Input
-                            type="number"
-                            className="pl-7"
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                          />
-                        </div>
-                      ) : (
-                        <>£{parseInt(record.value).toLocaleString()}</>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {editHistoryRecord?.id === record.id ? (
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={handleSaveEdit}
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={handleCancelEdit}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => handleEditRecord(record)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-
-          <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setHistoryOpen(false)}>
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
