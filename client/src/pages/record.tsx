@@ -272,8 +272,8 @@ export default function Record() {
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-36 md:w-40 py-1 pl-1 pr-2 border border-gray-300 rounded-md shadow-sm focus:ring-1 focus:ring-black focus:border-black text-sm"
-                style={{ textIndent: '-2px' }}
+                className="w-36 md:w-40 py-1 pl-2 pr-0 border border-gray-300 rounded-md shadow-sm focus:ring-1 focus:ring-black focus:border-black text-sm"
+                style={{ textIndent: '4px' }}
               />
             </div>
           </div>
