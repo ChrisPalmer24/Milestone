@@ -413,6 +413,13 @@ export class DatabaseAssetService implements IAssetService {
         currencyChange,
         percentageChange
       }
+    }, {
+      startDate: startDate ?? new Date(),
+      endDate: endDate ?? new Date(),
+      startValue: 0,
+      value: 0,
+      currencyChange: 0,
+      percentageChange: 0
     });
 
     return assetsValueChanges;

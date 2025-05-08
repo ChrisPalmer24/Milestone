@@ -64,7 +64,7 @@ export default function Goals() {
   const {
     brokerAssets,
     milestones,
-    totalPortfolioValue,
+    portfolioOverview,
     addMilestone,
     deleteMilestone,
     isLoading,
@@ -170,7 +170,7 @@ export default function Goals() {
       );
     } else {
       // Use total portfolio value for general milestones
-      currentValue = totalPortfolioValue;
+      currentValue = portfolioOverview?.value ?? 0;
     }
 
     const targetValue = Number(milestone.targetValue);
@@ -195,7 +195,7 @@ export default function Goals() {
       );
     } else {
       // Use total portfolio value for general milestones
-      currentValue = totalPortfolioValue;
+      currentValue = portfolioOverview?.value ?? 0;
     }
 
     const targetValue = Number(milestone.targetValue);

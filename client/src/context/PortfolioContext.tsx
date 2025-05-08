@@ -78,6 +78,7 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
       value: 0,
       currencyChange: 0,
       percentageChange: 0,
+      startValue: 0,
       startDate: new Date(),
       endDate: new Date(),
     },
