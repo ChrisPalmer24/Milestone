@@ -25,6 +25,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { History, Edit, Check, X } from "lucide-react";
+import { SiTradingview, SiCoinbase } from "react-icons/si";
+import { BsPiggyBank } from "react-icons/bs";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { useToast } from "@/hooks/use-toast";
 import DateRangeBar from "@/components/layout/DateRangeBar";
@@ -50,6 +52,32 @@ export default function Record() {
   } = usePortfolio();
 
   const { data: brokerProviders } = useBrokerProviders();
+  
+  // Helper to get logo for provider
+  const getProviderLogo = (providerName: string) => {
+    switch (providerName.toLowerCase()) {
+      case "trading 212":
+      case "trading212":
+        return <SiTradingview className="w-6 h-6" />;
+      case "vanguard":
+        return <BsPiggyBank className="w-6 h-6" />;
+      case "invest engine":
+      case "investengine":
+        return <SiCoinbase className="w-6 h-6" />;
+      case "hargreaves lansdown":
+        return <BsPiggyBank className="w-6 h-6" />;
+      case "aj bell":
+        return <SiCoinbase className="w-6 h-6" />;
+      default:
+        return <SiTradingview className="w-6 h-6" />;
+    }
+  };
+
+  // Get color for account type
+  const getAccountTypeColor = (type: string) => {
+    // Return black for all account types
+    return "text-black font-semibold";
+  };
 
   const { toast } = useToast();
   const [accountValues, setAccountValues] = useState<AccountFormData>({});
@@ -271,21 +299,30 @@ export default function Record() {
                       className="p-4 border rounded-lg bg-card"
                     >
                       <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
-                        {/* Column 1: Account Information */}
-                        <div>
-                          <h3 className="font-medium">
-                            {getFullAssetName(asset)}
-                          </h3>
-                          <p className="text-sm text-muted-foreground">
-                            {asset.assetType}
-                          </p>
+                        {/* Column 1: Provider Logo and Information */}
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center mr-3">
+                            {getProviderLogo(getProviderName(asset.providerId, brokerProviders ?? []))}
+                          </div>
+                          <div>
+                            <h3 className="font-medium">{getProviderName(asset.providerId, brokerProviders ?? [])}</h3>
+                            <span className={`text-sm ${getAccountTypeColor(asset.accountType)}`}>
+                              {asset.accountType === "LISA"
+                                ? "Lifetime ISA"
+                                : asset.accountType === "GIA"
+                                ? "General Account"
+                                : asset.accountType === "CISA"
+                                ? "Cash ISA"
+                                : asset.accountType}
+                            </span>
+                          </div>
                         </div>
 
                         {/* Column 2: Current Value */}
                         <div className="text-center">
                           <h3 className="font-medium">Current Value</h3>
-                          <p className="text-sm text-muted-foreground">
-                            £{asset.currentValue}
+                          <p className="text-sm font-semibold">
+                            £{Number(asset.currentValue).toLocaleString()}
                           </p>
                         </div>
 
@@ -322,9 +359,16 @@ export default function Record() {
                     isLoading ||
                     Object.keys(accountValues).length === 0
                   }
-                  className="w-full bg-primary text-white"
+                  className="w-full bg-black hover:bg-gray-800 text-white"
                 >
-                  {submitting ? "Recording All Values..." : "Record All Values"}
+                  {submitting ? (
+                    <>
+                      <span className="mr-2">Recording Values...</span>
+                      <span className="animate-spin">⏳</span>
+                    </>
+                  ) : (
+                    "Record All Values"
+                  )}
                 </Button>
               </div>
             </>
