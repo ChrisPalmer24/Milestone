@@ -329,15 +329,15 @@ export default function Record() {
                         </div>
 
                         {/* Column 2: New Value Input */}
-                        <div className="flex items-center space-x-2">
-                          <div className="relative flex-1">
+                        <div className="flex items-center justify-end">
+                          <div className="relative md:w-1/3 w-full">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                               <span className="text-gray-500">£</span>
                             </div>
                             <Input
                               type="number"
                               className="pl-7"
-                              placeholder={`Current: ${Number(asset.currentValue).toLocaleString()}`}
+                              placeholder={`${Number(asset.currentValue).toLocaleString()}`}
                               value={accountValues[asset.id] || ""}
                               onChange={(e) =>
                                 handleAccountValueChange(
