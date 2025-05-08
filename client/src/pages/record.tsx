@@ -266,16 +266,13 @@ export default function Record() {
                 Update the value of your accounts to keep track of your investments.
               </CardDescription>
             </div>
-            <div className="flex flex-col items-end">
-              <label htmlFor="date" className="block text-sm font-medium mb-1">
-                Date
-              </label>
+            <div className="flex items-center">
               <Input
                 id="date"
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-40 md:w-44"
+                className="w-40 md:w-44 border border-gray-300 rounded-md shadow-sm focus:ring-1 focus:ring-black focus:border-black"
               />
             </div>
           </div>
