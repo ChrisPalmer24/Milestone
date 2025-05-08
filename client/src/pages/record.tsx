@@ -275,7 +275,7 @@ export default function Record() {
                 Update the value of your accounts to keep track of your investments.
               </CardDescription>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center">
               <input
                 id="date"
                 type="date"
@@ -284,14 +284,6 @@ export default function Record() {
                 className="w-32 py-1 px-1 border border-gray-300 rounded-md shadow-sm text-sm text-center"
                 style={{ textAlign: "center" }}
               />
-              <Button 
-                onClick={initializeWithCurrentValues}
-                variant="outline"
-                size="sm"
-                className="text-xs"
-              >
-                Use Current Values
-              </Button>
             </div>
           </div>
         </CardHeader>
@@ -306,13 +298,6 @@ export default function Record() {
           ) : (
             <>
               <div>
-                {/* Column Headers */}
-                <div className="grid grid-cols-1 md:grid-cols-3 mb-3 px-4 font-semibold text-gray-700">
-                  <div>Account</div>
-                  <div className="text-center hidden md:block">Current Value</div>
-                  <div className="text-center hidden md:block">Value</div>
-                </div>
-                
                 <div className="space-y-4">
                 {[...brokerAssets]
                   .sort(
@@ -323,7 +308,7 @@ export default function Record() {
                       key={asset.id}
                       className="p-4 border rounded-lg bg-card"
                     >
-                      <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-4">
                         {/* Column 1: Provider Logo and Information */}
                         <div className="flex items-center">
                           <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center mr-3">
@@ -340,18 +325,13 @@ export default function Record() {
                                 ? "Cash ISA"
                                 : asset.accountType}
                             </span>
+                            <div className="text-sm font-semibold mt-1">
+                              £{Number(asset.currentValue).toLocaleString()}
+                            </div>
                           </div>
                         </div>
 
-                        {/* Column 2: Current Value */}
-                        <div className="text-center">
-                          <span className="md:hidden font-medium mr-2">Current Value:</span>
-                          <span className="text-sm font-semibold">
-                            £{Number(asset.currentValue).toLocaleString()}
-                          </span>
-                        </div>
-
-                        {/* Column 3: New Value Input & Update Button */}
+                        {/* Column 2: New Value Input */}
                         <div className="flex items-center space-x-2">
                           <div className="relative flex-1">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -376,7 +356,7 @@ export default function Record() {
                   ))}
                 </div>
 
-                <div className="mt-6">
+                <div className="mt-6 flex justify-center">
                   <Button
                     onClick={handleSubmitAll}
                     disabled={
@@ -384,15 +364,15 @@ export default function Record() {
                       isLoading ||
                       Object.keys(accountValues).length === 0
                     }
-                    className="w-full bg-black hover:bg-gray-800 text-white"
+                    className="md:w-1/2 w-full bg-black hover:bg-gray-800 text-white"
                   >
                     {submitting ? (
                       <>
-                        <span className="mr-2">Recording Values...</span>
+                        <span className="mr-2">Updating...</span>
                         <span className="animate-spin">⏳</span>
                       </>
                     ) : (
-                      "Record All Values"
+                      "Update Portfolio"
                     )}
                   </Button>
                 </div>
