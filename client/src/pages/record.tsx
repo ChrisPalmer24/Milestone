@@ -86,6 +86,15 @@ export default function Record() {
   );
   const [submitting, setSubmitting] = useState(false);
   const [updatingAccounts, setUpdatingAccounts] = useState<string[]>([]);
+  
+  // Initialize values with current values button
+  const initializeWithCurrentValues = () => {
+    const initialValues: AccountFormData = {};
+    brokerAssets.forEach(asset => {
+      initialValues[asset.id] = Number(asset.currentValue);
+    });
+    setAccountValues(initialValues);
+  };
 
   // History dialog states
   const [editHistoryRecord, setEditHistoryRecord] = useState<AssetValue | null>(
@@ -266,7 +275,7 @@ export default function Record() {
                 Update the value of your accounts to keep track of your investments.
               </CardDescription>
             </div>
-            <div className="flex items-center">
+            <div className="flex items-center space-x-2">
               <input
                 id="date"
                 type="date"
@@ -275,6 +284,14 @@ export default function Record() {
                 className="w-32 py-1 px-1 border border-gray-300 rounded-md shadow-sm text-sm text-center"
                 style={{ textAlign: "center" }}
               />
+              <Button 
+                onClick={initializeWithCurrentValues}
+                variant="outline"
+                size="sm"
+                className="text-xs"
+              >
+                Use Current Values
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -343,7 +360,7 @@ export default function Record() {
                             <Input
                               type="number"
                               className="pl-7"
-                              placeholder="Value"
+                              placeholder={Number(asset.currentValue).toLocaleString()}
                               value={accountValues[asset.id] || ""}
                               onChange={(e) =>
                                 handleAccountValueChange(
