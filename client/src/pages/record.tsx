@@ -288,7 +288,15 @@ export default function Record() {
             </div>
           ) : (
             <>
-              <div className="space-y-4">
+              <div>
+                {/* Column Headers */}
+                <div className="grid grid-cols-1 md:grid-cols-3 mb-3 px-4 font-semibold text-gray-700">
+                  <div>Account</div>
+                  <div className="text-center hidden md:block">Current Value</div>
+                  <div className="text-center hidden md:block">Value</div>
+                </div>
+                
+                <div className="space-y-4">
                 {[...brokerAssets]
                   .sort(
                     (a, b) => Number(b.currentValue) - Number(a.currentValue)
@@ -320,10 +328,10 @@ export default function Record() {
 
                         {/* Column 2: Current Value */}
                         <div className="text-center">
-                          <h3 className="font-medium">Current Value</h3>
-                          <p className="text-sm font-semibold">
+                          <span className="md:hidden font-medium mr-2">Current Value:</span>
+                          <span className="text-sm font-semibold">
                             £{Number(asset.currentValue).toLocaleString()}
-                          </p>
+                          </span>
                         </div>
 
                         {/* Column 3: New Value Input & Update Button */}
@@ -335,7 +343,7 @@ export default function Record() {
                             <Input
                               type="number"
                               className="pl-7"
-                              placeholder="Enter new value"
+                              placeholder="Value"
                               value={accountValues[asset.id] || ""}
                               onChange={(e) =>
                                 handleAccountValueChange(
@@ -349,27 +357,28 @@ export default function Record() {
                       </div>
                     </div>
                   ))}
-              </div>
+                </div>
 
-              <div className="mt-6">
-                <Button
-                  onClick={handleSubmitAll}
-                  disabled={
-                    submitting ||
-                    isLoading ||
-                    Object.keys(accountValues).length === 0
-                  }
-                  className="w-full bg-black hover:bg-gray-800 text-white"
-                >
-                  {submitting ? (
-                    <>
-                      <span className="mr-2">Recording Values...</span>
-                      <span className="animate-spin">⏳</span>
-                    </>
-                  ) : (
-                    "Record All Values"
-                  )}
-                </Button>
+                <div className="mt-6">
+                  <Button
+                    onClick={handleSubmitAll}
+                    disabled={
+                      submitting ||
+                      isLoading ||
+                      Object.keys(accountValues).length === 0
+                    }
+                    className="w-full bg-black hover:bg-gray-800 text-white"
+                  >
+                    {submitting ? (
+                      <>
+                        <span className="mr-2">Recording Values...</span>
+                        <span className="animate-spin">⏳</span>
+                      </>
+                    ) : (
+                      "Record All Values"
+                    )}
+                  </Button>
+                </div>
               </div>
             </>
           )}
