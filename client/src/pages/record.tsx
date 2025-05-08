@@ -267,14 +267,24 @@ export default function Record() {
               </CardDescription>
             </div>
             <div className="flex items-center">
-              <input
-                id="date"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-36 md:w-40 py-1 pl-2 pr-0 border border-gray-300 rounded-md shadow-sm focus:ring-1 focus:ring-black focus:border-black text-sm"
-                style={{ textIndent: '4px' }}
-              />
+              <div className="relative w-36 md:w-40">
+                <input
+                  id="date"
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="w-full py-1 px-2 border border-gray-300 rounded-md shadow-sm focus:ring-1 focus:ring-black focus:border-black text-sm"
+                  style={{ 
+                    caretColor: 'transparent',
+                    appearance: 'none'
+                  }}
+                />
+                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+              </div>
             </div>
           </div>
         </CardHeader>
