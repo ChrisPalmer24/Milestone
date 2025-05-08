@@ -267,12 +267,12 @@ export default function Record() {
               </CardDescription>
             </div>
             <div className="flex items-center">
-              <Input
+              <input
                 id="date"
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-40 md:w-44 border border-gray-300 rounded-md shadow-sm focus:ring-1 focus:ring-black focus:border-black"
+                className="w-36 md:w-40 py-1 px-2 border border-gray-300 rounded-md shadow-sm focus:ring-1 focus:ring-black focus:border-black text-sm"
               />
             </div>
           </div>
