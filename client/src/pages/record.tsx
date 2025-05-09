@@ -85,6 +85,16 @@ export default function Record() {
   const [date, setDate] = useState<string>(
     new Date().toISOString().split("T")[0]
   );
+  
+  // Format date for display
+  const formatDateForDisplay = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', { 
+      day: '2-digit', 
+      month: 'short', 
+      year: 'numeric' 
+    });
+  };
   const [submitting, setSubmitting] = useState(false);
   const [updatingAccounts, setUpdatingAccounts] = useState<string[]>([]);
   
@@ -278,37 +288,28 @@ export default function Record() {
             </div>
             <div className="flex items-center space-x-2">
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-2 flex items-center">
-                  <Calendar 
-                    size={16} 
-                    className="text-primary cursor-pointer" 
-                    onClick={() => {
-                      // Find the input and programmatically click it to open the native date picker
-                      const dateInput = document.getElementById('date');
-                      if (dateInput) {
-                        dateInput.click();
-                      }
-                    }}
-                  />
-                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    // When button is clicked, focus and open the hidden date input
+                    const dateInput = document.getElementById('date-hidden') as HTMLInputElement;
+                    if (dateInput) {
+                      dateInput.focus();
+                      dateInput.click();
+                    }
+                  }}
+                  className="flex items-center w-32 h-9 py-1 pl-2 pr-2 border border-primary rounded-md shadow-sm text-sm text-primary hover:bg-primary/5 transition-colors"
+                >
+                  <Calendar size={16} className="text-primary mr-2" />
+                  <span>{formatDateForDisplay(date)}</span>
+                </button>
                 <input
-                  id="date"
+                  id="date-hidden"
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-32 h-9 py-1 pl-8 pr-2 border border-primary rounded-md shadow-sm text-sm text-primary appearance-none date-input-no-calendar"
-                  style={{ 
-                    textAlign: "center",
-                  }}
-                  // Hide the default calendar icon with CSS
-                  onClick={(e) => {
-                    // Stop propagation and manually toggle the date picker
-                    e.stopPropagation();
-                    const input = e.target as HTMLInputElement;
-                    if (document.activeElement !== input) {
-                      input.showPicker();
-                    }
-                  }}
+                  className="sr-only"
+                  aria-label="Select date"
                 />
               </div>
               <ScreenshotUpload 
