@@ -207,7 +207,8 @@ export function ScreenshotUpload({
     <>
       <Button
         variant="outline"
-        className="gap-2"
+        size="sm"
+        className="flex items-center gap-2 text-primary border-primary hover:bg-primary hover:text-white"
         onClick={() => setIsDialogOpen(true)}
       >
         <Camera size={16} />
