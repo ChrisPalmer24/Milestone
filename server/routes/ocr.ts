@@ -36,8 +36,9 @@ export async function registerRoutes(router: Router) {
       );
       
       return res.status(200).json({ extractedValues });
-    } catch (err) {
+    } catch (err: any) {
       error(`Error processing image: ${err}`);
+      console.log('Error details:', JSON.stringify(err));
       
       if (err instanceof z.ZodError) {
         return res.status(400).json({ 
@@ -47,7 +48,36 @@ export async function registerRoutes(router: Router) {
       }
       
       return res.status(500).json({ 
-        error: 'Failed to process image' 
+        error: 'Failed to process image',
+        message: err.message || 'Unknown error' 
+      });
+    }
+  });
+
+  // Add a test endpoint to diagnose API issues
+  router.get('/test-api', async (req: AuthRequest, res) => {
+    try {
+      const anthropic = new (await import('@anthropic-ai/sdk')).default({
+        apiKey: process.env.ANTHROPIC_API_KEY,
+      });
+      
+      const response = await anthropic.messages.create({
+        model: "claude-3-7-sonnet-20250219",
+        max_tokens: 100,
+        messages: [{ role: "user", content: "Hello, can you respond with just the word 'working'?" }],
+      });
+      
+      return res.status(200).json({ 
+        status: 'success',
+        message: response.content[0].text,
+        model: "claude-3-7-sonnet-20250219"
+      });
+    } catch (err: any) {
+      console.log('API test error:', JSON.stringify(err));
+      return res.status(500).json({ 
+        status: 'error',
+        error: err.message || 'Unknown error',
+        details: err
       });
     }
   });

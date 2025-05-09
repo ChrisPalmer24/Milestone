@@ -150,6 +150,7 @@ If you can't identify any account details, return an empty array.`,
     }
   } catch (apiError) {
     error(`Error calling Anthropic API: ${apiError}`);
+    console.log('Anthropic API error details:', JSON.stringify(apiError));
     return [];
   }
 }
