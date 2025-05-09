@@ -219,7 +219,7 @@ export function ScreenshotUpload({
           <DialogHeader>
             <DialogTitle>Upload Account Screenshots</DialogTitle>
             <DialogDescription>
-              Take screenshots of your account balances and upload them here to automatically fill in the values.
+              Take screenshots of your account balances and upload them here to automatically fill in the values. This feature is still in beta and is experimental*
             </DialogDescription>
           </DialogHeader>
 
@@ -258,6 +258,10 @@ export function ScreenshotUpload({
               />
             </div>
           </div>
+          
+          <p className="text-xs italic text-gray-500 mt-2">
+            *We do not store screenshots for security reasons - they are simply read by the AI using OCR to get the figures to make the input process easier for you
+          </p>
 
           {uploadedImages.length > 0 && (
             <div className="mt-4 grid grid-cols-2 gap-4">
