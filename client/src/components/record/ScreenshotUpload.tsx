@@ -145,23 +145,47 @@ export function ScreenshotUpload({
       
       const matchedValues = flatResults
         .map(result => {
-          // Find the asset that matches this provider name
-          const matchingAsset = brokerAssets.find(asset => 
-            getProviderName(asset.providerId, brokerProviders ?? []).toLowerCase() === 
-            result.accountName.toLowerCase()
-          );
+          // First try to match by both provider name and account type
+          let matchingAsset = null;
+          
+          // If account type is available in the result, try to match that first
+          if (result.accountType) {
+            matchingAsset = brokerAssets.find(asset => 
+              getProviderName(asset.providerId, brokerProviders ?? []).toLowerCase() === result.accountName.toLowerCase() &&
+              asset.accountType.toUpperCase() === result.accountType.toUpperCase()
+            );
+          }
+          
+          // If no match by account type or account type wasn't extracted, fall back to just provider name
+          if (!matchingAsset) {
+            matchingAsset = brokerAssets.find(asset => 
+              getProviderName(asset.providerId, brokerProviders ?? []).toLowerCase() === result.accountName.toLowerCase()
+            );
+          }
           
           if (matchingAsset) {
+            // Increase confidence if we matched both provider and account type
+            const matchConfidence = (result.accountType && 
+              matchingAsset.accountType.toUpperCase() === result.accountType.toUpperCase()) 
+              ? Math.min(1, result.confidence + 0.1) : result.confidence;
+              
             return {
               assetId: matchingAsset.id,
               value: result.amount,
-              confidence: result.confidence,
-              providerName: result.accountName
+              confidence: matchConfidence,
+              providerName: result.accountName,
+              accountType: result.accountType
             };
           }
           return null;
         })
-        .filter(Boolean) as { assetId: string; value: number; confidence: number; providerName: string }[];
+        .filter(Boolean) as { 
+          assetId: string; 
+          value: number; 
+          confidence: number; 
+          providerName: string; 
+          accountType?: string 
+        }[];
       
       if (matchedValues.length === 0) {
         toast({
@@ -176,9 +200,16 @@ export function ScreenshotUpload({
         if (highConfidenceMatches.length > 0) {
           onExtractedValues(highConfidenceMatches.map(({ assetId, value }) => ({ assetId, value })));
           
+          const matchDetails = highConfidenceMatches
+            .map(match => {
+              const accountTypeStr = match.accountType ? ` (${match.accountType})` : '';
+              return `${match.providerName}${accountTypeStr}: £${match.value.toLocaleString()}`;
+            })
+            .join(', ');
+            
           toast({
             title: "Account values detected",
-            description: `Found ${highConfidenceMatches.length} account values in your screenshots.`,
+            description: `Found ${highConfidenceMatches.length} account values: ${matchDetails}`,
           });
           
           setIsDialogOpen(false);
@@ -220,7 +251,7 @@ export function ScreenshotUpload({
           <DialogHeader>
             <DialogTitle>Upload Account Screenshots</DialogTitle>
             <DialogDescription>
-              Take screenshots of your account balances and upload them here to automatically fill in the values. This feature is still in beta and is experimental*
+              Take screenshots of your account balances and upload them here to automatically fill in the values. The AI will try to identify your accounts by provider name, account type (ISA, SIPP, etc.), and balance amount. This feature is still in beta and is experimental*
             </DialogDescription>
           </DialogHeader>
 
@@ -260,9 +291,14 @@ export function ScreenshotUpload({
             </div>
           </div>
           
-          <p className="text-xs italic text-gray-500 mt-2">
-            *We do not store screenshots for security reasons - they are simply read by the AI using OCR to get the figures to make the input process easier for you
-          </p>
+          <div className="mt-2 space-y-1">
+            <p className="text-xs italic text-gray-500">
+              *We do not store screenshots for security reasons - they are simply read by the AI using OCR to get the figures to make the input process easier for you
+            </p>
+            <p className="text-xs text-gray-600">
+              <strong>Tip:</strong> For best results, ensure your screenshots clearly show both the account name/type (ISA, SIPP, etc.) and current balance. Crop out unnecessary parts of the screen.
+            </p>
+          </div>
 
           {uploadedImages.length > 0 && (
             <div className="mt-4 grid grid-cols-2 gap-4">
