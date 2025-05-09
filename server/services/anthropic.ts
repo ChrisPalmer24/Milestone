@@ -71,8 +71,14 @@ Use these key strategies to identify accounts and their balances:
 For each account you identify:
 1. Extract the provider name (must match one from the list)
 2. Extract the account balance (in pounds)
+   - For InvestEngine, look specifically for the value immediately below "Portfolio balance"
+   - The value format is typically "£XXX,XXX.XX" like "£147,232.23" 
 3. Assess your confidence in the extraction (as a number 0-1)
+   - For InvestEngine, increase confidence if you see "Portfolio balance" label directly above the amount
+   - Increase confidence further if you also see "ISA" at the top of the screen
 4. Include the specific account type if visible (ISA, SIPP, etc.)
+   - For InvestEngine, the account type is often prominently displayed at the top of the screen
+   - Look for green pill/badge with "Self-managed, ISA" text
 
 Format your response as JSON only, with this structure:
 [

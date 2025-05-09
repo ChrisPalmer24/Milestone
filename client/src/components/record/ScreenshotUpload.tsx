@@ -419,12 +419,22 @@ export function ScreenshotUpload({
                                   >
                                     <div className="grid grid-cols-2 gap-2">
                                       <div className="text-xs font-medium">Provider:</div>
-                                      <div className="text-xs">{result.accountName}</div>
+                                      <div className="text-xs flex items-center">
+                                        {result.accountName}
+                                        {result.accountName.toLowerCase().includes('invest') && (
+                                          <span className="ml-1 px-1 text-[10px] bg-blue-100 text-blue-700 rounded">InvestEngine</span>
+                                        )}
+                                      </div>
                                       
                                       {result.accountType && (
                                         <>
                                           <div className="text-xs font-medium">Account Type:</div>
-                                          <div className="text-xs">{result.accountType}</div>
+                                          <div className="text-xs flex items-center">
+                                            {result.accountType}
+                                            {result.accountType.toUpperCase() === 'ISA' && (
+                                              <span className="ml-1 px-1 text-[10px] bg-green-100 text-green-700 rounded">Stocks & Shares ISA</span>
+                                            )}
+                                          </div>
                                         </>
                                       )}
                                       
