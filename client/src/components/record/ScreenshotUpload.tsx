@@ -451,13 +451,7 @@ export function ScreenshotUpload({
               *We do not store screenshots for security reasons - they are simply read by the AI using OCR to get the figures to make the input process easier for you
             </p>
             <p className="text-xs text-gray-600">
-              <strong>Tip:</strong> For best results, ensure your screenshots clearly show both the account name/type (ISA, SIPP, etc.) and current balance. Crop out unnecessary parts of the screen.
-            </p>
-            <p className="text-xs text-gray-600">
-              <strong>InvestEngine users:</strong> Make sure the "Portfolio balance" text and your account value are clearly visible in the screenshot. These are usually displayed at the top of your account page.
-            </p>
-            <p className="text-xs text-gray-600">
-              If recognition fails, try a different part of your account screen or a clearer screenshot with less glare.
+              <strong>Tip:</strong> For best results, ensure your screenshots clearly show both the account name/type (ISA, SIPP, etc.) and current balance.
             </p>
           </div>
 
@@ -508,16 +502,8 @@ export function ScreenshotUpload({
                         {analysisResult && (
                           <>
                             {analysisResult.extractedData.length === 0 ? (
-                              <div className="text-sm text-red-500 border border-dashed border-red-200 rounded-md p-3 flex-grow flex flex-col gap-2 justify-center">
-                                <p className="text-center">No account information detected in this screenshot.</p>
-                                <div className="text-xs text-gray-500 text-center">
-                                  <p>Tips: Make sure the screenshot clearly shows:</p>
-                                  <ul className="list-disc list-inside mt-1 space-y-1">
-                                    <li>The account balance with currency symbol (£)</li>
-                                    <li>For InvestEngine, the "Portfolio balance" label</li>
-                                    <li>Account type indicators like "ISA" if possible</li>
-                                  </ul>
-                                </div>
+                              <div className="text-sm text-red-500 border border-dashed border-red-200 rounded-md p-3 flex-grow flex items-center justify-center">
+                                <p>No account information detected in this screenshot.</p>
                               </div>
                             ) : (
                               <div className="space-y-3">
@@ -530,21 +516,15 @@ export function ScreenshotUpload({
                                   >
                                     <div className="grid grid-cols-2 gap-2">
                                       <div className="text-xs font-medium">Provider:</div>
-                                      <div className="text-xs flex items-center">
+                                      <div className="text-xs">
                                         {result.accountName}
-                                        {result.accountName.toLowerCase().includes('invest') && (
-                                          <span className="ml-1 px-1 text-[10px] bg-blue-100 text-blue-700 rounded">InvestEngine</span>
-                                        )}
                                       </div>
                                       
                                       {result.accountType && (
                                         <>
                                           <div className="text-xs font-medium">Account Type:</div>
-                                          <div className="text-xs flex items-center">
+                                          <div className="text-xs">
                                             {result.accountType}
-                                            {result.accountType.toUpperCase() === 'ISA' && (
-                                              <span className="ml-1 px-1 text-[10px] bg-green-100 text-green-700 rounded">Stocks & Shares ISA</span>
-                                            )}
                                           </div>
                                         </>
                                       )}
