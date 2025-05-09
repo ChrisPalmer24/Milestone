@@ -70,7 +70,16 @@ If you can't identify any account details, return an empty array.`,
     });
 
     try {
-      const jsonContent = response.content[0].text;
+      // Use type assertion to handle the response content
+      const textBlock = response.content[0] as { type: string; text: string };
+      
+      // Make sure the content block is a text block
+      if (textBlock.type !== 'text') {
+        log('Invalid response format from Anthropic API: not a text block');
+        return [];
+      }
+      
+      const jsonContent = textBlock.text;
       // Parse the JSON response
       const extractedData: ExtractedAmount[] = JSON.parse(jsonContent);
       

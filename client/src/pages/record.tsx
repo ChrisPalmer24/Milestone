@@ -33,6 +33,7 @@ import DateRangeBar from "@/components/layout/DateRangeBar";
 import { getProviderName } from "@/lib/broker";
 import { BrokerProviderAsset, AssetValue } from "shared/schema";
 import { useBrokerProviders } from "@/hooks/use-broker-providers";
+import { ScreenshotUpload } from "@/components/record/ScreenshotUpload";
 type AccountFormData = {
   [key: string]: number | undefined;
 };
