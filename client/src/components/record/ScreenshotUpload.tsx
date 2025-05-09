@@ -181,7 +181,7 @@ export function ScreenshotUpload({
       
       const matchedValues = flatResults
         .map(result => {
-          // First try to match by both provider name and account type
+          // First try to match by both provider name and account type (highest confidence match)
           let matchingAsset = null;
           
           // If account type is available in the result, try to match that first
@@ -192,7 +192,20 @@ export function ScreenshotUpload({
             );
           }
           
-          // If no match by account type or account type wasn't extracted, fall back to just provider name
+          // If no match by both provider and account type, try matching just by account type for known providers
+          // This helps when the provider name might be recognized differently than what's in our database
+          if (!matchingAsset && result.accountType) {
+            // For InvestEngine, we know it has distinctive UI patterns
+            if (result.accountName.toLowerCase() === "investengine" || 
+                result.accountName.toLowerCase().includes("invest")) {
+              matchingAsset = brokerAssets.find(asset => 
+                getProviderName(asset.providerId, brokerProviders ?? []).toLowerCase().includes("invest") &&
+                asset.accountType.toUpperCase() === result.accountType.toUpperCase()
+              );
+            }
+          }
+          
+          // Last resort, fall back to just provider name
           if (!matchingAsset) {
             matchingAsset = brokerAssets.find(asset => 
               getProviderName(asset.providerId, brokerProviders ?? []).toLowerCase() === result.accountName.toLowerCase()
@@ -200,10 +213,19 @@ export function ScreenshotUpload({
           }
           
           if (matchingAsset) {
-            // Increase confidence if we matched both provider and account type
-            const matchConfidence = (result.accountType && 
-              matchingAsset.accountType.toUpperCase() === result.accountType.toUpperCase()) 
-              ? Math.min(1, result.confidence + 0.1) : result.confidence;
+            // Calculate confidence based on multiple factors
+            let matchConfidence = result.confidence;
+            
+            // Boost confidence for exact provider and account type matches
+            if (result.accountType && matchingAsset.accountType.toUpperCase() === result.accountType.toUpperCase()) {
+              matchConfidence = Math.min(1, matchConfidence + 0.1);
+            }
+            
+            // Additional confidence boost for InvestEngine with distinctive UI patterns
+            if (result.accountName.toLowerCase().includes("invest") && 
+                getProviderName(matchingAsset.providerId, brokerProviders ?? []).toLowerCase().includes("invest")) {
+              matchConfidence = Math.min(1, matchConfidence + 0.15);
+            }
               
             return {
               assetId: matchingAsset.id,

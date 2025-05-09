@@ -43,7 +43,13 @@ Use these key strategies to identify accounts and their balances:
 2. Use provider-specific visual cues:
    - Trading 212: Blue interface with white text
    - Vanguard: Dark red/burgundy colors
-   - InvestEngine: Green and white interface
+   - InvestEngine: 
+       * Blue "Invest" button at bottom of screen
+       * Green graph lines showing performance
+       * White cards with "Portfolio balance" label above amount (very important)
+       * Green pill with "Self-managed, ISA" text
+       * Navigation tabs showing "1W, 1M, 6M, 1Y, Max"
+       * Often shows "Investment return" in green with "+" sign
    - Hargreaves Lansdown: Light blue interface
    - AJ Bell: Dark blue interface
 
@@ -51,6 +57,16 @@ Use these key strategies to identify accounts and their balances:
    - Total values are typically the largest numbers shown
    - Look for currency symbols (£, GBP, p)
    - Numbers with decimal places (e.g., £1,234.56) are likely monetary values
+
+4. Provider-specific patterns:
+   - InvestEngine:
+     * Shows "ISA" prominently at the top center
+     * Often has "Self-managed, ISA" in a green pill/badge
+     * Label "Portfolio balance" appears directly above the value amount
+     * Value format: "£XXX,XXX.XX" (e.g., "£147,232.23")
+     * Graph shows investment performance in green
+     * Blue "Invest" button at bottom
+     * Navigation tabs with "1W, 1M, 6M, 1Y, Max" options
 
 For each account you identify:
 1. Extract the provider name (must match one from the list)
@@ -85,7 +101,7 @@ If you can't identify any account details, return an empty array.`,
             },
             {
               type: "text",
-              text: "Extract the account balances from this financial screenshot."
+              text: "Extract the account balances from this financial screenshot. Look carefully for provider-specific patterns, especially for InvestEngine accounts which have 'Portfolio balance' label with a large value below it (like £147,232.23), often with 'ISA' at the top of the screen."
             }
           ]
         }
