@@ -67,9 +67,13 @@ export async function registerRoutes(router: Router) {
         messages: [{ role: "user", content: "Hello, can you respond with just the word 'working'?" }],
       });
       
+      // Handle the response properly
+      const textBlock = response.content[0] as { type: string; text: string };
+      const responseText = textBlock.type === 'text' ? textBlock.text : 'Response received (not text)';
+      
       return res.status(200).json({ 
         status: 'success',
-        message: response.content[0].text,
+        message: responseText,
         model: "claude-3-7-sonnet-20250219"
       });
     } catch (err: any) {

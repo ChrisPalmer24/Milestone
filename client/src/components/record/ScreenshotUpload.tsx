@@ -142,10 +142,14 @@ export function ScreenshotUpload({
             });
 
             if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
+              const errorData = await response.json();
+              console.error('API error response:', errorData);
+              throw new Error(`HTTP error! status: ${response.status} - ${errorData.error || 'Unknown error'}`);
             }
 
+            // Parse and log the response
             const data = await response.json();
+            console.log('API response:', data);
             
             // Store this image's analysis results
             setAnalysisResults(prev => [
