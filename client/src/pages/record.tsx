@@ -287,28 +287,16 @@ export default function Record() {
               </CardDescription>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => {
-                    // When button is clicked, focus and open the hidden date input
-                    const dateInput = document.getElementById('date-hidden') as HTMLInputElement;
-                    if (dateInput) {
-                      dateInput.focus();
-                      dateInput.click();
-                    }
-                  }}
-                  className="flex items-center w-32 h-9 py-1 pl-2 pr-2 border border-primary rounded-md shadow-sm text-sm text-primary hover:bg-primary/5 transition-colors"
-                >
-                  <Calendar size={16} className="text-primary mr-2" />
-                  <span>{formatDateForDisplay(date)}</span>
-                </button>
+              <div className="relative flex items-center border border-primary rounded-md shadow-sm">
+                <div className="absolute left-2 pointer-events-none">
+                  <Calendar size={16} className="text-primary" />
+                </div>
                 <input
-                  id="date-hidden"
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="sr-only"
+                  className="pl-8 pr-3 py-2 w-auto h-9 text-sm text-primary bg-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  style={{ minWidth: "140px" }}
                   aria-label="Select date"
                 />
               </div>
