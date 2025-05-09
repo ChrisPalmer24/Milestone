@@ -27,6 +27,16 @@ export function ScreenshotUpload({
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [analysisResults, setAnalysisResults] = useState<Array<{
+    imageIndex: number,
+    extractedData: Array<{
+      providerName: string,
+      accountType?: string,
+      amount: number,
+      confidence: number
+    }>,
+    isProcessed: boolean
+  }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { data: brokerProviders } = useBrokerProviders();
@@ -91,6 +101,7 @@ export function ScreenshotUpload({
   // Remove an image from the list
   const removeImage = (index: number) => {
     setUploadedImages((prev) => prev.filter((_, i) => i !== index));
+    setAnalysisResults((prev) => prev.filter(result => result.imageIndex !== index));
   };
 
   // Process the uploaded images
@@ -112,9 +123,12 @@ export function ScreenshotUpload({
         getProviderName(asset.providerId, brokerProviders ?? [])
       );
 
+      // Clear previous analysis results
+      setAnalysisResults([]);
+      
       // Process each image and get the results
       const results = await Promise.all(
-        uploadedImages.map(async (imageData) => {
+        uploadedImages.map(async (imageData, imageIndex) => {
           try {
             const response = await fetch("/api/ocr/extract-values", {
               method: "POST",
@@ -132,9 +146,31 @@ export function ScreenshotUpload({
             }
 
             const data = await response.json();
+            
+            // Store this image's analysis results
+            setAnalysisResults(prev => [
+              ...prev, 
+              {
+                imageIndex,
+                extractedData: data.extractedValues,
+                isProcessed: true
+              }
+            ]);
+            
             return data.extractedValues;
           } catch (error) {
             console.error("Error processing image:", error);
+            
+            // Store empty result for this image
+            setAnalysisResults(prev => [
+              ...prev, 
+              {
+                imageIndex,
+                extractedData: [],
+                isProcessed: true
+              }
+            ]);
+            
             return [];
           }
         })
@@ -247,7 +283,7 @@ export function ScreenshotUpload({
       </Button>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-xl">
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>Upload Account Screenshots</DialogTitle>
             <DialogDescription>
@@ -301,25 +337,97 @@ export function ScreenshotUpload({
           </div>
 
           {uploadedImages.length > 0 && (
-            <div className="mt-4 grid grid-cols-2 gap-4">
-              {uploadedImages.map((img, index) => (
-                <div key={index} className="relative">
-                  <img
-                    src={img}
-                    alt={`Screenshot ${index + 1}`}
-                    className="w-full rounded-md border border-gray-200 h-32 object-cover"
-                  />
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-                    onClick={() => removeImage(index)}
-                    disabled={isProcessing}
-                  >
-                    <X size={12} />
-                  </Button>
-                </div>
-              ))}
+            <div className="mt-4 space-y-4">
+              {uploadedImages.map((img, index) => {
+                const analysisResult = analysisResults.find(r => r.imageIndex === index);
+                
+                return (
+                  <div key={index} className="border rounded-lg p-4">
+                    <div className="flex flex-col md:flex-row gap-4">
+                      {/* Left column - Screenshot */}
+                      <div className="md:w-1/2 relative">
+                        <img
+                          src={img}
+                          alt={`Screenshot ${index + 1}`}
+                          className="w-full rounded-md border border-gray-200 object-cover"
+                          style={{ maxHeight: "250px" }}
+                        />
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                          onClick={() => removeImage(index)}
+                          disabled={isProcessing}
+                        >
+                          <X size={12} />
+                        </Button>
+                      </div>
+                      
+                      {/* Right column - Extracted data */}
+                      <div className="md:w-1/2 flex flex-col">
+                        <h4 className="text-sm font-medium mb-2">Extracted Information</h4>
+                        
+                        {isProcessing && !analysisResult && (
+                          <div className="flex items-center justify-center h-full">
+                            <Loader2 className="h-5 w-5 animate-spin text-primary mr-2" />
+                            <span className="text-sm">Processing...</span>
+                          </div>
+                        )}
+                        
+                        {!isProcessing && !analysisResult && (
+                          <div className="text-sm text-gray-500 border border-dashed rounded-md p-3 flex-grow flex items-center justify-center">
+                            <p>Click "Extract Account Values" to analyze this screenshot</p>
+                          </div>
+                        )}
+                        
+                        {analysisResult && (
+                          <>
+                            {analysisResult.extractedData.length === 0 ? (
+                              <div className="text-sm text-red-500 border border-dashed border-red-200 rounded-md p-3 flex-grow flex items-center justify-center">
+                                <p>No account information detected in this screenshot.</p>
+                              </div>
+                            ) : (
+                              <div className="space-y-3">
+                                {analysisResult.extractedData.map((result, resultIndex) => (
+                                  <div 
+                                    key={resultIndex} 
+                                    className={`border rounded-md p-3 ${
+                                      result.confidence > 0.7 ? 'border-green-200 bg-green-50' : 'border-yellow-200 bg-yellow-50'
+                                    }`}
+                                  >
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <div className="text-xs font-medium">Provider:</div>
+                                      <div className="text-xs">{result.providerName}</div>
+                                      
+                                      {result.accountType && (
+                                        <>
+                                          <div className="text-xs font-medium">Account Type:</div>
+                                          <div className="text-xs">{result.accountType}</div>
+                                        </>
+                                      )}
+                                      
+                                      <div className="text-xs font-medium">Value:</div>
+                                      <div className="text-xs">£{result.amount.toLocaleString()}</div>
+                                      
+                                      <div className="text-xs font-medium">Confidence:</div>
+                                      <div className="text-xs">
+                                        {(result.confidence * 100).toFixed(0)}%
+                                        {result.confidence < 0.7 && (
+                                          <span className="text-yellow-600 ml-1">(Low)</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
 
@@ -329,6 +437,7 @@ export function ScreenshotUpload({
               onClick={() => {
                 setIsDialogOpen(false);
                 setUploadedImages([]);
+                setAnalysisResults([]);
               }}
               disabled={isProcessing}
             >
