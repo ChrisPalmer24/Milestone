@@ -114,18 +114,21 @@ If you can't identify any account details, return an empty array.`,
       ],
     });
 
+    // Use type assertion to handle the response content
+    const textBlock = response.content[0] as { type: string; text: string };
+    
+    // Make sure the content block is a text block
+    if (textBlock.type !== 'text') {
+      log('Invalid response format from Anthropic API: not a text block');
+      console.log('Response content:', JSON.stringify(response.content));
+      return [];
+    }
+    
+    const jsonContent = textBlock.text.trim();
+    console.log('Raw JSON response from Claude:', jsonContent);
+    
+    // Parse the JSON response
     try {
-      // Use type assertion to handle the response content
-      const textBlock = response.content[0] as { type: string; text: string };
-      
-      // Make sure the content block is a text block
-      if (textBlock.type !== 'text') {
-        log('Invalid response format from Anthropic API: not a text block');
-        return [];
-      }
-      
-      const jsonContent = textBlock.text;
-      // Parse the JSON response
       const extractedData: ExtractedAmount[] = JSON.parse(jsonContent);
       
       // Validate that the response is an array

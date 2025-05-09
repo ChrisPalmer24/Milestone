@@ -136,32 +136,49 @@ export function ScreenshotUpload({
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                imageData,
+                image: imageData.split(',')[1] || imageData, // Extract just the base64 part if needed
                 providerNames: Array.from(new Set(providerNames)), // Remove duplicates
               }),
             });
 
             if (!response.ok) {
-              const errorData = await response.json();
-              console.error('API error response:', errorData);
-              throw new Error(`HTTP error! status: ${response.status} - ${errorData.error || 'Unknown error'}`);
+              try {
+                const errorData = await response.json();
+                console.error('API error response:', errorData);
+                throw new Error(`HTTP error! status: ${response.status} - ${errorData.error || 'Unknown error'}`);
+              } catch (e) {
+                // If we can't parse the error as JSON, just use the status
+                console.error('API error (unparseable):', e);
+                throw new Error(`HTTP error! status: ${response.status}`);
+              }
             }
 
             // Parse and log the response
-            const data = await response.json();
-            console.log('API response:', data);
+            let data;
+            try {
+              const responseText = await response.text();
+              console.log('Raw API response:', responseText);
+              data = JSON.parse(responseText);
+              console.log('Parsed API response:', data);
+            } catch (parseError) {
+              console.error('Error parsing API response:', parseError);
+              throw new Error('Failed to parse API response');
+            }
+            
+            // Make sure extractedValues exists and is an array
+            const extractedValues = Array.isArray(data.extractedValues) ? data.extractedValues : [];
             
             // Store this image's analysis results
             setAnalysisResults(prev => [
               ...prev, 
               {
                 imageIndex,
-                extractedData: data.extractedValues,
+                extractedData: extractedValues,
                 isProcessed: true
               }
             ]);
             
-            return data.extractedValues;
+            return extractedValues;
           } catch (error) {
             console.error("Error processing image:", error);
             
