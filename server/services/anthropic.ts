@@ -10,6 +10,7 @@ interface ExtractedAmount {
   accountName: string;
   amount: number;
   confidence: number;
+  accountType?: string;
 }
 
 /**
@@ -31,17 +32,39 @@ export async function extractAccountValuesFromImage(
       system: `You are a financial assistant that extracts account balances from screenshots of financial accounts.
       
 Your task is to identify account balances for the following providers: ${providersString}.
+
+Use these key strategies to identify accounts and their balances:
+
+1. Look for account type indicators:
+   - "ISA", "LISA", "SIPP", "GIA", "Cash ISA" which are common investment account types
+   - Account numbers or identifiers are often near balances
+   - Look for sections labeled "Portfolio Value", "Total Balance", "Account Value", "Total Value" etc.
+
+2. Use provider-specific visual cues:
+   - Trading 212: Blue interface with white text
+   - Vanguard: Dark red/burgundy colors
+   - InvestEngine: Green and white interface
+   - Hargreaves Lansdown: Light blue interface
+   - AJ Bell: Dark blue interface
+
+3. Numerical patterns:
+   - Total values are typically the largest numbers shown
+   - Look for currency symbols (£, GBP, p)
+   - Numbers with decimal places (e.g., £1,234.56) are likely monetary values
+
 For each account you identify:
 1. Extract the provider name (must match one from the list)
 2. Extract the account balance (in pounds)
 3. Assess your confidence in the extraction (as a number 0-1)
+4. Include the specific account type if visible (ISA, SIPP, etc.)
 
 Format your response as JSON only, with this structure:
 [
   {
     "accountName": "Provider Name",
     "amount": 12345.67,
-    "confidence": 0.95
+    "confidence": 0.95,
+    "accountType": "ISA" 
   }
 ]
 
