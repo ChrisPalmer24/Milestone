@@ -292,8 +292,7 @@ export default function Record() {
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-auto h-9 py-2 px-3 border border-primary rounded-md shadow-sm text-sm text-primary bg-transparent focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  style={{ minWidth: "140px" }}
+                  className="w-28 h-9 py-2 px-2 text-center border border-primary rounded-md shadow-sm text-sm text-primary bg-transparent focus:outline-none focus:ring-2 focus:ring-primary/20"
                   aria-label="Select date"
                 />
               </div>
