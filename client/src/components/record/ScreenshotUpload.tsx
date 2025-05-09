@@ -30,7 +30,7 @@ export function ScreenshotUpload({
   const [analysisResults, setAnalysisResults] = useState<Array<{
     imageIndex: number,
     extractedData: Array<{
-      providerName: string,
+      accountName: string,
       accountType?: string,
       amount: number,
       confidence: number
@@ -209,7 +209,7 @@ export function ScreenshotUpload({
               assetId: matchingAsset.id,
               value: result.amount,
               confidence: matchConfidence,
-              providerName: result.accountName,
+              providerName: result.accountName, // Use accountName from API result as providerName
               accountType: result.accountType
             };
           }
@@ -397,7 +397,7 @@ export function ScreenshotUpload({
                                   >
                                     <div className="grid grid-cols-2 gap-2">
                                       <div className="text-xs font-medium">Provider:</div>
-                                      <div className="text-xs">{result.providerName}</div>
+                                      <div className="text-xs">{result.accountName}</div>
                                       
                                       {result.accountType && (
                                         <>
