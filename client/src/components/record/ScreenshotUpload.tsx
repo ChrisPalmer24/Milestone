@@ -36,6 +36,7 @@ interface AnalysisResult {
     accountType?: string;
     amount: number;
     confidence: number;
+    isVerified?: boolean;
   }>;
   isProcessed: boolean;
   isEdited?: boolean;
@@ -70,10 +71,31 @@ export function ScreenshotUpload({
   const { toast } = useToast();
   const { data: brokerProviders } = useBrokerProviders();
 
+  // Format currency with 2 decimal places
+  const formatCurrency = (value: number): string => {
+    return value.toLocaleString('en-GB', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  };
+
   // Get the account types for a provider
   const getAccountTypesForProvider = (providerId: string): string[] => {
     const provider = brokerProviders?.find(p => p.id === providerId);
     return provider?.supportedAccountTypes || [];
+  };
+
+  // Get a clean asset name from the database name
+  const getCleanAssetName = (asset: BrokerProviderAsset | undefined): string => {
+    if (!asset) return "Unknown Account";
+    
+    // If asset name contains duplicated words (like "ISA ISA"), clean it up
+    const name = asset.name.trim();
+    const words = name.split(/\s+/);
+    if (words.length > 1 && words[0] === words[1]) {
+      return words[0];
+    }
+    return name;
   };
 
   // Handle file upload
@@ -667,7 +689,7 @@ export function ScreenshotUpload({
                                                   <span className="mr-1">£</span>
                                                   <Input
                                                     type="text"
-                                                    defaultValue={extractedItem.amount.toString()}
+                                                    defaultValue={extractedItem.amount.toFixed(2)}
                                                     onChange={(e) => {
                                                       const value = parseFloat(e.target.value);
                                                       if (!isNaN(value)) {
@@ -678,7 +700,7 @@ export function ScreenshotUpload({
                                                   />
                                                 </div>
                                               ) : (
-                                                `£${extractedItem.amount.toLocaleString()}`
+                                                `£${formatCurrency(extractedItem.amount)}`
                                               )}
                                             </div>
                                             
@@ -686,7 +708,7 @@ export function ScreenshotUpload({
                                             <div className="text-xs">
                                               {matchingAsset ? (
                                                 <span className="text-green-600">
-                                                  {matchingAsset.name}
+                                                  {getCleanAssetName(matchingAsset)}
                                                 </span>
                                               ) : (
                                                 <span className="text-red-500">
@@ -694,13 +716,18 @@ export function ScreenshotUpload({
                                                 </span>
                                               )}
                                             </div>
+                                            
+                                            <div className="text-xs font-medium">Confidence:</div>
+                                            <div className="text-xs">
+                                              {(extractedItem.confidence * 100).toFixed(0)}%
+                                              {extractedItem.confidence < 0.7 && !isVerified && (
+                                                <span className="text-yellow-600 ml-1">(Low)</span>
+                                              )}
+                                            </div>
                                           </div>
                                           
                                           <div className="flex justify-end items-center gap-2 mt-2">
                                             <div className="text-xs flex-1">
-                                              {!isEditing && !isVerified && extractedItem.confidence < 0.7 && (
-                                                <span className="text-yellow-600">Low confidence ({(extractedItem.confidence * 100).toFixed(0)}%)</span>
-                                              )}
                                               {isVerified && (
                                                 <span className="text-green-600 flex items-center gap-1">
                                                   <Check size={12} />
@@ -720,25 +747,24 @@ export function ScreenshotUpload({
                                               </Button>
                                             ) : (
                                               <>
+                                                <Button 
+                                                  variant="outline" 
+                                                  size="sm"
+                                                  className="h-7 text-xs"
+                                                  onClick={() => startEditing(index, resultIndex)}
+                                                >
+                                                  <Edit2 size={12} className="mr-1" /> Edit
+                                                </Button>
+                                                
                                                 {!isVerified && (
-                                                  <>
-                                                    <Button 
-                                                      variant="outline" 
-                                                      size="sm"
-                                                      className="h-7 text-xs"
-                                                      onClick={() => startEditing(index, resultIndex)}
-                                                    >
-                                                      <Edit2 size={12} className="mr-1" /> Edit
-                                                    </Button>
-                                                    <Button 
-                                                      variant="primary" 
-                                                      size="sm"
-                                                      className="h-7 text-xs bg-primary text-white hover:bg-primary/90"
-                                                      onClick={() => markAsVerified(index, resultIndex)}
-                                                    >
-                                                      <Check size={12} className="mr-1" /> Correct
-                                                    </Button>
-                                                  </>
+                                                  <Button 
+                                                    variant="primary" 
+                                                    size="sm"
+                                                    className="h-7 text-xs bg-primary text-white hover:bg-primary/90"
+                                                    onClick={() => markAsVerified(index, resultIndex)}
+                                                  >
+                                                    <Check size={12} className="mr-1" /> Correct
+                                                  </Button>
                                                 )}
                                               </>
                                             )}
