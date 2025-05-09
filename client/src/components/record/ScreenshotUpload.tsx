@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Camera, Upload, X, Loader2, CheckCircle, Edit2 } from "lucide-react";
+import { Camera, Upload, X, Loader2, Check, Edit2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,11 +10,18 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { BrokerProviderAsset } from "shared/schema";
+import { BrokerProviderAsset, BrokerProvider } from "shared/schema";
 import { useBrokerProviders } from "@/hooks/use-broker-providers";
 import { getProviderName } from "@/lib/broker";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ScreenshotUploadProps {
   brokerAssets: BrokerProviderAsset[];
@@ -31,17 +38,22 @@ interface AnalysisResult {
     confidence: number;
   }>;
   isProcessed: boolean;
+  isEdited?: boolean;
 }
 
-// Interface for extracted values with verification
-interface ExtractedMatchedValue {
-  assetId: string;
-  value: number;
-  confidence: number;
-  providerName: string;
-  accountType?: string;
+// Interface for extracted values with editing
+interface ExtractedValue {
+  originalData: {
+    accountName: string;
+    accountType?: string;
+    amount: number;
+    confidence: number;
+  };
+  matchedAssetId?: string;
+  editedValue?: number;
+  editedProviderId?: string;
+  editedAccountType?: string;
   isVerified?: boolean;
-  isEdited?: boolean;
 }
 
 export function ScreenshotUpload({
@@ -53,18 +65,15 @@ export function ScreenshotUpload({
   const [isProcessing, setIsProcessing] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [analysisResults, setAnalysisResults] = useState<AnalysisResult[]>([]);
-  const [extractedMatchedValues, setExtractedMatchedValues] = useState<ExtractedMatchedValue[]>([]);
-  const [userVerifiedValues, setUserVerifiedValues] = useState<{[key: string]: boolean}>({});
-  const [editingValue, setEditingValue] = useState<{assetId: string, value: number} | null>(null);
-  const [editValue, setEditValue] = useState("");
+  const [editingExtractedValue, setEditingExtractedValue] = useState<{ imageIndex: number, resultIndex: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { data: brokerProviders } = useBrokerProviders();
 
-  // Helper function to get asset name by ID
-  const getAssetName = (assetId: string): string => {
-    const asset = brokerAssets.find(a => a.id === assetId);
-    return asset?.name || "Unknown Account";
+  // Get the account types for a provider
+  const getAccountTypesForProvider = (providerId: string): string[] => {
+    const provider = brokerProviders?.find(p => p.id === providerId);
+    return provider?.supportedAccountTypes || [];
   };
 
   // Handle file upload
@@ -164,7 +173,7 @@ export function ScreenshotUpload({
         // Draw the resized image on the canvas
         ctx.drawImage(img, 0, 0, width, height);
         
-        // Apply image processing to enhance text visibility (optional)
+        // Apply image processing to enhance text visibility
         try {
           // Get the image data
           const imageData = ctx.getImageData(0, 0, width, height);
@@ -201,98 +210,130 @@ export function ScreenshotUpload({
     });
   };
 
-  // Mark extracted value as correct
-  const markAsCorrect = (assetId: string) => {
-    setUserVerifiedValues(prev => ({
-      ...prev,
-      [assetId]: true
-    }));
-    
-    // Update the extracted matched values
-    setExtractedMatchedValues(prev => 
-      prev.map(item => 
-        item.assetId === assetId 
-          ? { ...item, isVerified: true } 
-          : item
+  // Start editing a value
+  const startEditing = (imageIndex: number, resultIndex: number) => {
+    setEditingExtractedValue({ imageIndex, resultIndex });
+  };
+  
+  // Mark a value as verified
+  const markAsVerified = (imageIndex: number, resultIndex: number) => {
+    setAnalysisResults(prev => 
+      prev.map((result, i) => 
+        i === imageIndex 
+          ? {
+              ...result,
+              extractedData: result.extractedData.map((item, j) => 
+                j === resultIndex 
+                  ? { ...item, isVerified: true }
+                  : item
+              )
+            }
+          : result
       )
     );
     
-    // Log user verification for analytics (in a real app, you'd send this to the server)
-    console.log(`User verified value for asset ${assetId} as correct`);
-    
     toast({
-      title: "Marked as correct",
-      description: `Verification recorded for ${getAssetName(assetId)}`,
+      title: "Verified",
+      description: "The detected value has been marked as correct.",
     });
   };
   
-  // Start editing a value
-  const startEditing = (assetId: string, currentValue: number) => {
-    setEditingValue({ assetId, value: currentValue });
-    setEditValue(currentValue.toString());
+  // Update the extracted value with edited data
+  const updateExtractedValue = (
+    imageIndex: number, 
+    resultIndex: number, 
+    updates: { 
+      providerId?: string, 
+      accountType?: string, 
+      value?: number 
+    }
+  ) => {
+    setAnalysisResults(prev => 
+      prev.map((result, i) => 
+        i === imageIndex 
+          ? {
+              ...result,
+              isEdited: true,
+              extractedData: result.extractedData.map((item, j) => 
+                j === resultIndex 
+                  ? { 
+                      ...item,
+                      ...(updates.providerId && brokerProviders 
+                        ? { 
+                            accountName: getProviderName(updates.providerId, brokerProviders),
+                          }
+                        : {}),
+                      ...(updates.accountType ? { accountType: updates.accountType } : {}),
+                      ...(updates.value !== undefined ? { amount: updates.value } : {})
+                    }
+                  : item
+              )
+            }
+          : result
+      )
+    );
   };
-  
-  // Save edited value
-  const saveEditedValue = () => {
-    if (!editingValue) return;
+
+  // Find the best matching asset for an extracted account
+  const findMatchingAsset = (providerName: string, accountType?: string) => {
+    // First try to match by both provider name and account type
+    if (accountType) {
+      const exactMatch = brokerAssets.find(asset => 
+        brokerProviders && 
+        getProviderName(asset.providerId, brokerProviders).toLowerCase() === providerName.toLowerCase() &&
+        asset.accountType.toUpperCase() === accountType.toUpperCase()
+      );
+      
+      if (exactMatch) return exactMatch;
+    }
     
-    const numValue = parseFloat(editValue);
-    if (isNaN(numValue)) {
+    // Then try matching just by provider
+    return brokerAssets.find(asset => 
+      brokerProviders && 
+      getProviderName(asset.providerId, brokerProviders).toLowerCase() === providerName.toLowerCase()
+    );
+  };
+
+  // Save all extracted values and apply to record
+  const saveExtractedValues = () => {
+    // Collect all extractedData with matched assets
+    const valuesToSave: { assetId: string; value: number }[] = [];
+    
+    analysisResults.forEach(result => {
+      result.extractedData.forEach(extractedItem => {
+        const matchingAsset = findMatchingAsset(extractedItem.accountName, extractedItem.accountType);
+        
+        if (matchingAsset) {
+          valuesToSave.push({
+            assetId: matchingAsset.id,
+            value: extractedItem.amount
+          });
+        }
+      });
+    });
+    
+    if (valuesToSave.length === 0) {
       toast({
-        title: "Invalid value",
-        description: "Please enter a valid number.",
+        title: "No matching assets",
+        description: "We couldn't match the extracted values to any of your accounts. Please verify the provider and account type.",
         variant: "destructive",
       });
       return;
     }
     
-    // Update the extracted matched values
-    setExtractedMatchedValues(prev => 
-      prev.map(item => 
-        item.assetId === editingValue.assetId 
-          ? { ...item, value: numValue, isEdited: true } 
-          : item
-      )
-    );
+    // Pass values to parent component
+    onExtractedValues(valuesToSave);
     
-    // Log user edit for analytics
-    console.log(`User edited value for asset ${editingValue.assetId} from ${editingValue.value} to ${numValue}`);
-    
-    setEditingValue(null);
-    setEditValue("");
-    
+    // Show success toast
     toast({
-      title: "Value updated",
-      description: `New value saved for ${getAssetName(editingValue.assetId)}`,
-    });
-  };
-  
-  // Cancel editing
-  const cancelEditing = () => {
-    setEditingValue(null);
-    setEditValue("");
-  };
-
-  // Save all extracted values
-  const saveExtractedValues = () => {
-    // Only pass values to the parent component to update the UI
-    onExtractedValues(extractedMatchedValues.map(({ assetId, value }) => ({ assetId, value })));
-    
-    // Show summary toast
-    const verifiedCount = Object.values(userVerifiedValues).filter(Boolean).length;
-    const editedCount = extractedMatchedValues.filter(v => v.isEdited).length;
-    
-    toast({
-      title: "Values saved successfully",
-      description: `${extractedMatchedValues.length} values saved, ${verifiedCount} verified, ${editedCount} edited.`,
+      title: "Values saved",
+      description: `Updated ${valuesToSave.length} account values successfully.`,
     });
     
     // Close dialog and reset state
     setIsDialogOpen(false);
     setUploadedImages([]);
     setAnalysisResults([]);
-    setExtractedMatchedValues([]);
-    setUserVerifiedValues({});
   };
 
   // Process the uploaded images
@@ -322,7 +363,6 @@ export function ScreenshotUpload({
         uploadedImages.map(async (imageData, imageIndex) => {
           try {
             // Process the image before sending it to the server (resize + enhance for OCR)
-            // Make it even smaller to avoid "request entity too large" errors
             const processedImage = await processImageForOCR(imageData, 800, 800);
             console.log(`Original image size: ~${Math.round(imageData.length / 1024)}KB, Processed: ~${Math.round(processedImage.length / 1024)}KB`);
             
@@ -332,8 +372,8 @@ export function ScreenshotUpload({
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                imageData: processedImage, // We need to send the whole data URL as the server expects
-                providerNames: Array.from(new Set(providerNames)), // Remove duplicates
+                imageData: processedImage,
+                providerNames: Array.from(new Set(providerNames)),
               }),
             });
 
@@ -393,94 +433,20 @@ export function ScreenshotUpload({
         })
       );
 
-      // Flatten the results and match with asset IDs
-      const flatResults = results.flat();
+      // Check if we found any values
+      const allResults = results.flat();
       
-      const matchedValues = flatResults
-        .map(result => {
-          // First try to match by both provider name and account type (highest confidence match)
-          let matchingAsset = null;
-          
-          // If account type is available in the result, try to match that first
-          if (result.accountType) {
-            matchingAsset = brokerAssets.find(asset => 
-              getProviderName(asset.providerId, brokerProviders ?? []).toLowerCase() === result.accountName.toLowerCase() &&
-              asset.accountType.toUpperCase() === result.accountType.toUpperCase()
-            );
-          }
-          
-          // If no match by both provider and account type, try matching just by account type for known providers
-          // This helps when the provider name might be recognized differently than what's in our database
-          if (!matchingAsset && result.accountType) {
-            // For InvestEngine, we know it has distinctive UI patterns
-            if (result.accountName.toLowerCase() === "investengine" || 
-                result.accountName.toLowerCase().includes("invest")) {
-              matchingAsset = brokerAssets.find(asset => 
-                getProviderName(asset.providerId, brokerProviders ?? []).toLowerCase().includes("invest") &&
-                asset.accountType.toUpperCase() === result.accountType.toUpperCase()
-              );
-            }
-          }
-          
-          // Last resort, fall back to just provider name
-          if (!matchingAsset) {
-            matchingAsset = brokerAssets.find(asset => 
-              getProviderName(asset.providerId, brokerProviders ?? []).toLowerCase() === result.accountName.toLowerCase()
-            );
-          }
-          
-          if (matchingAsset) {
-            // Calculate confidence based on multiple factors
-            let matchConfidence = result.confidence;
-            
-            // Boost confidence for exact provider and account type matches
-            if (result.accountType && matchingAsset.accountType.toUpperCase() === result.accountType.toUpperCase()) {
-              matchConfidence = Math.min(1, matchConfidence + 0.1);
-            }
-            
-            // Additional confidence boost for InvestEngine with distinctive UI patterns
-            if (result.accountName.toLowerCase().includes("invest") && 
-                getProviderName(matchingAsset.providerId, brokerProviders ?? []).toLowerCase().includes("invest")) {
-              matchConfidence = Math.min(1, matchConfidence + 0.15);
-            }
-              
-            return {
-              assetId: matchingAsset.id,
-              value: result.amount,
-              confidence: matchConfidence,
-              providerName: result.accountName, // Use accountName from API result as providerName
-              accountType: result.accountType
-            };
-          }
-          return null;
-        })
-        .filter(Boolean) as ExtractedMatchedValue[];
-      
-      if (matchedValues.length === 0) {
+      if (allResults.length === 0) {
         toast({
           title: "No account values detected",
           description: "We couldn't identify any account values in your screenshots. Please try again with clearer images.",
           variant: "destructive",
         });
       } else {
-        // Filter out very low confidence matches
-        const reasonableConfidenceMatches = matchedValues.filter(m => m.confidence > 0.5);
-        
-        if (reasonableConfidenceMatches.length > 0) {
-          // Store the matched values for user verification
-          setExtractedMatchedValues(reasonableConfidenceMatches);
-          
-          toast({
-            title: "Account values detected",
-            description: `Found ${reasonableConfidenceMatches.length} account values. Please verify they are correct before saving.`,
-          });
-        } else {
-          toast({
-            title: "Very low confidence matches",
-            description: "We found some possible matches but they have very low confidence. Please try with clearer screenshots.",
-            variant: "destructive",
-          });
-        }
+        toast({
+          title: "Account values detected",
+          description: `Found ${allResults.length} account values. Review the matches and edit if needed before saving.`,
+        });
       }
     } catch (error) {
       console.error("Error in image processing:", error);
@@ -566,7 +532,7 @@ export function ScreenshotUpload({
               {uploadedImages.length > 0 && (
                 <div className="mt-4 space-y-4">
                   {uploadedImages.map((img, index) => {
-                    const analysisResult = analysisResults.find(r => r.imageIndex === index);
+                    const result = analysisResults.find(r => r.imageIndex === index);
                     
                     return (
                       <div key={index} className="border rounded-lg p-4">
@@ -590,66 +556,196 @@ export function ScreenshotUpload({
                             </Button>
                           </div>
                           
-                          {/* Right column - Extracted data (larger) */}
+                          {/* Right column - Extracted data (larger) with editable fields */}
                           <div className="md:w-2/3 flex flex-col">
                             <h4 className="text-sm font-medium mb-2">Extracted Information</h4>
                             
-                            {isProcessing && !analysisResult && (
+                            {isProcessing && !result && (
                               <div className="flex items-center justify-center h-full">
                                 <Loader2 className="h-5 w-5 animate-spin text-primary mr-2" />
                                 <span className="text-sm">Processing...</span>
                               </div>
                             )}
                             
-                            {!isProcessing && !analysisResult && (
+                            {!isProcessing && !result && (
                               <div className="text-sm text-gray-500 border border-dashed rounded-md p-3 flex-grow flex items-center justify-center">
                                 <p>Click "Extract Account Values" to analyze this screenshot</p>
                               </div>
                             )}
                             
-                            {analysisResult && (
+                            {result && (
                               <>
-                                {analysisResult.extractedData.length === 0 ? (
+                                {result.extractedData.length === 0 ? (
                                   <div className="text-sm text-red-500 border border-dashed border-red-200 rounded-md p-3 flex-grow flex items-center justify-center">
                                     <p>No account information detected in this screenshot.</p>
                                   </div>
                                 ) : (
                                   <div className="space-y-3">
-                                    {analysisResult.extractedData.map((result, resultIndex) => (
-                                      <div 
-                                        key={resultIndex} 
-                                        className={`border rounded-md p-3 ${
-                                          result.confidence > 0.7 ? 'border-green-200 bg-green-50' : 'border-yellow-200 bg-yellow-50'
-                                        }`}
-                                      >
-                                        <div className="grid grid-cols-2 gap-2">
-                                          <div className="text-xs font-medium">Provider:</div>
-                                          <div className="text-xs">
-                                            {result.accountName}
+                                    {result.extractedData.map((extractedItem, resultIndex) => {
+                                      const isEditing = editingExtractedValue?.imageIndex === index && editingExtractedValue?.resultIndex === resultIndex;
+                                      const isVerified = 'isVerified' in extractedItem && extractedItem.isVerified;
+                                      
+                                      // Find matching asset for this extracted item
+                                      const matchingAsset = findMatchingAsset(extractedItem.accountName, extractedItem.accountType);
+                                      
+                                      // Get provider ID based on name
+                                      const providerId = matchingAsset?.providerId || brokerProviders?.find(
+                                        p => p.name.toLowerCase() === extractedItem.accountName.toLowerCase()
+                                      )?.id;
+                                      
+                                      const confidenceClass = 
+                                        isVerified ? 'border-green-300 bg-green-50' :
+                                        result.isEdited ? 'border-blue-300 bg-blue-50' :
+                                        extractedItem.confidence > 0.7 ? 'border-green-200 bg-green-50' : 
+                                        'border-yellow-200 bg-yellow-50';
+                                      
+                                      return (
+                                        <div 
+                                          key={resultIndex} 
+                                          className={`border rounded-md p-3 ${confidenceClass}`}
+                                        >
+                                          <div className="grid grid-cols-2 gap-2 mb-1">
+                                            <div className="text-xs font-medium">Provider:</div>
+                                            <div className="text-xs">
+                                              {isEditing ? (
+                                                <Select
+                                                  defaultValue={providerId}
+                                                  onValueChange={(value) => {
+                                                    updateExtractedValue(index, resultIndex, { 
+                                                      providerId: value 
+                                                    });
+                                                  }}
+                                                >
+                                                  <SelectTrigger className="h-7 text-xs">
+                                                    <SelectValue placeholder="Select provider" />
+                                                  </SelectTrigger>
+                                                  <SelectContent>
+                                                    {brokerProviders?.map(provider => (
+                                                      <SelectItem key={provider.id} value={provider.id}>
+                                                        {provider.name}
+                                                      </SelectItem>
+                                                    ))}
+                                                  </SelectContent>
+                                                </Select>
+                                              ) : (
+                                                extractedItem.accountName
+                                              )}
+                                            </div>
+                                            
+                                            <div className="text-xs font-medium">Account Type:</div>
+                                            <div className="text-xs">
+                                              {isEditing ? (
+                                                <Select
+                                                  defaultValue={extractedItem.accountType}
+                                                  onValueChange={(value) => {
+                                                    updateExtractedValue(index, resultIndex, { 
+                                                      accountType: value 
+                                                    });
+                                                  }}
+                                                >
+                                                  <SelectTrigger className="h-7 text-xs">
+                                                    <SelectValue placeholder="Select account type" />
+                                                  </SelectTrigger>
+                                                  <SelectContent>
+                                                    {(providerId ? getAccountTypesForProvider(providerId) : [])
+                                                      .map(type => (
+                                                        <SelectItem key={type} value={type}>
+                                                          {type}
+                                                        </SelectItem>
+                                                      ))}
+                                                  </SelectContent>
+                                                </Select>
+                                              ) : (
+                                                extractedItem.accountType || "Unknown"
+                                              )}
+                                            </div>
+                                            
+                                            <div className="text-xs font-medium">Value:</div>
+                                            <div className="text-xs">
+                                              {isEditing ? (
+                                                <div className="flex items-center">
+                                                  <span className="mr-1">£</span>
+                                                  <Input
+                                                    type="text"
+                                                    defaultValue={extractedItem.amount.toString()}
+                                                    onChange={(e) => {
+                                                      const value = parseFloat(e.target.value);
+                                                      if (!isNaN(value)) {
+                                                        updateExtractedValue(index, resultIndex, { value });
+                                                      }
+                                                    }}
+                                                    className="h-7 text-xs w-24"
+                                                  />
+                                                </div>
+                                              ) : (
+                                                `£${extractedItem.amount.toLocaleString()}`
+                                              )}
+                                            </div>
+                                            
+                                            <div className="text-xs font-medium">Match:</div>
+                                            <div className="text-xs">
+                                              {matchingAsset ? (
+                                                <span className="text-green-600">
+                                                  {matchingAsset.name}
+                                                </span>
+                                              ) : (
+                                                <span className="text-red-500">
+                                                  No matching account
+                                                </span>
+                                              )}
+                                            </div>
                                           </div>
                                           
-                                          {result.accountType && (
-                                            <>
-                                              <div className="text-xs font-medium">Account Type:</div>
-                                              <div className="text-xs">
-                                                {result.accountType}
-                                              </div>
-                                            </>
-                                          )}
-                                          
-                                          <div className="text-xs font-medium">Value:</div>
-                                          <div className="text-xs">£{result.amount.toLocaleString()}</div>
-                                          
-                                          <div className="text-xs font-medium">Confidence:</div>
-                                          <div className="text-xs">
-                                            {(result.confidence * 100).toFixed(0)}%
-                                            {result.confidence < 0.7 && (
-                                              <span className="text-yellow-600 ml-1">(Low)</span>
+                                          <div className="flex justify-end items-center gap-2 mt-2">
+                                            <div className="text-xs flex-1">
+                                              {!isEditing && !isVerified && extractedItem.confidence < 0.7 && (
+                                                <span className="text-yellow-600">Low confidence ({(extractedItem.confidence * 100).toFixed(0)}%)</span>
+                                              )}
+                                              {isVerified && (
+                                                <span className="text-green-600 flex items-center gap-1">
+                                                  <Check size={12} />
+                                                  <span>Verified</span>
+                                                </span>
+                                              )}
+                                            </div>
+                                            
+                                            {isEditing ? (
+                                              <Button 
+                                                size="sm"
+                                                variant="outline"
+                                                className="h-7 text-xs"
+                                                onClick={() => setEditingExtractedValue(null)}
+                                              >
+                                                Done
+                                              </Button>
+                                            ) : (
+                                              <>
+                                                {!isVerified && (
+                                                  <>
+                                                    <Button 
+                                                      variant="outline" 
+                                                      size="sm"
+                                                      className="h-7 text-xs"
+                                                      onClick={() => startEditing(index, resultIndex)}
+                                                    >
+                                                      <Edit2 size={12} className="mr-1" /> Edit
+                                                    </Button>
+                                                    <Button 
+                                                      variant="primary" 
+                                                      size="sm"
+                                                      className="h-7 text-xs bg-primary text-white hover:bg-primary/90"
+                                                      onClick={() => markAsVerified(index, resultIndex)}
+                                                    >
+                                                      <Check size={12} className="mr-1" /> Correct
+                                                    </Button>
+                                                  </>
+                                                )}
+                                              </>
                                             )}
                                           </div>
                                         </div>
-                                      </div>
-                                    ))}
+                                      );
+                                    })}
                                   </div>
                                 )}
                               </>
@@ -659,131 +755,6 @@ export function ScreenshotUpload({
                       </div>
                     );
                   })}
-                </div>
-              )}
-
-              {/* Extracted matched values with verification options */}
-              {extractedMatchedValues.length > 0 && (
-                <div className="mt-6 border-t pt-4">
-                  <h3 className="text-sm font-semibold mb-3">Detected Account Values</h3>
-                  <p className="text-xs text-gray-600 mb-3">
-                    Please verify these values are correct before saving. You can mark each value as correct or edit it if needed.
-                  </p>
-
-                  <div className="space-y-3">
-                    {extractedMatchedValues.map((match) => {
-                      const asset = brokerAssets.find(a => a.id === match.assetId);
-                      const isEditing = editingValue?.assetId === match.assetId;
-                      const isVerified = userVerifiedValues[match.assetId] || match.isVerified;
-                      const isEdited = match.isEdited;
-                      
-                      return (
-                        <div 
-                          key={match.assetId} 
-                          className={`border rounded-md p-3 ${
-                            isVerified ? 'border-green-300 bg-green-50' : 
-                            isEdited ? 'border-blue-300 bg-blue-50' :
-                            match.confidence > 0.8 ? 'border-green-200 bg-green-50' : 'border-yellow-200 bg-yellow-50'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="font-medium text-sm">
-                              {asset?.name || "Unknown Account"}
-                            </div>
-                            {isVerified && (
-                              <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded flex items-center gap-1">
-                                <CheckCircle size={12} />
-                                <span>Verified</span>
-                              </span>
-                            )}
-                            {isEdited && !isVerified && (
-                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded flex items-center gap-1">
-                                <Edit2 size={12} />
-                                <span>Edited</span>
-                              </span>
-                            )}
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-1 text-xs mb-3">
-                            <div className="text-gray-500">Provider:</div>
-                            <div>{asset?.provider?.name || match.providerName}</div>
-                            
-                            <div className="text-gray-500">Account Type:</div>
-                            <div>{asset?.accountType || match.accountType || "Unknown"}</div>
-                            
-                            <div className="text-gray-500">Value:</div>
-                            <div className="font-medium">
-                              {isEditing ? (
-                                <div className="flex items-center">
-                                  <span className="mr-1">£</span>
-                                  <Input
-                                    type="text"
-                                    value={editValue}
-                                    onChange={(e) => setEditValue(e.target.value)}
-                                    className="h-7 px-2 py-1 text-xs w-24"
-                                    autoFocus
-                                  />
-                                </div>
-                              ) : (
-                                `£${match.value.toLocaleString()}`
-                              )}
-                            </div>
-                            
-                            <div className="text-gray-500">Confidence:</div>
-                            <div>
-                              {(match.confidence * 100).toFixed(0)}%
-                              {match.confidence < 0.7 && <span className="text-yellow-600 ml-1">(Low)</span>}
-                            </div>
-                          </div>
-                          
-                          <div className="flex gap-2 mt-1 justify-end">
-                            {isEditing ? (
-                              <>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  className="h-7 text-xs px-2"
-                                  onClick={cancelEditing}
-                                >
-                                  Cancel
-                                </Button>
-                                <Button 
-                                  size="sm"
-                                  className="h-7 text-xs px-2"
-                                  onClick={saveEditedValue}
-                                >
-                                  Save
-                                </Button>
-                              </>
-                            ) : (
-                              <>
-                                {!isVerified && (
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    className="h-7 text-xs px-2"
-                                    onClick={() => startEditing(match.assetId, match.value)}
-                                  >
-                                    Edit
-                                  </Button>
-                                )}
-                                {!isVerified && !isEdited && (
-                                  <Button 
-                                    variant="default" 
-                                    size="sm"
-                                    className="h-7 text-xs px-2"
-                                    onClick={() => markAsCorrect(match.assetId)}
-                                  >
-                                    Mark as Correct
-                                  </Button>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
                 </div>
               )}
             </div>
@@ -796,7 +767,6 @@ export function ScreenshotUpload({
                 setIsDialogOpen(false);
                 setUploadedImages([]);
                 setAnalysisResults([]);
-                setExtractedMatchedValues([]);
               }}
               disabled={isProcessing}
             >
@@ -804,12 +774,12 @@ export function ScreenshotUpload({
             </Button>
             
             <div className="flex gap-2">
-              {extractedMatchedValues.length > 0 && (
+              {analysisResults.some(r => r.extractedData.length > 0) && (
                 <Button 
                   onClick={saveExtractedValues}
-                  className="gap-2"
+                  className="gap-2 bg-primary text-white hover:bg-primary/90"
                 >
-                  Save Values
+                  Save
                 </Button>
               )}
               
@@ -817,6 +787,7 @@ export function ScreenshotUpload({
                 onClick={processImages}
                 disabled={uploadedImages.length === 0 || isProcessing}
                 className="gap-2"
+                variant="outline"
               >
                 {isProcessing ? (
                   <>
