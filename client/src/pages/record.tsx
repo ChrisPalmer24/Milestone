@@ -287,15 +287,29 @@ export default function Record() {
               </CardDescription>
             </div>
             <div className="flex items-center space-x-2">
-              <div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2 text-primary border-primary hover:bg-primary hover:text-white relative h-9"
+                onClick={() => {
+                  // Create a click event on the date input
+                  const dateInput = document.getElementById('record-date-input');
+                  if (dateInput) {
+                    dateInput.click();
+                  }
+                }}
+              >
+                <Calendar size={16} />
                 <input
+                  id="record-date-input"
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-28 h-9 py-2 px-2 text-center border border-primary rounded-md shadow-sm text-sm text-primary bg-transparent focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="opacity-0 absolute inset-0 w-full cursor-pointer"
                   aria-label="Select date"
                 />
-              </div>
+                <span>{formatDateForDisplay(date)}</span>
+              </Button>
               <ScreenshotUpload 
                 brokerAssets={brokerAssets}
                 onExtractedValues={(extractedValues) => {
