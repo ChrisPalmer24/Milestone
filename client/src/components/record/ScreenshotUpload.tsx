@@ -104,6 +104,77 @@ export function ScreenshotUpload({
     setAnalysisResults((prev) => prev.filter(result => result.imageIndex !== index));
   };
 
+  // Resize and pre-process an image to improve OCR results
+  const processImageForOCR = (base64Image: string, maxWidth = 1200, maxHeight = 1200): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        
+        // Calculate new dimensions if the image is too large
+        if (width > maxWidth || height > maxHeight) {
+          if (width > height) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          } else {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+        
+        // Create a canvas to process the image
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Failed to get canvas context'));
+          return;
+        }
+        
+        // Draw the resized image on the canvas
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Apply image processing to enhance text visibility (optional)
+        try {
+          // Get the image data
+          const imageData = ctx.getImageData(0, 0, width, height);
+          const data = imageData.data;
+          
+          // Enhance contrast slightly to make text more readable
+          for (let i = 0; i < data.length; i += 4) {
+            // Apply a simple contrast enhancement
+            // This can help OCR with text recognition
+            data[i] = data[i] < 120 ? data[i] * 0.8 : Math.min(255, data[i] * 1.2);        // red
+            data[i+1] = data[i+1] < 120 ? data[i+1] * 0.8 : Math.min(255, data[i+1] * 1.2); // green
+            data[i+2] = data[i+2] < 120 ? data[i+2] * 0.8 : Math.min(255, data[i+2] * 1.2); // blue
+            // Alpha channel unchanged
+          }
+          
+          // Put the modified image data back
+          ctx.putImageData(imageData, 0, 0);
+        } catch (e) {
+          console.warn('Image processing enhancement failed, continuing with basic resize:', e);
+          // If image processing fails, just continue with the resized image
+        }
+        
+        // Convert the canvas back to a base64 string at a reduced quality
+        const processedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+        
+        resolve(processedBase64);
+      };
+      
+      img.onerror = () => {
+        reject(new Error('Failed to load image'));
+      };
+      
+      img.src = base64Image;
+    });
+  };
+
   // Process the uploaded images
   const processImages = async () => {
     if (uploadedImages.length === 0) {
@@ -130,13 +201,17 @@ export function ScreenshotUpload({
       const results = await Promise.all(
         uploadedImages.map(async (imageData, imageIndex) => {
           try {
+            // Process the image before sending it to the server (resize + enhance for OCR)
+            const processedImage = await processImageForOCR(imageData);
+            console.log(`Original image size: ~${Math.round(imageData.length / 1024)}KB, Processed: ~${Math.round(processedImage.length / 1024)}KB`);
+            
             const response = await fetch("/api/ocr/extract-values", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                image: imageData.split(',')[1] || imageData, // Extract just the base64 part if needed
+                image: processedImage.split(',')[1] || processedImage, // Extract just the base64 part if needed
                 providerNames: Array.from(new Set(providerNames)), // Remove duplicates
               }),
             });
@@ -377,6 +452,12 @@ export function ScreenshotUpload({
             <p className="text-xs text-gray-600">
               <strong>Tip:</strong> For best results, ensure your screenshots clearly show both the account name/type (ISA, SIPP, etc.) and current balance. Crop out unnecessary parts of the screen.
             </p>
+            <p className="text-xs text-gray-600">
+              <strong>InvestEngine users:</strong> Make sure the "Portfolio balance" text and your account value are clearly visible in the screenshot. These are usually displayed at the top of your account page.
+            </p>
+            <p className="text-xs text-gray-600">
+              If recognition fails, try a different part of your account screen or a clearer screenshot with less glare.
+            </p>
           </div>
 
           {uploadedImages.length > 0 && (
@@ -426,8 +507,16 @@ export function ScreenshotUpload({
                         {analysisResult && (
                           <>
                             {analysisResult.extractedData.length === 0 ? (
-                              <div className="text-sm text-red-500 border border-dashed border-red-200 rounded-md p-3 flex-grow flex items-center justify-center">
-                                <p>No account information detected in this screenshot.</p>
+                              <div className="text-sm text-red-500 border border-dashed border-red-200 rounded-md p-3 flex-grow flex flex-col gap-2 justify-center">
+                                <p className="text-center">No account information detected in this screenshot.</p>
+                                <div className="text-xs text-gray-500 text-center">
+                                  <p>Tips: Make sure the screenshot clearly shows:</p>
+                                  <ul className="list-disc list-inside mt-1 space-y-1">
+                                    <li>The account balance with currency symbol (£)</li>
+                                    <li>For InvestEngine, the "Portfolio balance" label</li>
+                                    <li>Account type indicators like "ISA" if possible</li>
+                                  </ul>
+                                </div>
                               </div>
                             ) : (
                               <div className="space-y-3">

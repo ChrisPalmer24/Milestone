@@ -38,35 +38,39 @@ Use these key strategies to identify accounts and their balances:
 1. Look for account type indicators:
    - "ISA", "LISA", "SIPP", "GIA", "Cash ISA" which are common investment account types
    - Account numbers or identifiers are often near balances
-   - Look for sections labeled "Portfolio Value", "Total Balance", "Account Value", "Total Value" etc.
+   - Look for sections labeled "Portfolio Value", "Total Balance", "Account Value", "Total Value", "Current value", etc.
 
 2. Use provider-specific visual cues:
    - Trading 212: Blue interface with white text
    - Vanguard: Dark red/burgundy colors
    - InvestEngine: 
-       * Blue "Invest" button at bottom of screen
+       * Blue and white interface with clean design
        * Green graph lines showing performance
-       * White cards with "Portfolio balance" label above amount (very important)
-       * Green pill with "Self-managed, ISA" text
-       * Navigation tabs showing "1W, 1M, 6M, 1Y, Max"
+       * White cards with "Portfolio balance" label above amount (VERY IMPORTANT)
+       * "Portfolio balance" text is directly above the main account value (key identifier)
+       * Green pill/badge with "Self-managed, ISA" text
+       * Navigation tabs showing "1W, 1M, 6M, 1Y, Max" on the graph
        * Often shows "Investment return" in green with "+" sign
+       * Blue "Invest" button at bottom of screen
    - Hargreaves Lansdown: Light blue interface
    - AJ Bell: Dark blue interface
 
 3. Numerical patterns:
    - Total values are typically the largest numbers shown
-   - Look for currency symbols (£, GBP, p)
+   - Look for currency symbols (£, $, €, GBP, p)
    - Numbers with decimal places (e.g., £1,234.56) are likely monetary values
+   - For InvestEngine, look for a large number usually with the format: "£XXX,XXX.XX"
 
 4. Provider-specific patterns:
-   - InvestEngine:
-     * Shows "ISA" prominently at the top center
+   - InvestEngine (PAY EXTRA ATTENTION TO THIS PROVIDER):
+     * Shows "ISA" prominently at the top center of the screen
      * Often has "Self-managed, ISA" in a green pill/badge
-     * Label "Portfolio balance" appears directly above the value amount
-     * Value format: "£XXX,XXX.XX" (e.g., "£147,232.23")
+     * Label "Portfolio balance" appears directly above the value amount - THIS IS THE MOST RELIABLE INDICATOR
+     * Value format is typically "£XXX,XXX.XX" like "£147,232.23" or "£10,500.00"
      * Graph shows investment performance in green
      * Blue "Invest" button at bottom
      * Navigation tabs with "1W, 1M, 6M, 1Y, Max" options
+     * The account value is typically centered and is the largest number on the screen
 
 For each account you identify:
 1. Extract the provider name (must match one from the list)
@@ -107,7 +111,7 @@ If you can't identify any account details, return an empty array.`,
             },
             {
               type: "text",
-              text: "Extract the account balances from this financial screenshot. Look carefully for provider-specific patterns, especially for InvestEngine accounts which have 'Portfolio balance' label with a large value below it (like £147,232.23), often with 'ISA' at the top of the screen."
+              text: "Extract the account balances from this financial screenshot. Focus on finding the account values and identifying which provider they belong to.\n\nPay extra attention to InvestEngine screenshots which have specific characteristics:\n- Look for the exact text 'Portfolio balance' which appears directly above the main account value\n- The account value appears as a large number like '£147,232.23' centered on the screen\n- Often has 'ISA' or 'Self-managed, ISA' in a green pill at the top\n- Has a blue and white interface with green graph lines\n\nEven if you only see part of the UI, try to determine if it matches InvestEngine's distinctive style. If you see 'Portfolio balance' text, that's a very strong indicator it's InvestEngine."
             }
           ]
         }
