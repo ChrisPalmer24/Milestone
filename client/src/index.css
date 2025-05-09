@@ -13,6 +13,11 @@
 }
 
 @layer components {
+  /* Hide the default calendar icon in date inputs */
+  .date-input-no-calendar::-webkit-calendar-picker-indicator {
+    display: none;
+  }
+
   /* Main content container with proper padding to prevent scrollbar overlap with navigation */
   .main-content {
     position: fixed;

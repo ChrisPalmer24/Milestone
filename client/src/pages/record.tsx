@@ -278,15 +278,37 @@ export default function Record() {
             </div>
             <div className="flex items-center space-x-2">
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
-                  <Calendar size={16} className="text-primary" />
+                <div className="absolute inset-y-0 left-0 pl-2 flex items-center">
+                  <Calendar 
+                    size={16} 
+                    className="text-primary cursor-pointer" 
+                    onClick={() => {
+                      // Find the input and programmatically click it to open the native date picker
+                      const dateInput = document.getElementById('date');
+                      if (dateInput) {
+                        dateInput.click();
+                      }
+                    }}
+                  />
                 </div>
                 <input
                   id="date"
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-32 h-9 py-1 pl-8 pr-2 border border-primary rounded-md shadow-sm text-sm text-primary"
+                  className="w-32 h-9 py-1 pl-8 pr-2 border border-primary rounded-md shadow-sm text-sm text-primary appearance-none date-input-no-calendar"
+                  style={{ 
+                    textAlign: "center",
+                  }}
+                  // Hide the default calendar icon with CSS
+                  onClick={(e) => {
+                    // Stop propagation and manually toggle the date picker
+                    e.stopPropagation();
+                    const input = e.target as HTMLInputElement;
+                    if (document.activeElement !== input) {
+                      input.showPicker();
+                    }
+                  }}
                 />
               </div>
               <ScreenshotUpload 
