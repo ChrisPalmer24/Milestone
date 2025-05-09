@@ -202,7 +202,8 @@ export function ScreenshotUpload({
         uploadedImages.map(async (imageData, imageIndex) => {
           try {
             // Process the image before sending it to the server (resize + enhance for OCR)
-            const processedImage = await processImageForOCR(imageData);
+            // Make it even smaller to avoid "request entity too large" errors
+            const processedImage = await processImageForOCR(imageData, 800, 800);
             console.log(`Original image size: ~${Math.round(imageData.length / 1024)}KB, Processed: ~${Math.round(processedImage.length / 1024)}KB`);
             
             const response = await fetch("/api/ocr/extract-values", {
@@ -211,7 +212,7 @@ export function ScreenshotUpload({
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                image: processedImage.split(',')[1] || processedImage, // Extract just the base64 part if needed
+                imageData: processedImage, // We need to send the whole data URL as the server expects
                 providerNames: Array.from(new Set(providerNames)), // Remove duplicates
               }),
             });
