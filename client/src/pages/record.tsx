@@ -24,7 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { History, Edit, Check, X } from "lucide-react";
+import { History, Edit, Check, X, Calendar } from "lucide-react";
 import { SiTradingview, SiCoinbase } from "react-icons/si";
 import { BsPiggyBank } from "react-icons/bs";
 import { usePortfolio } from "@/context/PortfolioContext";
@@ -277,14 +277,18 @@ export default function Record() {
               </CardDescription>
             </div>
             <div className="flex items-center space-x-2">
-              <input
-                id="date"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-32 h-9 py-1 px-2 border border-primary rounded-md shadow-sm text-sm text-center text-primary"
-                style={{ textAlign: "center" }}
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                  <Calendar size={16} className="text-primary" />
+                </div>
+                <input
+                  id="date"
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="w-32 h-9 py-1 pl-8 pr-2 border border-primary rounded-md shadow-sm text-sm text-primary"
+                />
+              </div>
               <ScreenshotUpload 
                 brokerAssets={brokerAssets}
                 onExtractedValues={(extractedValues) => {
