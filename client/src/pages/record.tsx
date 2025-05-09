@@ -276,7 +276,7 @@ export default function Record() {
                 Update the value of your accounts to keep track of your investments.
               </CardDescription>
             </div>
-            <div className="flex items-center">
+            <div className="flex items-center space-x-2">
               <input
                 id="date"
                 type="date"
@@ -284,6 +284,21 @@ export default function Record() {
                 onChange={(e) => setDate(e.target.value)}
                 className="w-32 py-1 px-1 border border-gray-300 rounded-md shadow-sm text-sm text-center"
                 style={{ textAlign: "center" }}
+              />
+              <ScreenshotUpload 
+                brokerAssets={brokerAssets}
+                onExtractedValues={(extractedValues) => {
+                  // Create a new object to hold the values
+                  const newValues = { ...accountValues };
+                  
+                  // Update values with the extracted ones
+                  extractedValues.forEach(({ assetId, value }) => {
+                    newValues[assetId] = value;
+                  });
+                  
+                  // Set the new values
+                  setAccountValues(newValues);
+                }}
               />
             </div>
           </div>
