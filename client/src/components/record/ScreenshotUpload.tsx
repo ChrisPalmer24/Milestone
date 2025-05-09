@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Camera, Upload, X, Loader2, Check, Edit2 } from "lucide-react";
+import { Camera, Upload, X, Loader2, Check, Edit2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,6 +22,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ScreenshotUploadProps {
   brokerAssets: BrokerProviderAsset[];
@@ -96,6 +102,19 @@ export function ScreenshotUpload({
       return words[0];
     }
     return name;
+  };
+  
+  // Check if we have any unmatched accounts
+  const hasUnmatchedAccounts = (): boolean => {
+    for (const result of analysisResults) {
+      for (const item of result.extractedData) {
+        const matchingAsset = findMatchingAsset(item.accountName, item.accountType);
+        if (!matchingAsset) {
+          return true;
+        }
+      }
+    }
+    return false;
   };
 
   // Handle file upload
@@ -255,8 +274,8 @@ export function ScreenshotUpload({
     );
     
     toast({
-      title: "Verified",
-      description: "The detected value has been marked as correct.",
+      title: "Thank you!",
+      description: "Verifying correct entries helps us to improve the AI.",
     });
   };
   
@@ -318,6 +337,16 @@ export function ScreenshotUpload({
 
   // Save all extracted values and apply to record
   const saveExtractedValues = () => {
+    // Check for unmatched accounts first
+    if (hasUnmatchedAccounts()) {
+      toast({
+        title: "Unmatched accounts",
+        description: "Please add missing accounts to your portfolio before saving.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Collect all extractedData with matched assets
     const valuesToSave: { assetId: string; value: number }[] = [];
     
@@ -558,8 +587,35 @@ export function ScreenshotUpload({
                     
                     return (
                       <div key={index} className="border rounded-lg p-4">
+                        <div className="flex mb-2 items-center justify-between">
+                          <div className="flex">
+                            <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center text-white text-xs font-medium">
+                              {index + 1}
+                            </div>
+                            <h4 className="text-sm font-medium ml-2">Screenshot {index + 1}</h4>
+                          </div>
+                          
+                          {hasUnmatchedAccounts() && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="flex items-center text-xs text-amber-600">
+                                    <AlertCircle size={14} className="mr-1" />
+                                    <span>Unmatched accounts</span>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="max-w-[250px]">
+                                    Some accounts don't match your portfolio. Please add these accounts before saving.
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </div>
+                        
                         <div className="flex flex-col md:flex-row gap-4">
-                          {/* Left column - Screenshot (smaller) */}
+                          {/* Left column - Screenshot (smaller) with number indicator */}
                           <div className="md:w-1/3 relative">
                             <img
                               src={img}
@@ -580,8 +636,6 @@ export function ScreenshotUpload({
                           
                           {/* Right column - Extracted data (larger) with editable fields */}
                           <div className="md:w-2/3 flex flex-col">
-                            <h4 className="text-sm font-medium mb-2">Extracted Information</h4>
-                            
                             {isProcessing && !result && (
                               <div className="flex items-center justify-center h-full">
                                 <Loader2 className="h-5 w-5 animate-spin text-primary mr-2" />
@@ -615,7 +669,10 @@ export function ScreenshotUpload({
                                         p => p.name.toLowerCase() === extractedItem.accountName.toLowerCase()
                                       )?.id;
                                       
+                                      const hasNoMatch = !matchingAsset;
+                                      
                                       const confidenceClass = 
+                                        hasNoMatch ? 'border-amber-300 bg-amber-50' :
                                         isVerified ? 'border-green-300 bg-green-50' :
                                         result.isEdited ? 'border-blue-300 bg-blue-50' :
                                         extractedItem.confidence > 0.7 ? 'border-green-200 bg-green-50' : 
@@ -626,6 +683,13 @@ export function ScreenshotUpload({
                                           key={resultIndex} 
                                           className={`border rounded-md p-3 ${confidenceClass}`}
                                         >
+                                          {hasNoMatch && (
+                                            <div className="mb-2 bg-amber-100 p-2 rounded-sm text-xs text-amber-800 flex items-center">
+                                              <AlertCircle size={12} className="mr-1 flex-shrink-0" />
+                                              <span>This account doesn't currently match any in your portfolio. Please add it before saving.</span>
+                                            </div>
+                                          )}
+                                          
                                           <div className="grid grid-cols-2 gap-2 mb-1">
                                             <div className="text-xs font-medium">Provider:</div>
                                             <div className="text-xs">
@@ -711,7 +775,7 @@ export function ScreenshotUpload({
                                                   {getCleanAssetName(matchingAsset)}
                                                 </span>
                                               ) : (
-                                                <span className="text-red-500">
+                                                <span className="text-amber-600">
                                                   No matching account
                                                 </span>
                                               )}
@@ -804,6 +868,7 @@ export function ScreenshotUpload({
                 <Button 
                   onClick={saveExtractedValues}
                   className="gap-2 bg-primary text-white hover:bg-primary/90"
+                  disabled={hasUnmatchedAccounts()}
                 >
                   Save
                 </Button>
