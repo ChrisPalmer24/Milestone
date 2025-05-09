@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Camera, Upload, X, Loader2 } from "lucide-react";
+import { Camera, Upload, X, Loader2, CheckCircle, Edit2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,10 +13,35 @@ import { useToast } from "@/hooks/use-toast";
 import { BrokerProviderAsset } from "shared/schema";
 import { useBrokerProviders } from "@/hooks/use-broker-providers";
 import { getProviderName } from "@/lib/broker";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
 
 interface ScreenshotUploadProps {
   brokerAssets: BrokerProviderAsset[];
   onExtractedValues: (data: { assetId: string; value: number }[]) => void;
+}
+
+// Define types for analysis results
+interface AnalysisResult {
+  imageIndex: number;
+  extractedData: Array<{
+    accountName: string;
+    accountType?: string;
+    amount: number;
+    confidence: number;
+  }>;
+  isProcessed: boolean;
+}
+
+// Interface for extracted values with verification
+interface ExtractedMatchedValue {
+  assetId: string;
+  value: number;
+  confidence: number;
+  providerName: string;
+  accountType?: string;
+  isVerified?: boolean;
+  isEdited?: boolean;
 }
 
 export function ScreenshotUpload({
@@ -27,19 +52,20 @@ export function ScreenshotUpload({
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [dragActive, setDragActive] = useState(false);
-  const [analysisResults, setAnalysisResults] = useState<Array<{
-    imageIndex: number,
-    extractedData: Array<{
-      accountName: string,
-      accountType?: string,
-      amount: number,
-      confidence: number
-    }>,
-    isProcessed: boolean
-  }>>([]);
+  const [analysisResults, setAnalysisResults] = useState<AnalysisResult[]>([]);
+  const [extractedMatchedValues, setExtractedMatchedValues] = useState<ExtractedMatchedValue[]>([]);
+  const [userVerifiedValues, setUserVerifiedValues] = useState<{[key: string]: boolean}>({});
+  const [editingValue, setEditingValue] = useState<{assetId: string, value: number} | null>(null);
+  const [editValue, setEditValue] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { data: brokerProviders } = useBrokerProviders();
+
+  // Helper function to get asset name by ID
+  const getAssetName = (assetId: string): string => {
+    const asset = brokerAssets.find(a => a.id === assetId);
+    return asset?.name || "Unknown Account";
+  };
 
   // Handle file upload
   const handleFiles = (files: FileList | null) => {
@@ -105,7 +131,7 @@ export function ScreenshotUpload({
   };
 
   // Resize and pre-process an image to improve OCR results
-  const processImageForOCR = (base64Image: string, maxWidth = 1200, maxHeight = 1200): Promise<string> => {
+  const processImageForOCR = (base64Image: string, maxWidth = 800, maxHeight = 800): Promise<string> => {
     return new Promise((resolve, reject) => {
       const img = new Image();
       
@@ -173,6 +199,100 @@ export function ScreenshotUpload({
       
       img.src = base64Image;
     });
+  };
+
+  // Mark extracted value as correct
+  const markAsCorrect = (assetId: string) => {
+    setUserVerifiedValues(prev => ({
+      ...prev,
+      [assetId]: true
+    }));
+    
+    // Update the extracted matched values
+    setExtractedMatchedValues(prev => 
+      prev.map(item => 
+        item.assetId === assetId 
+          ? { ...item, isVerified: true } 
+          : item
+      )
+    );
+    
+    // Log user verification for analytics (in a real app, you'd send this to the server)
+    console.log(`User verified value for asset ${assetId} as correct`);
+    
+    toast({
+      title: "Marked as correct",
+      description: `Verification recorded for ${getAssetName(assetId)}`,
+    });
+  };
+  
+  // Start editing a value
+  const startEditing = (assetId: string, currentValue: number) => {
+    setEditingValue({ assetId, value: currentValue });
+    setEditValue(currentValue.toString());
+  };
+  
+  // Save edited value
+  const saveEditedValue = () => {
+    if (!editingValue) return;
+    
+    const numValue = parseFloat(editValue);
+    if (isNaN(numValue)) {
+      toast({
+        title: "Invalid value",
+        description: "Please enter a valid number.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Update the extracted matched values
+    setExtractedMatchedValues(prev => 
+      prev.map(item => 
+        item.assetId === editingValue.assetId 
+          ? { ...item, value: numValue, isEdited: true } 
+          : item
+      )
+    );
+    
+    // Log user edit for analytics
+    console.log(`User edited value for asset ${editingValue.assetId} from ${editingValue.value} to ${numValue}`);
+    
+    setEditingValue(null);
+    setEditValue("");
+    
+    toast({
+      title: "Value updated",
+      description: `New value saved for ${getAssetName(editingValue.assetId)}`,
+    });
+  };
+  
+  // Cancel editing
+  const cancelEditing = () => {
+    setEditingValue(null);
+    setEditValue("");
+  };
+
+  // Save all extracted values
+  const saveExtractedValues = () => {
+    // Only pass values to the parent component to update the UI
+    onExtractedValues(extractedMatchedValues.map(({ assetId, value }) => ({ assetId, value })));
+    
+    // Show summary toast
+    const verifiedCount = Object.values(userVerifiedValues).filter(Boolean).length;
+    const editedCount = extractedMatchedValues.filter(v => v.isEdited).length;
+    
+    toast({
+      title: "Values saved successfully",
+      description: `${extractedMatchedValues.length} values saved, ${verifiedCount} verified, ${editedCount} edited.`,
+    });
+    
+    // Close dialog and reset state
+    setIsDialogOpen(false);
+    setUploadedImages([]);
+    setAnalysisResults([]);
+    setExtractedMatchedValues([]);
+    setUserVerifiedValues({});
   };
 
   // Process the uploaded images
@@ -334,13 +454,7 @@ export function ScreenshotUpload({
           }
           return null;
         })
-        .filter(Boolean) as { 
-          assetId: string; 
-          value: number; 
-          confidence: number; 
-          providerName: string; 
-          accountType?: string 
-        }[];
+        .filter(Boolean) as ExtractedMatchedValue[];
       
       if (matchedValues.length === 0) {
         toast({
@@ -349,30 +463,21 @@ export function ScreenshotUpload({
           variant: "destructive",
         });
       } else {
-        // Filter out low confidence matches and pass to the parent component
-        const highConfidenceMatches = matchedValues.filter(m => m.confidence > 0.7);
+        // Filter out very low confidence matches
+        const reasonableConfidenceMatches = matchedValues.filter(m => m.confidence > 0.5);
         
-        if (highConfidenceMatches.length > 0) {
-          onExtractedValues(highConfidenceMatches.map(({ assetId, value }) => ({ assetId, value })));
+        if (reasonableConfidenceMatches.length > 0) {
+          // Store the matched values for user verification
+          setExtractedMatchedValues(reasonableConfidenceMatches);
           
-          const matchDetails = highConfidenceMatches
-            .map(match => {
-              const accountTypeStr = match.accountType ? ` (${match.accountType})` : '';
-              return `${match.providerName}${accountTypeStr}: £${match.value.toLocaleString()}`;
-            })
-            .join(', ');
-            
           toast({
             title: "Account values detected",
-            description: `Found ${highConfidenceMatches.length} account values: ${matchDetails}`,
+            description: `Found ${reasonableConfidenceMatches.length} account values. Please verify they are correct before saving.`,
           });
-          
-          setIsDialogOpen(false);
-          setUploadedImages([]);
         } else {
           toast({
-            title: "Low confidence matches",
-            description: "We found some possible matches but they have low confidence. Please verify the values or try with clearer screenshots.",
+            title: "Very low confidence matches",
+            description: "We found some possible matches but they have very low confidence. Please try with clearer screenshots.",
             variant: "destructive",
           });
         }
@@ -402,7 +507,7 @@ export function ScreenshotUpload({
       </Button>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle>Upload Account Screenshots</DialogTitle>
             <DialogDescription>
@@ -410,176 +515,319 @@ export function ScreenshotUpload({
             </DialogDescription>
           </DialogHeader>
 
-          <div
-            className={`
-              mt-4 p-6 border-2 border-dashed rounded-md transition-colors
-              ${dragActive ? "border-primary bg-primary/5" : "border-gray-300"}
-            `}
-            onDragEnter={handleDrag}
-            onDragOver={handleDrag}
-            onDragLeave={handleDrag}
-            onDrop={handleDrop}
-          >
-            <div className="flex flex-col items-center justify-center gap-2">
-              <Upload size={32} className="text-gray-400" />
-              <p className="text-sm text-center text-gray-600">
-                Drag and drop your screenshots here, or click to browse
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-2"
-                onClick={handleUploadClick}
-                disabled={isProcessing}
+          <ScrollArea className="max-h-[calc(80vh-150px)]">
+            <div className="px-1 py-2">
+              <div
+                className={`
+                  p-6 border-2 border-dashed rounded-md transition-colors
+                  ${dragActive ? "border-primary bg-primary/5" : "border-gray-300"}
+                `}
+                onDragEnter={handleDrag}
+                onDragOver={handleDrag}
+                onDragLeave={handleDrag}
+                onDrop={handleDrop}
               >
-                Browse Files
-              </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={(e) => handleFiles(e.target.files)}
-                disabled={isProcessing}
-              />
-            </div>
-          </div>
-          
-          <div className="mt-2 space-y-1">
-            <p className="text-xs italic text-gray-500">
-              *We do not store screenshots for security reasons - they are simply read by the AI using OCR to get the figures to make the input process easier for you
-            </p>
-            <p className="text-xs text-gray-600">
-              <strong>Tip:</strong> For best results, ensure your screenshots clearly show both the account name/type (ISA, SIPP, etc.) and current balance.
-            </p>
-          </div>
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <Upload size={32} className="text-gray-400" />
+                  <p className="text-sm text-center text-gray-600">
+                    Drag and drop your screenshots here, or click to browse
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                    onClick={handleUploadClick}
+                    disabled={isProcessing}
+                  >
+                    Browse Files
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => handleFiles(e.target.files)}
+                    disabled={isProcessing}
+                  />
+                </div>
+              </div>
+              
+              <div className="mt-2 space-y-1">
+                <p className="text-xs italic text-gray-500">
+                  *We do not store screenshots for security reasons - they are simply read by the AI using OCR to get the figures to make the input process easier for you
+                </p>
+                <p className="text-xs text-gray-600">
+                  <strong>Tip:</strong> For best results, ensure your screenshots clearly show both the account name/type (ISA, SIPP, etc.) and current balance.
+                </p>
+              </div>
 
-          {uploadedImages.length > 0 && (
-            <div className="mt-4 space-y-4">
-              {uploadedImages.map((img, index) => {
-                const analysisResult = analysisResults.find(r => r.imageIndex === index);
-                
-                return (
-                  <div key={index} className="border rounded-lg p-4">
-                    <div className="flex flex-col md:flex-row gap-4">
-                      {/* Left column - Screenshot */}
-                      <div className="md:w-1/2 relative">
-                        <img
-                          src={img}
-                          alt={`Screenshot ${index + 1}`}
-                          className="w-full rounded-md border border-gray-200 object-cover"
-                          style={{ maxHeight: "250px" }}
-                        />
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-                          onClick={() => removeImage(index)}
-                          disabled={isProcessing}
-                        >
-                          <X size={12} />
-                        </Button>
-                      </div>
-                      
-                      {/* Right column - Extracted data */}
-                      <div className="md:w-1/2 flex flex-col">
-                        <h4 className="text-sm font-medium mb-2">Extracted Information</h4>
-                        
-                        {isProcessing && !analysisResult && (
-                          <div className="flex items-center justify-center h-full">
-                            <Loader2 className="h-5 w-5 animate-spin text-primary mr-2" />
-                            <span className="text-sm">Processing...</span>
+              {/* Images and analysis results */}
+              {uploadedImages.length > 0 && (
+                <div className="mt-4 space-y-4">
+                  {uploadedImages.map((img, index) => {
+                    const analysisResult = analysisResults.find(r => r.imageIndex === index);
+                    
+                    return (
+                      <div key={index} className="border rounded-lg p-4">
+                        <div className="flex flex-col md:flex-row gap-4">
+                          {/* Left column - Screenshot (smaller) */}
+                          <div className="md:w-1/3 relative">
+                            <img
+                              src={img}
+                              alt={`Screenshot ${index + 1}`}
+                              className="w-full rounded-md border border-gray-200 object-contain"
+                              style={{ maxHeight: "180px" }}
+                            />
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                              onClick={() => removeImage(index)}
+                              disabled={isProcessing}
+                            >
+                              <X size={12} />
+                            </Button>
                           </div>
-                        )}
-                        
-                        {!isProcessing && !analysisResult && (
-                          <div className="text-sm text-gray-500 border border-dashed rounded-md p-3 flex-grow flex items-center justify-center">
-                            <p>Click "Extract Account Values" to analyze this screenshot</p>
-                          </div>
-                        )}
-                        
-                        {analysisResult && (
-                          <>
-                            {analysisResult.extractedData.length === 0 ? (
-                              <div className="text-sm text-red-500 border border-dashed border-red-200 rounded-md p-3 flex-grow flex items-center justify-center">
-                                <p>No account information detected in this screenshot.</p>
-                              </div>
-                            ) : (
-                              <div className="space-y-3">
-                                {analysisResult.extractedData.map((result, resultIndex) => (
-                                  <div 
-                                    key={resultIndex} 
-                                    className={`border rounded-md p-3 ${
-                                      result.confidence > 0.7 ? 'border-green-200 bg-green-50' : 'border-yellow-200 bg-yellow-50'
-                                    }`}
-                                  >
-                                    <div className="grid grid-cols-2 gap-2">
-                                      <div className="text-xs font-medium">Provider:</div>
-                                      <div className="text-xs">
-                                        {result.accountName}
-                                      </div>
-                                      
-                                      {result.accountType && (
-                                        <>
-                                          <div className="text-xs font-medium">Account Type:</div>
-                                          <div className="text-xs">
-                                            {result.accountType}
-                                          </div>
-                                        </>
-                                      )}
-                                      
-                                      <div className="text-xs font-medium">Value:</div>
-                                      <div className="text-xs">£{result.amount.toLocaleString()}</div>
-                                      
-                                      <div className="text-xs font-medium">Confidence:</div>
-                                      <div className="text-xs">
-                                        {(result.confidence * 100).toFixed(0)}%
-                                        {result.confidence < 0.7 && (
-                                          <span className="text-yellow-600 ml-1">(Low)</span>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
+                          
+                          {/* Right column - Extracted data (larger) */}
+                          <div className="md:w-2/3 flex flex-col">
+                            <h4 className="text-sm font-medium mb-2">Extracted Information</h4>
+                            
+                            {isProcessing && !analysisResult && (
+                              <div className="flex items-center justify-center h-full">
+                                <Loader2 className="h-5 w-5 animate-spin text-primary mr-2" />
+                                <span className="text-sm">Processing...</span>
                               </div>
                             )}
-                          </>
-                        )}
+                            
+                            {!isProcessing && !analysisResult && (
+                              <div className="text-sm text-gray-500 border border-dashed rounded-md p-3 flex-grow flex items-center justify-center">
+                                <p>Click "Extract Account Values" to analyze this screenshot</p>
+                              </div>
+                            )}
+                            
+                            {analysisResult && (
+                              <>
+                                {analysisResult.extractedData.length === 0 ? (
+                                  <div className="text-sm text-red-500 border border-dashed border-red-200 rounded-md p-3 flex-grow flex items-center justify-center">
+                                    <p>No account information detected in this screenshot.</p>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-3">
+                                    {analysisResult.extractedData.map((result, resultIndex) => (
+                                      <div 
+                                        key={resultIndex} 
+                                        className={`border rounded-md p-3 ${
+                                          result.confidence > 0.7 ? 'border-green-200 bg-green-50' : 'border-yellow-200 bg-yellow-50'
+                                        }`}
+                                      >
+                                        <div className="grid grid-cols-2 gap-2">
+                                          <div className="text-xs font-medium">Provider:</div>
+                                          <div className="text-xs">
+                                            {result.accountName}
+                                          </div>
+                                          
+                                          {result.accountType && (
+                                            <>
+                                              <div className="text-xs font-medium">Account Type:</div>
+                                              <div className="text-xs">
+                                                {result.accountType}
+                                              </div>
+                                            </>
+                                          )}
+                                          
+                                          <div className="text-xs font-medium">Value:</div>
+                                          <div className="text-xs">£{result.amount.toLocaleString()}</div>
+                                          
+                                          <div className="text-xs font-medium">Confidence:</div>
+                                          <div className="text-xs">
+                                            {(result.confidence * 100).toFixed(0)}%
+                                            {result.confidence < 0.7 && (
+                                              <span className="text-yellow-600 ml-1">(Low)</span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                    );
+                  })}
+                </div>
+              )}
 
-          <DialogFooter>
+              {/* Extracted matched values with verification options */}
+              {extractedMatchedValues.length > 0 && (
+                <div className="mt-6 border-t pt-4">
+                  <h3 className="text-sm font-semibold mb-3">Detected Account Values</h3>
+                  <p className="text-xs text-gray-600 mb-3">
+                    Please verify these values are correct before saving. You can mark each value as correct or edit it if needed.
+                  </p>
+
+                  <div className="space-y-3">
+                    {extractedMatchedValues.map((match) => {
+                      const asset = brokerAssets.find(a => a.id === match.assetId);
+                      const isEditing = editingValue?.assetId === match.assetId;
+                      const isVerified = userVerifiedValues[match.assetId] || match.isVerified;
+                      const isEdited = match.isEdited;
+                      
+                      return (
+                        <div 
+                          key={match.assetId} 
+                          className={`border rounded-md p-3 ${
+                            isVerified ? 'border-green-300 bg-green-50' : 
+                            isEdited ? 'border-blue-300 bg-blue-50' :
+                            match.confidence > 0.8 ? 'border-green-200 bg-green-50' : 'border-yellow-200 bg-yellow-50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="font-medium text-sm">
+                              {asset?.name || "Unknown Account"}
+                            </div>
+                            {isVerified && (
+                              <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded flex items-center gap-1">
+                                <CheckCircle size={12} />
+                                <span>Verified</span>
+                              </span>
+                            )}
+                            {isEdited && !isVerified && (
+                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded flex items-center gap-1">
+                                <Edit2 size={12} />
+                                <span>Edited</span>
+                              </span>
+                            )}
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-1 text-xs mb-3">
+                            <div className="text-gray-500">Provider:</div>
+                            <div>{asset?.provider?.name || match.providerName}</div>
+                            
+                            <div className="text-gray-500">Account Type:</div>
+                            <div>{asset?.accountType || match.accountType || "Unknown"}</div>
+                            
+                            <div className="text-gray-500">Value:</div>
+                            <div className="font-medium">
+                              {isEditing ? (
+                                <div className="flex items-center">
+                                  <span className="mr-1">£</span>
+                                  <Input
+                                    type="text"
+                                    value={editValue}
+                                    onChange={(e) => setEditValue(e.target.value)}
+                                    className="h-7 px-2 py-1 text-xs w-24"
+                                    autoFocus
+                                  />
+                                </div>
+                              ) : (
+                                `£${match.value.toLocaleString()}`
+                              )}
+                            </div>
+                            
+                            <div className="text-gray-500">Confidence:</div>
+                            <div>
+                              {(match.confidence * 100).toFixed(0)}%
+                              {match.confidence < 0.7 && <span className="text-yellow-600 ml-1">(Low)</span>}
+                            </div>
+                          </div>
+                          
+                          <div className="flex gap-2 mt-1 justify-end">
+                            {isEditing ? (
+                              <>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  className="h-7 text-xs px-2"
+                                  onClick={cancelEditing}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button 
+                                  size="sm"
+                                  className="h-7 text-xs px-2"
+                                  onClick={saveEditedValue}
+                                >
+                                  Save
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                {!isVerified && (
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    className="h-7 text-xs px-2"
+                                    onClick={() => startEditing(match.assetId, match.value)}
+                                  >
+                                    Edit
+                                  </Button>
+                                )}
+                                {!isVerified && !isEdited && (
+                                  <Button 
+                                    variant="default" 
+                                    size="sm"
+                                    className="h-7 text-xs px-2"
+                                    onClick={() => markAsCorrect(match.assetId)}
+                                  >
+                                    Mark as Correct
+                                  </Button>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+
+          <DialogFooter className="flex flex-wrap justify-between mt-4 gap-2">
             <Button
               variant="outline"
               onClick={() => {
                 setIsDialogOpen(false);
                 setUploadedImages([]);
                 setAnalysisResults([]);
+                setExtractedMatchedValues([]);
               }}
               disabled={isProcessing}
             >
               Cancel
             </Button>
-            <Button 
-              onClick={processImages}
-              disabled={uploadedImages.length === 0 || isProcessing}
-              className="gap-2"
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" />
-                  <span>Processing...</span>
-                </>
-              ) : (
-                "Extract Account Values"
+            
+            <div className="flex gap-2">
+              {extractedMatchedValues.length > 0 && (
+                <Button 
+                  onClick={saveExtractedValues}
+                  className="gap-2"
+                >
+                  Save Values
+                </Button>
               )}
-            </Button>
+              
+              <Button 
+                onClick={processImages}
+                disabled={uploadedImages.length === 0 || isProcessing}
+                className="gap-2"
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    <span>Processing...</span>
+                  </>
+                ) : (
+                  "Extract Account Values"
+                )}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
