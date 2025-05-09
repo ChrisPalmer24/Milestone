@@ -287,15 +287,12 @@ export default function Record() {
               </CardDescription>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="relative flex items-center border border-primary rounded-md shadow-sm">
-                <div className="absolute left-2 pointer-events-none">
-                  <Calendar size={16} className="text-primary" />
-                </div>
+              <div>
                 <input
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="pl-8 pr-3 py-2 w-auto h-9 text-sm text-primary bg-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="w-auto h-9 py-2 px-3 border border-primary rounded-md shadow-sm text-sm text-primary bg-transparent focus:outline-none focus:ring-2 focus:ring-primary/20"
                   style={{ minWidth: "140px" }}
                   aria-label="Select date"
                 />
