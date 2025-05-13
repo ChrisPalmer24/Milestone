@@ -711,38 +711,40 @@ export default function AccountPage() {
                               onSubmit={contributionForm.handleSubmit(handleCreateContribution)}
                               className="space-y-4"
                             >
-                              <FormField
-                                control={contributionForm.control}
-                                name="value"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Amount</FormLabel>
-                                    <FormControl>
-                                      <Input
-                                        type="number"
-                                        step="0.01"
-                                        placeholder="Enter contribution amount"
-                                        {...field}
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-        
-                              <FormField
-                                control={contributionForm.control}
-                                name="recordedAt"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Date</FormLabel>
-                                    <FormControl>
-                                      <Input type="date" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
+                              <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                  control={contributionForm.control}
+                                  name="recordedAt"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Date</FormLabel>
+                                      <FormControl>
+                                        <Input type="date" {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                
+                                <FormField
+                                  control={contributionForm.control}
+                                  name="value"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Amount (£)</FormLabel>
+                                      <FormControl>
+                                        <Input
+                                          type="number"
+                                          step="0.01"
+                                          placeholder="Enter amount"
+                                          {...field}
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
         
                               <DialogFooter>
                                 <Button type="submit">Add Contribution</Button>
