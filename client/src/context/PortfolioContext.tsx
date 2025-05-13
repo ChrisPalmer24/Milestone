@@ -23,6 +23,8 @@ import {
   AssetsChange,
   AssetValue,
   AssetValueInsert,
+  AssetDebit,
+  AssetDebitInsert,
   MilestoneOrphanInsert,
   FireSettingsInsert,
   BrokerProviderAssetWithAccountChange,

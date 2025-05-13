@@ -11,6 +11,7 @@ export interface IAssetService {
   updateBrokerProviderAsset(id: BrokerProviderAsset["id"], data: BrokerProviderAssetInsert): Promise<BrokerProviderAsset>;
   deleteBrokerProviderAsset(id: BrokerProviderAsset["id"]): Promise<boolean>;
   getBrokerProviderAssetHistory(id: BrokerProviderAsset["id"], query: QueryParts): Promise<AssetValue[]>;
+  getBrokerProviderAssetDebitHistory(id: BrokerProviderAsset["id"], query: QueryParts): Promise<AssetDebit[]>;
   createBrokerProviderAssetValueHistory(id: BrokerProviderAsset["id"], data: AssetValueOrphanInsert): Promise<AssetValue>;
   createBrokerProviderAssetDebitHistory(id: BrokerProviderAsset["id"], data: AssetDebitOrphanInsert): Promise<AssetDebit>;
   updateBrokerProviderAssetValueHistory(id: BrokerProviderAsset["id"], assetValueId: AssetValue["id"], data: AssetValueOrphanInsert): Promise<AssetValue>;

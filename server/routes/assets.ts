@@ -14,6 +14,7 @@ import { ResourceQueryBuilder } from "@server/utils/resource-query-builder";
 import {
   assetValueInsertSchema,
   assetValueOrphanInsertSchema,
+  assetDebitOrphanInsertSchema,
   brokerProviderAssetInsertSchema,
   generalAssetInsertSchema,
 } from "@shared/schema";
