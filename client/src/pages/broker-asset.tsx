@@ -204,6 +204,54 @@ export default function AccountPage() {
       console.error("Error deleting history:", error);
     }
   };
+  
+  // Handlers for contributions
+  const handleCreateContribution = async (values: z.infer<typeof contributionSchema>) => {
+    if (!assetId) return;
+
+    try {
+      await addBrokerAssetContribution.mutateAsync({
+        assetId: assetId,
+        value: Number(values.value),
+        recordedAt: new Date(values.recordedAt),
+      });
+      setIsAddContributionOpen(false);
+      contributionForm.reset();
+    } catch (error) {
+      console.error("Error creating contribution:", error);
+    }
+  };
+
+  const handleEditContribution = async (values: z.infer<typeof contributionSchema>) => {
+    if (!contributionToEdit || !assetId) return;
+    try {
+      await updateBrokerAssetContribution.mutateAsync({
+        contributionId: contributionToEdit.id,
+        assetId: assetId,
+        value: Number(values.value),
+        recordedAt: new Date(values.recordedAt),
+      });
+      setIsEditContributionOpen(false);
+      contributionForm.reset();
+      setContributionToEdit(null);
+    } catch (error) {
+      console.error("Error updating contribution:", error);
+    }
+  };
+
+  const handleDeleteContribution = async () => {
+    if (!contributionToDelete || !assetId) return;
+
+    try {
+      await deleteBrokerAssetContribution.mutateAsync({
+        assetId: assetId,
+        contributionId: contributionToDelete,
+      });
+      setContributionToDelete(null);
+    } catch (error) {
+      console.error("Error deleting contribution:", error);
+    }
+  };
 
   // Helper to get logo for provider
   const getProviderLogo = (provider: string) => {
@@ -225,7 +273,7 @@ export default function AccountPage() {
     }
   };
 
-  if (isAssetLoading || isHistoryLoading) {
+  if (isAssetLoading || isHistoryLoading || isContributionsLoading) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-8">
         <Card>
@@ -298,129 +346,278 @@ export default function AccountPage() {
             </p>
           </div>
 
-          {/* History Section */}
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-medium">History</h2>
-              <Dialog
-                open={isAddHistoryOpen}
-                onOpenChange={setIsAddHistoryOpen}
-              >
-                <DialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center"
+          {/* Tabs for Values/Contributions */}
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "values" | "contributions")}>
+            <TabsList className="mb-4 w-full">
+              <TabsTrigger value="values" className="flex-1">Account Values</TabsTrigger>
+              <TabsTrigger value="contributions" className="flex-1">Contributions</TabsTrigger>
+            </TabsList>
+            
+            {/* Values Tab Content */}
+            <TabsContent value="values">
+              <div>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-medium">History</h2>
+                  <Dialog
+                    open={isAddHistoryOpen}
+                    onOpenChange={setIsAddHistoryOpen}
                   >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Entry
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add History Entry</DialogTitle>
-                    <DialogDescription>
-                      Add a new value record for this account.
-                    </DialogDescription>
-                  </DialogHeader>
-
-                  <Form {...form}>
-                    <form
-                      onSubmit={form.handleSubmit(handleCreateHistory)}
-                      className="space-y-4"
-                    >
-                      <FormField
-                        control={form.control}
-                        name="value"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Value</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                placeholder="Enter value"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="recordedAt"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Date</FormLabel>
-                            <FormControl>
-                              <Input type="date" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <DialogFooter>
-                        <Button type="submit">Add Entry</Button>
-                      </DialogFooter>
-                    </form>
-                  </Form>
-                </DialogContent>
-              </Dialog>
-            </div>
-
-            {/* History List */}
-            <div className="space-y-4">
-              {history?.map((entry) => (
-                <div
-                  key={entry.id}
-                  className="flex justify-between items-center p-4 bg-gray-50 rounded-lg"
-                >
-                  <div>
-                    <p className="font-medium">
-                      £{Number(entry.value).toLocaleString()}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      {new Date(entry.recordedAt).toLocaleDateString("en-GB", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => {
-                        setHistoryToEdit(entry);
-                        form.reset({
-                          value: entry.value.toString(),
-                          recordedAt: new Date(entry.recordedAt)
-                            .toISOString()
-                            .split("T")[0],
-                        });
-                        setIsEditHistoryOpen(true);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => setHistoryToDelete(entry.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Value
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add History Entry</DialogTitle>
+                        <DialogDescription>
+                          Add a new value record for this account.
+                        </DialogDescription>
+                      </DialogHeader>
+    
+                      <Form {...form}>
+                        <form
+                          onSubmit={form.handleSubmit(handleCreateHistory)}
+                          className="space-y-4"
+                        >
+                          <FormField
+                            control={form.control}
+                            name="value"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Value</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="Enter value"
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+    
+                          <FormField
+                            control={form.control}
+                            name="recordedAt"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Date</FormLabel>
+                                <FormControl>
+                                  <Input type="date" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+    
+                          <DialogFooter>
+                            <Button type="submit">Add Entry</Button>
+                          </DialogFooter>
+                        </form>
+                      </Form>
+                    </DialogContent>
+                  </Dialog>
                 </div>
-              ))}
-            </div>
-          </div>
+    
+                {/* History List */}
+                <div className="space-y-4">
+                  {history?.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      No account value history available.
+                    </div>
+                  )}
+                  {history?.map((entry) => (
+                    <div
+                      key={entry.id}
+                      className="flex justify-between items-center p-4 bg-gray-50 rounded-lg"
+                    >
+                      <div>
+                        <p className="font-medium">
+                          £{Number(entry.value).toLocaleString()}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {new Date(entry.recordedAt).toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => {
+                            setHistoryToEdit(entry);
+                            form.reset({
+                              value: entry.value.toString(),
+                              recordedAt: new Date(entry.recordedAt)
+                                .toISOString()
+                                .split("T")[0],
+                            });
+                            setIsEditHistoryOpen(true);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => setHistoryToDelete(entry.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </TabsContent>
+            
+            {/* Contributions Tab Content */}
+            <TabsContent value="contributions">
+              <div>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-medium">Contributions</h2>
+                  <Dialog
+                    open={isAddContributionOpen}
+                    onOpenChange={setIsAddContributionOpen}
+                  >
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Contribution
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add Contribution</DialogTitle>
+                        <DialogDescription>
+                          Record a new contribution to this account.
+                        </DialogDescription>
+                      </DialogHeader>
+    
+                      <Form {...contributionForm}>
+                        <form
+                          onSubmit={contributionForm.handleSubmit(handleCreateContribution)}
+                          className="space-y-4"
+                        >
+                          <FormField
+                            control={contributionForm.control}
+                            name="value"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Amount</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="Enter contribution amount"
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+    
+                          <FormField
+                            control={contributionForm.control}
+                            name="recordedAt"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Date</FormLabel>
+                                <FormControl>
+                                  <Input type="date" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+    
+                          <DialogFooter>
+                            <Button type="submit">Add Contribution</Button>
+                          </DialogFooter>
+                        </form>
+                      </Form>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+    
+                {/* Contributions List */}
+                <div className="space-y-4">
+                  {contributions?.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      No contributions recorded for this account.
+                    </div>
+                  )}
+                  {contributions?.map((contribution) => (
+                    <div
+                      key={contribution.id}
+                      className="flex justify-between items-center p-4 bg-gray-50 rounded-lg"
+                    >
+                      <div>
+                        <div className="flex items-center">
+                          <Coins className="h-4 w-4 mr-1 text-green-600" />
+                          <p className="font-medium">
+                            £{Number(contribution.value).toLocaleString()}
+                          </p>
+                        </div>
+                        <p className="text-sm text-gray-600">
+                          {new Date(contribution.recordedAt).toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => {
+                            setContributionToEdit(contribution);
+                            contributionForm.reset({
+                              value: contribution.value.toString(),
+                              recordedAt: new Date(contribution.recordedAt)
+                                .toISOString()
+                                .split("T")[0],
+                            });
+                            setIsEditContributionOpen(true);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => setContributionToDelete(contribution.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 
@@ -479,8 +676,64 @@ export default function AccountPage() {
           </Form>
         </DialogContent>
       </Dialog>
+      
+      {/* Edit Contribution Dialog */}
+      <Dialog open={isEditContributionOpen} onOpenChange={setIsEditContributionOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Contribution</DialogTitle>
+            <DialogDescription>
+              Update the amount and date of this contribution.
+            </DialogDescription>
+          </DialogHeader>
 
-      {/* Delete Confirmation Dialog */}
+          <Form {...contributionForm}>
+            <form
+              onSubmit={contributionForm.handleSubmit(handleEditContribution)}
+              className="space-y-4"
+            >
+              <FormField
+                control={contributionForm.control}
+                name="value"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Amount</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="Enter contribution amount"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={contributionForm.control}
+                name="recordedAt"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Date</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button type="submit">Update Contribution</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete History Confirmation Dialog */}
       <AlertDialog
         open={!!historyToDelete}
         onOpenChange={() => setHistoryToDelete(null)}
@@ -497,6 +750,31 @@ export default function AccountPage() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteHistory}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      {/* Delete Contribution Confirmation Dialog */}
+      <AlertDialog
+        open={!!contributionToDelete}
+        onOpenChange={() => setContributionToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Contribution</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this contribution record? This action
+              cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteContribution}
               className="bg-red-600 hover:bg-red-700"
             >
               Delete
