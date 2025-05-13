@@ -376,19 +376,28 @@ export default function Record() {
     setSubmittingContributions(true);
 
     try {
-      await Promise.all(
+      const results = await Promise.all(
         contributionsToAdd.map(async (contributionData) => {
-          await addBrokerAssetContribution.mutateAsync(contributionData);
+          return await addContributionToAsset(
+            contributionData.assetId, 
+            contributionData.value, 
+            contributionData.recordedAt
+          );
         })
       );
+      
+      // Check if all contributions were successful
+      const successCount = results.filter(result => result === true).length;
 
-      toast({
-        title: "Contributions recorded",
-        description: `Recorded ${contributionsToAdd.length} contribution(s) successfully`,
-      });
+      if (successCount > 0) {
+        toast({
+          title: "Contributions recorded",
+          description: `Recorded ${successCount} contribution(s) successfully`,
+        });
 
-      // Reset all values
-      setContributionValues({});
+        // Reset all values
+        setContributionValues({});
+      }
     } catch (error) {
       console.error("Error recording contributions:", error);
       toast({
