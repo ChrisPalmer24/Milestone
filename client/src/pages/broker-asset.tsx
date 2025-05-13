@@ -70,6 +70,20 @@ const contributionSchema = z.object({
   }),
 });
 
+// Form schema for recurring contribution
+const recurringContributionSchema = z.object({
+  amount: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+    message: "Amount must be a positive number",
+  }),
+  startDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
+    message: "Invalid date",
+  }),
+  interval: z.enum(["weekly", "biweekly", "monthly"], {
+    required_error: "Interval is required",
+  }),
+  isActive: z.boolean().default(true),
+});
+
 export default function AccountPage() {
   const params = useParams();
   const assetId: BrokerProviderAsset["id"] | undefined = params?.id;
@@ -141,6 +155,20 @@ export default function AccountPage() {
         "GET",
         `/api/assets/broker/${assetId}/contributions`
       ),
+  });
+  
+  // Query for recurring contributions
+  const {
+    data: recurringContributionsData,
+    isLoading: isRecurringLoading
+  } = useQuery<RecurringContribution[]>({
+    queryKey: ["broker-asset-recurring-contributions", assetId],
+    queryFn: () => 
+      apiRequest<RecurringContribution[]>(
+        "GET", 
+        `/api/assets/broker/${assetId}/recurring-contributions`
+      ),
+    enabled: !!assetId && activeTab === "recurring"
   });
 
   // Form for adding/editing history
