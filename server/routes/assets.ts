@@ -434,5 +434,68 @@ export async function registerRoutes(
     }
   );
 
+  // Recurring Contributions Routes
+  router.get(
+    `/broker/${uuidRouteParam("assetId")}/recurring-contributions`,
+    requireUser,
+    async (req: AuthRequest, res) => {
+      const query = recurringContributionsQueryBuilder.buildQuery(req.query);
+      const recurringContributions = await assetService.getRecurringContributionsForAsset(
+        req.params.assetId,
+        query
+      );
+      res.json(recurringContributions);
+    }
+  );
+
+  router.post(
+    `/broker/${uuidRouteParam("assetId")}/recurring-contributions`,
+    requireUser,
+    async (req: AuthRequest, res) => {
+      const data = recurringContributionOrphanInsertSchema.parse(req.body);
+      const recurringContribution = await assetService.createRecurringContribution(
+        req.params.assetId,
+        data
+      );
+      res.json(recurringContribution);
+    }
+  );
+
+  router.put(
+    `/broker/${uuidRouteParam("assetId")}/recurring-contributions/${uuidRouteParam("contributionId")}`,
+    requireUser,
+    async (req: AuthRequest, res) => {
+      const data = recurringContributionOrphanInsertSchema.parse(req.body);
+      const recurringContribution = await assetService.updateRecurringContribution(
+        req.params.assetId,
+        req.params.contributionId,
+        data
+      );
+      res.json(recurringContribution);
+    }
+  );
+
+  router.delete(
+    `/broker/${uuidRouteParam("assetId")}/recurring-contributions/${uuidRouteParam("contributionId")}`,
+    requireUser,
+    async (req: AuthRequest, res) => {
+      const result = await assetService.deleteRecurringContribution(
+        req.params.assetId,
+        req.params.contributionId
+      );
+      res.json({ success: result });
+    }
+  );
+
+  // Add a route to manually trigger processing of recurring contributions (for admin/testing)
+  router.post(
+    `/recurring-contributions/process`,
+    requireTenant,
+    async (req: AuthRequest, res) => {
+      const processCount = await assetService.processRecurringContributions();
+      res.json({ processedCount: processCount });
+    }
+  );
+
   return router;
 }

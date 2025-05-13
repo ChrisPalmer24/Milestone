@@ -3,7 +3,9 @@ import { useParams } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Coins } from "lucide-react";
+import { Plus, Pencil, Trash2, Coins, Calendar, RotateCcw } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import {
   Dialog,
   DialogContent,
@@ -38,9 +40,7 @@ import { z } from "zod";
 import { SiTradingview, SiCoinbase } from "react-icons/si";
 import { BsPiggyBank } from "react-icons/bs";
 import { usePortfolio } from "@/context/PortfolioContext";
-import { AssetValue, AssetDebit, BrokerProviderAsset } from "shared/schema";
-import { useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { AssetValue, AssetDebit, BrokerProviderAsset, RecurringContribution } from "shared/schema";
 import { getProviderName } from "@/lib/broker";
 import { useBrokerProviders } from "@/hooks/use-broker-providers";
 import {
@@ -99,7 +99,11 @@ export default function AccountPage() {
   const [contributionToEdit, setContributionToEdit] = useState<any>(null);
   
   // Active tab state
-  const [activeTab, setActiveTab] = useState<"values" | "contributions">("values");
+  const [activeTab, setActiveTab] = useState<"values" | "contributions" | "recurring">("values");
+  
+  // State for recurring contributions
+  const [recurringContributions, setRecurringContributions] = useState<RecurringContribution[]>([]);
+  const [isLoadingRecurring, setIsLoadingRecurring] = useState(false);
 
   const {
     data: asset,
@@ -347,10 +351,14 @@ export default function AccountPage() {
           </div>
 
           {/* Tabs for Values/Contributions */}
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "values" | "contributions")}>
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "values" | "contributions" | "recurring")}>
             <TabsList className="mb-4 w-full">
               <TabsTrigger value="values" className="flex-1">Account Values</TabsTrigger>
               <TabsTrigger value="contributions" className="flex-1">Contributions</TabsTrigger>
+              <TabsTrigger value="recurring" className="flex-1">
+                <Calendar className="h-4 w-4 mr-2" />
+                Recurring
+              </TabsTrigger>
             </TabsList>
             
             {/* Values Tab Content */}
@@ -666,6 +674,46 @@ export default function AccountPage() {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            </TabsContent>
+            
+            {/* Recurring Contributions Tab Content */}
+            <TabsContent value="recurring">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-medium">Recurring Contributions</h3>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button size="sm">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Recurring
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add Recurring Contribution</DialogTitle>
+                        <DialogDescription>
+                          Set up regular contributions to your investment account
+                        </DialogDescription>
+                      </DialogHeader>
+                      {/* Recurring contribution form will go here */}
+                      <div className="p-4">
+                        <p className="text-center text-sm text-muted-foreground">
+                          Recurring contributions feature is coming soon. This will allow you to 
+                          automatically track regular investments to your portfolio.
+                        </p>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+                
+                <div className="rounded-md border">
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    <Calendar className="h-16 w-16 mx-auto mb-2 opacity-30" />
+                    <p>You don't have any recurring contributions set up yet.</p>
+                    <p className="mt-1">Use the "Add Recurring" button above to set one up.</p>
+                  </div>
                 </div>
               </div>
             </TabsContent>
