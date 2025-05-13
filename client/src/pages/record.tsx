@@ -143,6 +143,48 @@ export default function Record() {
   const [updatingAccounts, setUpdatingAccounts] = useState<string[]>([]);
   const [updatingContributions, setUpdatingContributions] = useState<string[]>([]);
   
+  // State for the recurring contributions info box visibility
+  const [showRecurringInfo, setShowRecurringInfo] = useState<boolean | null>(null);
+  
+  // Handle permanently hiding the info box
+  const handleHideInfoBox = () => {
+    localStorage.setItem('hideRecurringContributionInfo', 'true');
+    setShowRecurringInfo(false);
+  };
+  
+  // Handle "Remind Me Later" for the info box
+  const handleRemindLater = () => {
+    const now = new Date();
+    localStorage.setItem('remindRecurringContributionLater', now.toISOString());
+    localStorage.removeItem('hideRecurringContributionInfo'); // Clear any permanent hide setting
+    setShowRecurringInfo(false);
+  };
+  
+  // Check localStorage for the user's preference on info box visibility
+  useEffect(() => {
+    const hideRecurringInfo = localStorage.getItem('hideRecurringContributionInfo');
+    const lastRemindDate = localStorage.getItem('remindRecurringContributionLater');
+    
+    if (hideRecurringInfo === 'true') {
+      setShowRecurringInfo(false);
+    } else if (lastRemindDate) {
+      // Check if it's been at least a day since "Remind Me Later" was clicked
+      const lastDate = new Date(lastRemindDate);
+      const now = new Date();
+      const oneDayMs = 24 * 60 * 60 * 1000; // One day in milliseconds
+      
+      if (now.getTime() - lastDate.getTime() >= oneDayMs) {
+        // It's been at least a day, show the message again
+        setShowRecurringInfo(true);
+      } else {
+        setShowRecurringInfo(false);
+      }
+    } else {
+      // No preference saved, show the message
+      setShowRecurringInfo(true);
+    }
+  }, []);
+  
   // Initialize values with current values button
   const initializeWithCurrentValues = () => {
     const initialValues: AccountFormData = {};
@@ -586,28 +628,48 @@ export default function Record() {
                 
                 {/* Contributions Tab */}
                 <TabsContent value="contributions">
-                  <div className="p-4 border border-blue-200 bg-blue-50 rounded-lg mb-4">
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0 mt-0.5">
-                        <RotateCcw className="h-5 w-5 text-blue-500" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-blue-900">Want to add recurring contributions?</h4>
-                        <p className="text-sm text-blue-700 mt-1">
-                          You can record one-off contributions here, or set up recurring contributions by clicking on any 
-                          individual account in your portfolio and using the "Add Contribution" dialog's Recurring tab.
-                        </p>
-                        <Link href="/portfolio">
+                  {showRecurringInfo && (
+                    <div className="p-4 border border-blue-200 bg-blue-50 rounded-lg mb-4 relative">
+                      <div className="flex items-start">
+                        <div className="flex-shrink-0 mt-0.5 mr-3">
+                          <RotateCcw className="h-5 w-5 text-blue-500" />
+                        </div>
+                        <div className="flex-grow pr-4">
+                          <h4 className="font-medium text-blue-900">Want to add recurring contributions?</h4>
+                          <p className="text-sm text-blue-700 mt-1">
+                            You can record one-off contributions here, or set up recurring contributions by clicking on any 
+                            individual account in your portfolio and using the "Add Contribution" dialog's Recurring tab.
+                          </p>
+                          <Link href="/portfolio">
+                            <Button 
+                              variant="link" 
+                              className="text-blue-600 h-auto p-0 mt-1"
+                            >
+                              Go to Portfolio →
+                            </Button>
+                          </Link>
+                        </div>
+                        <div className="flex flex-col space-y-2 absolute top-3 right-3">
                           <Button 
-                            variant="link" 
-                            className="text-blue-600 h-auto p-0 mt-1"
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-xs h-7 px-2 text-blue-600"
+                            onClick={handleRemindLater}
                           >
-                            Go to Portfolio →
+                            Remind Me Later
                           </Button>
-                        </Link>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-xs h-7 px-2 text-slate-500"
+                            onClick={handleHideInfoBox}
+                          >
+                            Hide
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                   
                   <div className="space-y-4">
                     {[...brokerAssets]
