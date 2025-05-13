@@ -68,18 +68,158 @@ function Portfolio() {
     switch (providerName.toLowerCase()) {
       case "trading 212":
       case "trading212":
-        return <SiTradingview className="w-6 h-6" />;
+        return (
+          <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7">
+            <path 
+              d="M2 4V20H22V4H2ZM19.5 17.5H4.5V6.5H19.5V17.5Z" 
+              fill="#0061FF"
+            />
+            <path 
+              d="M9 8.5L7 15.5H8.5L10.5 8.5H9Z" 
+              fill="#0061FF"
+            />
+            <path 
+              d="M11 8.5L13 15.5H11.5L9.5 8.5H11Z" 
+              fill="#0061FF"
+            />
+            <path 
+              d="M14 8.5L12 15.5H13.5L15.5 8.5H14Z" 
+              fill="#0061FF"
+            />
+            <path 
+              d="M16 8.5L18 15.5H16.5L14.5 8.5H16Z" 
+              fill="#0061FF"
+            />
+          </svg>
+        );
       case "vanguard":
-        return <BsPiggyBank className="w-6 h-6" />;
+        return (
+          <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7">
+            <path 
+              d="M4 17L8 7H16L20 17H16L12 7L8 17H4Z" 
+              fill="#BD0008"
+            />
+            <path 
+              d="M8 17L12 7L16 17H8Z" 
+              fill="#BD0008" 
+              fillOpacity="0.6"
+            />
+          </svg>
+        );
       case "invest engine":
       case "investengine":
-        return <SiCoinbase className="w-6 h-6" />;
+        return (
+          <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7">
+            <rect x="3" y="3" width="18" height="18" rx="2" fill="#FF7022"/>
+            <path 
+              d="M7 12H17" 
+              stroke="white" 
+              strokeWidth="2" 
+              strokeLinecap="round"
+            />
+            <path 
+              d="M7 8H17" 
+              stroke="white" 
+              strokeWidth="2" 
+              strokeLinecap="round"
+            />
+            <path 
+              d="M7 16H13" 
+              stroke="white" 
+              strokeWidth="2" 
+              strokeLinecap="round"
+            />
+          </svg>
+        );
       case "hargreaves lansdown":
-        return <BsPiggyBank className="w-6 h-6" />;
+        return (
+          <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7">
+            <rect x="3" y="3" width="18" height="18" rx="9" fill="#00417D"/>
+            <path 
+              d="M8 12.5H16" 
+              stroke="white" 
+              strokeWidth="1.5" 
+              strokeLinecap="round"
+            />
+            <path 
+              d="M10 8H14" 
+              stroke="white" 
+              strokeWidth="1.5" 
+              strokeLinecap="round"
+            />
+            <path 
+              d="M12 16H16" 
+              stroke="white" 
+              strokeWidth="1.5" 
+              strokeLinecap="round"
+            />
+            <path 
+              d="M8 16H10" 
+              stroke="white" 
+              strokeWidth="1.5" 
+              strokeLinecap="round"
+            />
+          </svg>
+        );
       case "aj bell":
-        return <SiCoinbase className="w-6 h-6" />;
+        return (
+          <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7">
+            <rect x="3" y="3" width="18" height="18" rx="2" fill="#00274C"/>
+            <path 
+              d="M7 13L10 7H14L17 13L14 19H10L7 13Z" 
+              stroke="white" 
+              strokeWidth="1.5" 
+              strokeLinejoin="round"
+            />
+            <circle cx="12" cy="13" r="2" stroke="white" strokeWidth="1.5"/>
+          </svg>
+        );
       default:
-        return <SiTradingview className="w-6 h-6" />;
+        // Default generic investment logo
+        return (
+          <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7">
+            <rect
+              x="3"
+              y="3"
+              width="18"
+              height="18"
+              rx="2"
+              fill="#0061FF"
+              fillOpacity="0.8"
+            />
+            <path
+              d="M7 17L10 12L13 14L17 7"
+              stroke="white"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <circle
+              cx="7"
+              cy="17"
+              r="1"
+              fill="white"
+            />
+            <circle
+              cx="10"
+              cy="12"
+              r="1"
+              fill="white"
+            />
+            <circle
+              cx="13"
+              cy="14"
+              r="1"
+              fill="white"
+            />
+            <circle
+              cx="17"
+              cy="7"
+              r="1"
+              fill="white"
+            />
+          </svg>
+        );
     }
   };
 
@@ -274,7 +414,7 @@ function Portfolio() {
                   >
                     <div className="flex justify-between items-center">
                       <div className="flex items-center">
-                        <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center mr-3">
+                        <div className="w-10 h-10 rounded-md flex items-center justify-center mr-3">
                           {getProviderLogo(providerName)}
                         </div>
                         <div>
