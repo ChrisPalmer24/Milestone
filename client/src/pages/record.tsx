@@ -53,6 +53,7 @@ const assetWithValeGuard = (
 export default function Record() {
   const {
     addBrokerAssetValue,
+    addBrokerAssetContribution,
     isLoading,
     updateBrokerAssetValue,
     brokerAssets,
@@ -252,23 +253,18 @@ export default function Record() {
     setUpdatingContributions((prev) => [...prev, assetId]);
 
     try {
-      // TODO: Replace with actual contribution API call once implemented
-      // For now, just show a success message
-      setTimeout(() => {
-        toast({
-          title: "Contribution recorded",
-          description: "Account contribution has been recorded successfully",
-        });
+      await addBrokerAssetContribution.mutateAsync({
+        assetId,
+        value,
+        recordedAt: new Date(date),
+      });
 
-        // Clear the value for this account
-        setContributionValues((prev) => {
-          const newValues = { ...prev };
-          delete newValues[assetId];
-          return newValues;
-        });
-        
-        setUpdatingContributions((prev) => prev.filter((id) => id !== assetId));
-      }, 500);
+      // Clear the value for this account
+      setContributionValues((prev) => {
+        const newValues = { ...prev };
+        delete newValues[assetId];
+        return newValues;
+      });
     } catch (error) {
       console.error("Error recording contribution:", error);
       toast({
@@ -276,6 +272,7 @@ export default function Record() {
         description: "Failed to record contribution. Please try again.",
         variant: "destructive",
       });
+    } finally {
       setUpdatingContributions((prev) => prev.filter((id) => id !== assetId));
     }
   };
@@ -357,18 +354,19 @@ export default function Record() {
     setSubmittingContributions(true);
 
     try {
-      // TODO: Replace with actual contribution API calls once implemented
-      // For now, just show a success message after a short delay
-      setTimeout(() => {
-        toast({
-          title: "Contributions recorded",
-          description: `Recorded ${contributionsToAdd.length} contribution(s) successfully`,
-        });
+      await Promise.all(
+        contributionsToAdd.map(async (contributionData) => {
+          await addBrokerAssetContribution.mutateAsync(contributionData);
+        })
+      );
 
-        // Reset all values
-        setContributionValues({});
-        setSubmittingContributions(false);
-      }, 500);
+      toast({
+        title: "Contributions recorded",
+        description: `Recorded ${contributionsToAdd.length} contribution(s) successfully`,
+      });
+
+      // Reset all values
+      setContributionValues({});
     } catch (error) {
       console.error("Error recording contributions:", error);
       toast({
@@ -376,6 +374,7 @@ export default function Record() {
         description: "Failed to record some contributions. Please try again.",
         variant: "destructive",
       });
+    } finally {
       setSubmittingContributions(false);
     }
   };

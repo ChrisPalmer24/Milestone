@@ -52,6 +52,10 @@ type AssetValueUpdate = AssetValueInsert & {
   historyId: AssetValue["id"];
 };
 
+type AssetDebitUpdate = AssetDebitInsert & {
+  contributionId: AssetDebit["id"];
+};
+
 type AssetValueDelete = {
   assetId: BrokerProviderAsset["id"];
   historyId: AssetValue["id"];
@@ -418,6 +422,99 @@ export const usePortfolio = (startDate?: Date, endDate?: Date) => {
       });
     },
   });
+  
+  // Asset contribution mutations
+  const addBrokerAssetContribution = useMutation<
+    AssetDebitInsert,
+    Error,
+    AssetDebitInsert
+  >({
+    mutationFn: (data: AssetDebitInsert) => {
+      const { assetId, ...rest } = data;
+      return apiRequest<AssetDebit>(
+        "POST",
+        `/api/assets/broker/${assetId}/contributions`,
+        {
+          ...rest,
+          recordedAt: data.recordedAt ?? new Date(),
+        }
+      );
+    },
+    onSuccess: () => {
+      invalidateAccounts();
+      toast({
+        title: "Contribution recorded",
+        description: "Your contribution has been recorded successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error recording contribution",
+        description:
+          error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const updateBrokerAssetContribution = useMutation<
+    AssetDebit,
+    Error,
+    AssetDebitUpdate
+  >({
+    mutationFn: (data) => {
+      const { assetId, contributionId, ...rest } = data;
+      return apiRequest<AssetDebit>(
+        "PUT",
+        `/api/assets/broker/${assetId}/contributions/${contributionId}`,
+        {
+          ...rest,
+        }
+      );
+    },
+    onSuccess: () => {
+      invalidateAccounts();
+      toast({
+        title: "Contribution updated",
+        description: "Your contribution has been updated successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error updating contribution",
+        description:
+          error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const deleteBrokerAssetContribution = useMutation<
+    void,
+    Error,
+    { assetId: BrokerProviderAsset["id"]; contributionId: AssetDebit["id"] }
+  >({
+    mutationFn: ({ assetId, contributionId }) =>
+      apiRequest(
+        "DELETE",
+        `/api/assets/broker/${assetId}/contributions/${contributionId}`
+      ),
+    onSuccess: () => {
+      invalidateAccounts();
+      toast({
+        title: "Contribution deleted",
+        description: "Your contribution has been deleted successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error deleting contribution",
+        description:
+          error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
+      });
+    },
+  });
 
   // Update milestone mutations to handle response data
   const addMilestone = useMutation<Milestone, Error, MilestoneInsert>({
@@ -597,6 +694,9 @@ export const usePortfolio = (startDate?: Date, endDate?: Date) => {
     addBrokerAssetValue,
     updateBrokerAssetValue,
     deleteBrokerAssetValue,
+    addBrokerAssetContribution,
+    updateBrokerAssetContribution,
+    deleteBrokerAssetContribution,
     connectBrokerProviderAssetApi,
     addMilestone,
     deleteMilestone,
