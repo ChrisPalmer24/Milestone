@@ -42,6 +42,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -756,60 +757,65 @@ export default function AccountPage() {
                               onSubmit={recurringForm.handleSubmit(handleCreateRecurringContribution)}
                               className="space-y-4"
                             >
-                              <FormField
-                                control={recurringForm.control}
-                                name="amount"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Amount (£)</FormLabel>
-                                    <FormControl>
-                                      <Input
-                                        type="number"
-                                        step="0.01"
-                                        placeholder="Enter amount"
-                                        {...field}
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              
-                              <FormField
-                                control={recurringForm.control}
-                                name="startDate"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Start Date</FormLabel>
-                                    <FormControl>
-                                      <Input type="date" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
+                              <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                  control={recurringForm.control}
+                                  name="startDate"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Start Date</FormLabel>
+                                      <FormControl>
+                                        <Input type="date" {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                
+                                <FormField
+                                  control={recurringForm.control}
+                                  name="amount"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Amount (£)</FormLabel>
+                                      <FormControl>
+                                        <Input
+                                          type="number"
+                                          step="0.01"
+                                          placeholder="Enter amount"
+                                          {...field}
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
                               
                               <FormField
                                 control={recurringForm.control}
                                 name="interval"
                                 render={({ field }) => (
-                                  <FormItem>
+                                  <FormItem className="space-y-3">
                                     <FormLabel>Frequency</FormLabel>
-                                    <Select 
-                                      onValueChange={field.onChange} 
-                                      defaultValue={field.value}
-                                    >
-                                      <FormControl>
-                                        <SelectTrigger>
-                                          <SelectValue placeholder="Select frequency" />
-                                        </SelectTrigger>
-                                      </FormControl>
-                                      <SelectContent>
-                                        <SelectItem value="weekly">Weekly</SelectItem>
-                                        <SelectItem value="biweekly">Biweekly</SelectItem>
-                                        <SelectItem value="monthly">Monthly</SelectItem>
-                                      </SelectContent>
-                                    </Select>
+                                    <FormControl>
+                                      <ToggleGroup
+                                        type="single"
+                                        onValueChange={field.onChange}
+                                        defaultValue={field.value}
+                                        className="justify-start"
+                                      >
+                                        <ToggleGroupItem value="weekly" aria-label="Weekly">
+                                          Weekly
+                                        </ToggleGroupItem>
+                                        <ToggleGroupItem value="biweekly" aria-label="Biweekly">
+                                          Biweekly
+                                        </ToggleGroupItem>
+                                        <ToggleGroupItem value="monthly" aria-label="Monthly">
+                                          Monthly
+                                        </ToggleGroupItem>
+                                      </ToggleGroup>
+                                    </FormControl>
                                     <FormMessage />
                                   </FormItem>
                                 )}
