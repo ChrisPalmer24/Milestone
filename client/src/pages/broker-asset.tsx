@@ -146,7 +146,7 @@ export default function AccountPage() {
   const [contributionToEdit, setContributionToEdit] = useState<any>(null);
   
   // Active tab state
-  const [activeTab, setActiveTab] = useState<"values" | "contributions" | "recurring">("values");
+  const [activeTab, setActiveTab] = useState<"values" | "contributions">("values");
   
   // State for recurring contributions
   const [recurringContributions, setRecurringContributions] = useState<RecurringContribution[]>([]);
@@ -201,7 +201,7 @@ export default function AccountPage() {
         "GET", 
         `/api/assets/broker/${assetId}/recurring-contributions`
       ),
-    enabled: !!assetId && activeTab === "recurring"
+    enabled: !!assetId
   });
 
   // Form for adding/editing history
@@ -698,49 +698,158 @@ export default function AccountPage() {
                         </DialogDescription>
                       </DialogHeader>
     
-                      <Form {...contributionForm}>
-                        <form
-                          onSubmit={contributionForm.handleSubmit(handleCreateContribution)}
-                          className="space-y-4"
-                        >
-                          <FormField
-                            control={contributionForm.control}
-                            name="value"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Amount</FormLabel>
-                                <FormControl>
-                                  <Input
-                                    type="number"
-                                    step="0.01"
-                                    placeholder="Enter contribution amount"
-                                    {...field}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-    
-                          <FormField
-                            control={contributionForm.control}
-                            name="recordedAt"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Date</FormLabel>
-                                <FormControl>
-                                  <Input type="date" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-    
-                          <DialogFooter>
-                            <Button type="submit">Add Contribution</Button>
-                          </DialogFooter>
-                        </form>
-                      </Form>
+                      <Tabs defaultValue="single" className="mt-4">
+                        <TabsList className="grid w-full grid-cols-2 mb-4">
+                          <TabsTrigger value="single">Single</TabsTrigger>
+                          <TabsTrigger value="recurring">Recurring</TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="single">
+                          <Form {...contributionForm}>
+                            <form
+                              onSubmit={contributionForm.handleSubmit(handleCreateContribution)}
+                              className="space-y-4"
+                            >
+                              <FormField
+                                control={contributionForm.control}
+                                name="value"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Amount</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        placeholder="Enter contribution amount"
+                                        {...field}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+        
+                              <FormField
+                                control={contributionForm.control}
+                                name="recordedAt"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Date</FormLabel>
+                                    <FormControl>
+                                      <Input type="date" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+        
+                              <DialogFooter>
+                                <Button type="submit">Add Contribution</Button>
+                              </DialogFooter>
+                            </form>
+                          </Form>
+                        </TabsContent>
+
+                        <TabsContent value="recurring">
+                          <Form {...recurringForm}>
+                            <form
+                              onSubmit={recurringForm.handleSubmit(handleCreateRecurringContribution)}
+                              className="space-y-4"
+                            >
+                              <FormField
+                                control={recurringForm.control}
+                                name="amount"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Amount (£)</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        placeholder="Enter amount"
+                                        {...field}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              
+                              <FormField
+                                control={recurringForm.control}
+                                name="startDate"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Start Date</FormLabel>
+                                    <FormControl>
+                                      <Input type="date" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              
+                              <FormField
+                                control={recurringForm.control}
+                                name="interval"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Frequency</FormLabel>
+                                    <Select 
+                                      onValueChange={field.onChange} 
+                                      defaultValue={field.value}
+                                    >
+                                      <FormControl>
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Select frequency" />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        <SelectItem value="weekly">Weekly</SelectItem>
+                                        <SelectItem value="biweekly">Biweekly</SelectItem>
+                                        <SelectItem value="monthly">Monthly</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              
+                              <FormField
+                                control={recurringForm.control}
+                                name="isActive"
+                                render={({ field }) => (
+                                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                                    <FormControl>
+                                      <Checkbox
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                      />
+                                    </FormControl>
+                                    <div className="space-y-1 leading-none">
+                                      <FormLabel>
+                                        Active
+                                      </FormLabel>
+                                      <p className="text-sm text-muted-foreground">
+                                        Enable or disable this recurring contribution
+                                      </p>
+                                    </div>
+                                  </FormItem>
+                                )}
+                              />
+                              
+                              <DialogFooter>
+                                <Button type="submit">Add Recurring Contribution</Button>
+                              </DialogFooter>
+                            </form>
+                          </Form>
+                          <div className="mt-4">
+                            <p className="text-center text-sm text-muted-foreground">
+                              Set up recurring contributions to automatically track regular investments to your portfolio.
+                            </p>
+                          </div>
+                        </TabsContent>
+                      </Tabs>
                     </DialogContent>
                   </Dialog>
                 </div>
@@ -806,136 +915,7 @@ export default function AccountPage() {
             </TabsContent>
             
             {/* Recurring Contributions Tab Content */}
-            <TabsContent value="recurring">
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-medium">Recurring Contributions</h3>
-                  <Dialog open={isAddRecurringOpen} onOpenChange={setIsAddRecurringOpen}>
-                    <DialogTrigger asChild>
-                      <Button size="sm">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Recurring
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Add Recurring Contribution</DialogTitle>
-                        <DialogDescription>
-                          Set up regular contributions to your investment account
-                        </DialogDescription>
-                      </DialogHeader>
-                      
-                      <Form {...recurringForm}>
-                        <form
-                          onSubmit={recurringForm.handleSubmit(handleCreateRecurringContribution)}
-                          className="space-y-4"
-                        >
-                          <FormField
-                            control={recurringForm.control}
-                            name="amount"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Amount (£)</FormLabel>
-                                <FormControl>
-                                  <Input
-                                    type="number"
-                                    step="0.01"
-                                    placeholder="Enter amount"
-                                    {...field}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={recurringForm.control}
-                            name="startDate"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Start Date</FormLabel>
-                                <FormControl>
-                                  <Input type="date" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={recurringForm.control}
-                            name="interval"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Frequency</FormLabel>
-                                <Select 
-                                  onValueChange={field.onChange} 
-                                  defaultValue={field.value}
-                                >
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Select frequency" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="weekly">Weekly</SelectItem>
-                                    <SelectItem value="biweekly">Biweekly</SelectItem>
-                                    <SelectItem value="monthly">Monthly</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={recurringForm.control}
-                            name="isActive"
-                            render={({ field }) => (
-                              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                                <FormControl>
-                                  <Checkbox
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                  />
-                                </FormControl>
-                                <div className="space-y-1 leading-none">
-                                  <FormLabel>
-                                    Active
-                                  </FormLabel>
-                                  <p className="text-sm text-muted-foreground">
-                                    Enable or disable this recurring contribution
-                                  </p>
-                                </div>
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <DialogFooter>
-                            <Button type="submit">Add Recurring Contribution</Button>
-                          </DialogFooter>
-                        </form>
-                      </Form>
-                      <div className="p-4">
-                        <p className="text-center text-sm text-muted-foreground">
-                          Recurring contributions feature is coming soon. This will allow you to 
-                          automatically track regular investments to your portfolio.
-                        </p>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-                
-                <div className="rounded-md border">
-                  <div className="p-4 text-center text-sm text-muted-foreground">
-                    <Calendar className="h-16 w-16 mx-auto mb-2 opacity-30" />
-                    <p>You don't have any recurring contributions set up yet.</p>
-                    <p className="mt-1">Use the "Add Recurring" button above to set one up.</p>
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
+
           </Tabs>
         </CardContent>
       </Card>
