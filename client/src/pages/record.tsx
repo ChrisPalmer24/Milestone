@@ -30,7 +30,10 @@ import {
   TabsList,
   TabsTrigger
 } from "@/components/ui/tabs";
-import { History, Edit, Check, X, Calendar, PlusCircle, Coins, RotateCcw } from "lucide-react";
+import { 
+  History, Edit, Check, X, Calendar, PlusCircle, Coins, 
+  RotateCcw, Clock, EyeOff, AlertCircle 
+} from "lucide-react";
 import { SiTradingview, SiCoinbase } from "react-icons/si";
 import { BsPiggyBank } from "react-icons/bs";
 import { usePortfolio } from "@/context/PortfolioContext";
@@ -41,6 +44,12 @@ import { BrokerProviderAsset, AssetValue, AssetDebit, AssetDebitInsert } from "s
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Link } from "wouter";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useBrokerProviders } from "@/hooks/use-broker-providers";
 import { ScreenshotUpload } from "@/components/record/ScreenshotUpload";
 type AccountFormData = {
@@ -649,23 +658,42 @@ export default function Record() {
                             </Button>
                           </Link>
                         </div>
-                        <div className="flex flex-col space-y-2 absolute top-3 right-3">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-xs h-7 px-2 text-blue-600"
-                            onClick={handleRemindLater}
-                          >
-                            Remind Me Later
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-xs h-7 px-2 text-slate-500"
-                            onClick={handleHideInfoBox}
-                          >
-                            Hide
-                          </Button>
+                        <div className="flex items-center absolute top-3 right-3 space-x-1">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8 text-blue-600 rounded-full"
+                                  onClick={handleRemindLater}
+                                >
+                                  <Clock className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Remind me later</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8 text-slate-500 rounded-full"
+                                  onClick={handleHideInfoBox}
+                                >
+                                  <EyeOff className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Hide this message</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </div>
                       </div>
                     </div>
