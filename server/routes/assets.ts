@@ -9,6 +9,7 @@ import {
 import {
   brokerProviderAssets,
   generalAssets,
+  recurringContributions
 } from "@server/db/schema/portfolio-assets";
 import { ResourceQueryBuilder } from "@server/utils/resource-query-builder";
 import {
@@ -17,6 +18,8 @@ import {
   assetDebitOrphanInsertSchema,
   brokerProviderAssetInsertSchema,
   generalAssetInsertSchema,
+  recurringContributionOrphanInsertSchema,
+  RecurringContribution
 } from "@shared/schema";
 import { uuidRouteParam } from "@server/utils/uuid";
 
@@ -33,6 +36,22 @@ const brokerProviderAssetsQueryBuilder = new ResourceQueryBuilder({
     "accountType",
   ],
   allowedFilterFields: ["providerId", "accountType"],
+  defaultSort: { field: "createdAt", direction: "desc" },
+  maxLimit: 50,
+});
+
+const recurringContributionsQueryBuilder = new ResourceQueryBuilder({
+  table: recurringContributions,
+  allowedSortFields: [
+    "createdAt",
+    "updatedAt",
+    "amount",
+    "startDate",
+    "lastProcessedDate",
+    "interval",
+    "isActive"
+  ],
+  allowedFilterFields: ["interval", "isActive"],
   defaultSort: { field: "createdAt", direction: "desc" },
   maxLimit: 50,
 });

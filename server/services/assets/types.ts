@@ -1,4 +1,4 @@
-import { AssetDebitInsert, AssetValueInsert, AssetValue, BrokerProviderAsset, BrokerProviderAssetInsert, GeneralAsset, GeneralAssetInsert, UserAccount, AssetDebit, PortfolioHistoryTimePoint, BrokerProviderAssetAPIKeyConnection, BrokerProvider, BrokerProviderAssetWithAccountChange, GeneralAssetWithAccountChange, AssetsChange, AssetValueOrphanInsert, AssetDebitOrphanInsert } from "@shared/schema";
+import { AssetDebitInsert, AssetValueInsert, AssetValue, BrokerProviderAsset, BrokerProviderAssetInsert, GeneralAsset, GeneralAssetInsert, UserAccount, AssetDebit, PortfolioHistoryTimePoint, BrokerProviderAssetAPIKeyConnection, BrokerProvider, BrokerProviderAssetWithAccountChange, GeneralAssetWithAccountChange, AssetsChange, AssetValueOrphanInsert, AssetDebitOrphanInsert, RecurringContribution, RecurringContributionOrphanInsert } from "@shared/schema";
 import { QueryParts } from "@server/utils/resource-query-builder";
 
 export interface IAssetService {
@@ -40,5 +40,11 @@ export interface IAssetService {
   getPortfolioValueHistoryForUserForDateRange(userAccountId: UserAccount["id"], startDate?: Date | null, endDate?: Date | null): Promise<PortfolioHistoryTimePoint[]>;
 
   getBrokerAssetProviders(): Promise<BrokerProvider[]>;
-  
+
+  // Recurring Contributions
+  getRecurringContributionsForAsset(assetId: BrokerProviderAsset["id"], query: QueryParts): Promise<RecurringContribution[]>;
+  createRecurringContribution(assetId: BrokerProviderAsset["id"], data: RecurringContributionOrphanInsert): Promise<RecurringContribution>;
+  updateRecurringContribution(assetId: BrokerProviderAsset["id"], contributionId: RecurringContribution["id"], data: RecurringContributionOrphanInsert): Promise<RecurringContribution>;
+  deleteRecurringContribution(assetId: BrokerProviderAsset["id"], contributionId: RecurringContribution["id"]): Promise<boolean>;
+  processRecurringContributions(): Promise<number>; // Returns number of processed contributions
 }

@@ -1,9 +1,9 @@
 
 
-import { assetDebits, assetValues, brokerProviderAssets, brokerProviders, generalAssets, brokerProviderAssetAPIKeyConnections } from "server/db/schema";
+import { assetDebits, assetValues, brokerProviderAssets, brokerProviders, generalAssets, brokerProviderAssetAPIKeyConnections, recurringContributions } from "server/db/schema";
 import { Database } from "../../db";
 import { and, between, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
-import { Asset, AssetDebit, AssetDebitInsert, assetDebitInsertSchema, AssetType, AssetValue, AssetValueInsert, assetValueInsertSchema, BrokerProvider, BrokerProviderAsset, BrokerProviderAssetAPIKeyConnection, BrokerProviderAssetInsert, BrokerProviderAssetWithAccountChange, GeneralAsset, GeneralAssetInsert, GeneralAssetWithAccountChange, PortfolioHistoryTimePoint, UserAccount, WithAccountChange, AssetsChange, AssetValueOrphanInsert, AssetDebitOrphanInsert } from "@shared/schema";
+import { Asset, AssetDebit, AssetDebitInsert, assetDebitInsertSchema, AssetType, AssetValue, AssetValueInsert, assetValueInsertSchema, BrokerProvider, BrokerProviderAsset, BrokerProviderAssetAPIKeyConnection, BrokerProviderAssetInsert, BrokerProviderAssetWithAccountChange, GeneralAsset, GeneralAssetInsert, GeneralAssetWithAccountChange, PortfolioHistoryTimePoint, UserAccount, WithAccountChange, AssetsChange, AssetValueOrphanInsert, AssetDebitOrphanInsert, RecurringContribution, RecurringContributionOrphanInsert, ContributionInterval } from "@shared/schema";
 import { IAssetService } from "./types";
 import { QueryParts } from "@server/utils/resource-query-builder";
 import { NodePgTransaction } from "drizzle-orm/node-postgres";
@@ -557,7 +557,138 @@ export class DatabaseAssetService implements IAssetService {
     }, Promise.resolve([]));
   }
 
-}
+  /**
+   * Recurring Contributions
+   */
 
+  async getRecurringContributionsForAsset(assetId: BrokerProviderAsset["id"], query: QueryParts): Promise<RecurringContribution[]> {
+    const { where, orderBy, limit, offset } = query;
+    return this.db.query.recurringContributions.findMany({
+      where: and(eq(recurringContributions.assetId, assetId), where),
+      orderBy,
+      limit,
+      offset
+    });
+  }
+
+  async createRecurringContribution(assetId: BrokerProviderAsset["id"], data: RecurringContributionOrphanInsert): Promise<RecurringContribution> {
+    // Make sure the asset exists
+    const asset = await this.getBrokerProviderAsset(assetId);
+    if (!asset) {
+      throw new Error(`Asset with ID ${assetId} not found`);
+    }
+
+    const [insertedContribution] = await this.db.insert(recurringContributions).values({
+      ...data,
+      assetId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }).returning();
+
+    return insertedContribution;
+  }
+
+  async updateRecurringContribution(assetId: BrokerProviderAsset["id"], contributionId: RecurringContribution["id"], data: RecurringContributionOrphanInsert): Promise<RecurringContribution> {
+    // Make sure the contribution exists and belongs to the asset
+    const existingContribution = await this.db.query.recurringContributions.findFirst({
+      where: and(
+        eq(recurringContributions.id, contributionId),
+        eq(recurringContributions.assetId, assetId)
+      )
+    });
+
+    if (!existingContribution) {
+      throw new Error(`Recurring contribution with ID ${contributionId} not found for asset ${assetId}`);
+    }
+
+    const [updatedContribution] = await this.db.update(recurringContributions)
+      .set({
+        ...data,
+        updatedAt: new Date()
+      })
+      .where(eq(recurringContributions.id, contributionId))
+      .returning();
+
+    return updatedContribution;
+  }
+
+  async deleteRecurringContribution(assetId: BrokerProviderAsset["id"], contributionId: RecurringContribution["id"]): Promise<boolean> {
+    // Make sure the contribution exists and belongs to the asset
+    const existingContribution = await this.db.query.recurringContributions.findFirst({
+      where: and(
+        eq(recurringContributions.id, contributionId),
+        eq(recurringContributions.assetId, assetId)
+      )
+    });
+
+    if (!existingContribution) {
+      throw new Error(`Recurring contribution with ID ${contributionId} not found for asset ${assetId}`);
+    }
+
+    const result = await this.db.delete(recurringContributions)
+      .where(eq(recurringContributions.id, contributionId));
+
+    return (result?.rowCount ?? 0) > 0;
+  }
+
+  async processRecurringContributions(): Promise<number> {
+    const now = new Date();
+    let processedCount = 0;
+
+    // Find all active recurring contributions that need processing
+    const dueContributions = await this.db.query.recurringContributions.findMany({
+      where: and(
+        eq(recurringContributions.isActive, true),
+        lte(recurringContributions.lastProcessedDate, this.getNextProcessingDate(now, 'weekly')) // Most aggressive interval
+      )
+    });
+
+    // Process each contribution that is due
+    for (const contribution of dueContributions) {
+      const nextDate = this.getNextProcessingDate(contribution.lastProcessedDate, contribution.interval as ContributionInterval);
+      
+      // Check if the next processing date is due
+      if (nextDate <= now) {
+        // Create a contribution (debit) entry
+        await this.createBrokerProviderAssetDebitHistory(contribution.assetId, {
+          value: contribution.amount,
+          recordedAt: new Date(),
+        });
+
+        // Update the last processed date
+        await this.db.update(recurringContributions)
+          .set({
+            lastProcessedDate: new Date(),
+            updatedAt: new Date()
+          })
+          .where(eq(recurringContributions.id, contribution.id));
+
+        processedCount++;
+      }
+    }
+
+    return processedCount;
+  }
+
+  private getNextProcessingDate(lastDate: Date, interval: ContributionInterval): Date {
+    const nextDate = new Date(lastDate);
+    
+    switch (interval) {
+      case 'weekly':
+        nextDate.setDate(nextDate.getDate() + 7);
+        break;
+      case 'biweekly':
+        nextDate.setDate(nextDate.getDate() + 14);
+        break;
+      case 'monthly':
+        nextDate.setMonth(nextDate.getMonth() + 1);
+        break;
+      default:
+        throw new Error(`Invalid interval: ${interval}`);
+    }
+    
+    return nextDate;
+  }
+}
 
 
