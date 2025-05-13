@@ -30,7 +30,7 @@ import {
   TabsList,
   TabsTrigger
 } from "@/components/ui/tabs";
-import { History, Edit, Check, X, Calendar, PlusCircle, Coins } from "lucide-react";
+import { History, Edit, Check, X, Calendar, PlusCircle, Coins, RotateCcw } from "lucide-react";
 import { SiTradingview, SiCoinbase } from "react-icons/si";
 import { BsPiggyBank } from "react-icons/bs";
 import { usePortfolio } from "@/context/PortfolioContext";
@@ -40,6 +40,7 @@ import { getProviderName } from "@/lib/broker";
 import { BrokerProviderAsset, AssetValue, AssetDebit, AssetDebitInsert } from "shared/schema";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { Link } from "wouter";
 import { useBrokerProviders } from "@/hooks/use-broker-providers";
 import { ScreenshotUpload } from "@/components/record/ScreenshotUpload";
 type AccountFormData = {
@@ -585,6 +586,29 @@ export default function Record() {
                 
                 {/* Contributions Tab */}
                 <TabsContent value="contributions">
+                  <div className="p-4 border border-blue-200 bg-blue-50 rounded-lg mb-4">
+                    <div className="flex items-start space-x-3">
+                      <div className="flex-shrink-0 mt-0.5">
+                        <RotateCcw className="h-5 w-5 text-blue-500" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-blue-900">Want to add recurring contributions?</h4>
+                        <p className="text-sm text-blue-700 mt-1">
+                          You can record one-off contributions here, or set up recurring contributions by clicking on any 
+                          individual account in your portfolio and using the "Add Contribution" dialog's Recurring tab.
+                        </p>
+                        <Link href="/portfolio">
+                          <Button 
+                            variant="link" 
+                            className="text-blue-600 h-auto p-0 mt-1"
+                          >
+                            Go to Portfolio →
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                  
                   <div className="space-y-4">
                     {[...brokerAssets]
                       .sort(

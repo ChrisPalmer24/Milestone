@@ -347,7 +347,6 @@ export default function AccountPage() {
         startDate: new Date(values.startDate),
         interval: values.interval,
         isActive: values.isActive,
-        lastProcessedDate: new Date(values.startDate), // Initially set to same as start date
       });
       setIsAddRecurringOpen(false);
       recurringForm.reset();
@@ -367,7 +366,6 @@ export default function AccountPage() {
         startDate: new Date(values.startDate),
         interval: values.interval,
         isActive: values.isActive,
-        lastProcessedDate: recurringToEdit.lastProcessedDate || new Date(values.startDate),
       });
       setIsEditRecurringOpen(false);
       recurringForm.reset();
