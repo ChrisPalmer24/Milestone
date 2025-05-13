@@ -487,6 +487,58 @@ export default function AccountPage() {
             {/* Contributions Tab Content */}
             <TabsContent value="contributions">
               <div>
+                {/* Contribution Summary Section */}
+                {contributions && contributions.length > 0 && (
+                  <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                    <h3 className="text-lg font-medium mb-2 flex items-center">
+                      <BsPiggyBank className="h-5 w-5 mr-2 text-green-600" />
+                      Contribution Summary
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4 mt-3">
+                      <div>
+                        <p className="text-sm text-gray-600">Total Contributed</p>
+                        <p className="text-xl font-semibold">
+                          £{contributions
+                            .reduce((sum, item) => sum + Number(item.value), 0)
+                            .toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Number of Contributions</p>
+                        <p className="text-xl font-semibold">{contributions.length}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">First Contribution</p>
+                        <p className="text-base font-medium">
+                          {contributions.length > 0
+                            ? new Date(
+                                Math.min(...contributions.map(c => new Date(c.recordedAt).getTime()))
+                              ).toLocaleDateString("en-GB", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              })
+                            : "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Latest Contribution</p>
+                        <p className="text-base font-medium">
+                          {contributions.length > 0
+                            ? new Date(
+                                Math.max(...contributions.map(c => new Date(c.recordedAt).getTime()))
+                              ).toLocaleDateString("en-GB", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              })
+                            : "N/A"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-lg font-medium">Contributions</h2>
                   <Dialog
