@@ -37,7 +37,9 @@ import { usePortfolio } from "@/context/PortfolioContext";
 import { useToast } from "@/hooks/use-toast";
 import DateRangeBar from "@/components/layout/DateRangeBar";
 import { getProviderName } from "@/lib/broker";
-import { BrokerProviderAsset, AssetValue, AssetDebit } from "shared/schema";
+import { BrokerProviderAsset, AssetValue, AssetDebit, AssetDebitInsert } from "shared/schema";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { useBrokerProviders } from "@/hooks/use-broker-providers";
 import { ScreenshotUpload } from "@/components/record/ScreenshotUpload";
 type AccountFormData = {
@@ -53,13 +55,42 @@ const assetWithValeGuard = (
 export default function Record() {
   const {
     addBrokerAssetValue,
-    addBrokerAssetContribution,
     isLoading,
     updateBrokerAssetValue,
     brokerAssets,
   } = usePortfolio();
 
   const { data: brokerProviders } = useBrokerProviders();
+  
+  // Create a function to handle contribution submissions
+  const addContributionToAsset = async (assetId: string, value: number, date: Date) => {
+    try {
+      await apiRequest(
+        "POST",
+        `/api/assets/broker/${assetId}/contributions`,
+        {
+          value,
+          recordedAt: date,
+        }
+      );
+      
+      toast({
+        title: "Contribution recorded",
+        description: "Your contribution has been recorded successfully.",
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Error recording contribution:", error);
+      toast({
+        title: "Error recording contribution",
+        description: "Failed to record contribution. Please try again.",
+        variant: "destructive",
+      });
+      
+      return false;
+    }
+  };
   
   // State to manage which tab is currently active
   const [activeTab, setActiveTab] = useState<"values" | "contributions">("values");
@@ -253,25 +284,16 @@ export default function Record() {
     setUpdatingContributions((prev) => [...prev, assetId]);
 
     try {
-      await addBrokerAssetContribution.mutateAsync({
-        assetId,
-        value,
-        recordedAt: new Date(date),
-      });
-
-      // Clear the value for this account
-      setContributionValues((prev) => {
-        const newValues = { ...prev };
-        delete newValues[assetId];
-        return newValues;
-      });
-    } catch (error) {
-      console.error("Error recording contribution:", error);
-      toast({
-        title: "Error",
-        description: "Failed to record contribution. Please try again.",
-        variant: "destructive",
-      });
+      const success = await addContributionToAsset(assetId, value, new Date(date));
+      
+      if (success) {
+        // Clear the value for this account
+        setContributionValues((prev) => {
+          const newValues = { ...prev };
+          delete newValues[assetId];
+          return newValues;
+        });
+      }
     } finally {
       setUpdatingContributions((prev) => prev.filter((id) => id !== assetId));
     }
