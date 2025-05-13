@@ -482,14 +482,10 @@ export default function AccountPage() {
           </div>
 
           {/* Tabs for Values/Contributions */}
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "values" | "contributions" | "recurring")}>
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "values" | "contributions")}>
             <TabsList className="mb-4 w-full">
               <TabsTrigger value="values" className="flex-1">Account Values</TabsTrigger>
               <TabsTrigger value="contributions" className="flex-1">Contributions</TabsTrigger>
-              <TabsTrigger value="recurring" className="flex-1">
-                <Calendar className="h-4 w-4 mr-2" />
-                Recurring
-              </TabsTrigger>
             </TabsList>
             
             {/* Values Tab Content */}
