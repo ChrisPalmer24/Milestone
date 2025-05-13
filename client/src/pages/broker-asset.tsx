@@ -3,7 +3,7 @@ import { useParams } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Coins } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -38,14 +38,30 @@ import { z } from "zod";
 import { SiTradingview, SiCoinbase } from "react-icons/si";
 import { BsPiggyBank } from "react-icons/bs";
 import { usePortfolio } from "@/context/PortfolioContext";
-import { AssetValue, BrokerProviderAsset } from "shared/schema";
+import { AssetValue, AssetDebit, BrokerProviderAsset } from "shared/schema";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { getProviderName } from "@/lib/broker";
 import { useBrokerProviders } from "@/hooks/use-broker-providers";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
+} from "@/components/ui/tabs";
 
 // Form schema for history entry
 const historySchema = z.object({
+  value: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+    message: "Value must be a positive number",
+  }),
+  recordedAt: z.string().refine((val) => !isNaN(Date.parse(val)), {
+    message: "Invalid date",
+  }),
+});
+
+// Form schema for contribution entry (same structure)
+const contributionSchema = z.object({
   value: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
     message: "Value must be a positive number",
   }),
@@ -62,15 +78,28 @@ export default function AccountPage() {
     addBrokerAssetValue,
     updateBrokerAssetValue,
     deleteBrokerAssetValue,
+    addBrokerAssetContribution,
+    updateBrokerAssetContribution,
+    deleteBrokerAssetContribution,
   } = usePortfolio();
 
   const { data: providers, isLoading: isProvidersLoading } =
     useBrokerProviders();
 
+  // State for history (values) tab
   const [isAddHistoryOpen, setIsAddHistoryOpen] = useState(false);
   const [isEditHistoryOpen, setIsEditHistoryOpen] = useState(false);
   const [historyToDelete, setHistoryToDelete] = useState<string | null>(null);
   const [historyToEdit, setHistoryToEdit] = useState<any>(null);
+  
+  // State for contributions tab
+  const [isAddContributionOpen, setIsAddContributionOpen] = useState(false);
+  const [isEditContributionOpen, setIsEditContributionOpen] = useState(false);
+  const [contributionToDelete, setContributionToDelete] = useState<string | null>(null);
+  const [contributionToEdit, setContributionToEdit] = useState<any>(null);
+  
+  // Active tab state
+  const [activeTab, setActiveTab] = useState<"values" | "contributions">("values");
 
   const {
     data: asset,
@@ -96,10 +125,32 @@ export default function AccountPage() {
         ),
     }
   );
+  
+  // Query for asset contributions history
+  const { 
+    data: contributions, 
+    isLoading: isContributionsLoading 
+  } = useQuery<AssetDebit[]>({
+    queryKey: ["broker-asset-contributions", assetId],
+    queryFn: () =>
+      apiRequest<AssetDebit[]>(
+        "GET",
+        `/api/assets/broker/${assetId}/contributions`
+      ),
+  });
 
   // Form for adding/editing history
   const form = useForm<z.infer<typeof historySchema>>({
     resolver: zodResolver(historySchema),
+    defaultValues: {
+      value: "",
+      recordedAt: new Date().toISOString().split("T")[0],
+    },
+  });
+  
+  // Form for adding/editing contributions
+  const contributionForm = useForm<z.infer<typeof contributionSchema>>({
+    resolver: zodResolver(contributionSchema),
     defaultValues: {
       value: "",
       recordedAt: new Date().toISOString().split("T")[0],
