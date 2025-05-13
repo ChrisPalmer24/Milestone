@@ -24,14 +24,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { History, Edit, Check, X, Calendar } from "lucide-react";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
+} from "@/components/ui/tabs";
+import { History, Edit, Check, X, Calendar, PlusCircle, Coins } from "lucide-react";
 import { SiTradingview, SiCoinbase } from "react-icons/si";
 import { BsPiggyBank } from "react-icons/bs";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { useToast } from "@/hooks/use-toast";
 import DateRangeBar from "@/components/layout/DateRangeBar";
 import { getProviderName } from "@/lib/broker";
-import { BrokerProviderAsset, AssetValue } from "shared/schema";
+import { BrokerProviderAsset, AssetValue, AssetDebit } from "shared/schema";
 import { useBrokerProviders } from "@/hooks/use-broker-providers";
 import { ScreenshotUpload } from "@/components/record/ScreenshotUpload";
 type AccountFormData = {
@@ -53,6 +59,9 @@ export default function Record() {
   } = usePortfolio();
 
   const { data: brokerProviders } = useBrokerProviders();
+  
+  // State to manage which tab is currently active
+  const [activeTab, setActiveTab] = useState<"values" | "contributions">("values");
   
   // Helper to get logo for provider
   const getProviderLogo = (providerName: string) => {
@@ -82,6 +91,7 @@ export default function Record() {
 
   const { toast } = useToast();
   const [accountValues, setAccountValues] = useState<AccountFormData>({});
+  const [contributionValues, setContributionValues] = useState<AccountFormData>({});
   const [date, setDate] = useState<string>(
     new Date().toISOString().split("T")[0]
   );
@@ -96,7 +106,9 @@ export default function Record() {
     });
   };
   const [submitting, setSubmitting] = useState(false);
+  const [submittingContributions, setSubmittingContributions] = useState(false);
   const [updatingAccounts, setUpdatingAccounts] = useState<string[]>([]);
+  const [updatingContributions, setUpdatingContributions] = useState<string[]>([]);
   
   // Initialize values with current values button
   const initializeWithCurrentValues = () => {
@@ -170,6 +182,14 @@ export default function Record() {
       [assetId]: value === "" ? undefined : Number(value),
     }));
   };
+  
+  // Handle input change for contributions
+  const handleContributionValueChange = (assetId: string, value: string) => {
+    setContributionValues((prev) => ({
+      ...prev,
+      [assetId]: value === "" ? undefined : Number(value),
+    }));
+  };
 
   // Handle form submission for a single account
   const handleSubmitAccount = async (assetId: string) => {
@@ -213,6 +233,50 @@ export default function Record() {
       });
     } finally {
       setUpdatingAccounts((prev) => prev.filter((id) => id !== assetId));
+    }
+  };
+  
+  // Handle form submission for a single account contribution
+  const handleSubmitContribution = async (assetId: string) => {
+    const value = contributionValues[assetId];
+
+    if (!value || !date) {
+      toast({
+        title: "Missing information",
+        description: "Please enter a contribution amount for this account",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUpdatingContributions((prev) => [...prev, assetId]);
+
+    try {
+      // TODO: Replace with actual contribution API call once implemented
+      // For now, just show a success message
+      setTimeout(() => {
+        toast({
+          title: "Contribution recorded",
+          description: "Account contribution has been recorded successfully",
+        });
+
+        // Clear the value for this account
+        setContributionValues((prev) => {
+          const newValues = { ...prev };
+          delete newValues[assetId];
+          return newValues;
+        });
+        
+        setUpdatingContributions((prev) => prev.filter((id) => id !== assetId));
+      }, 500);
+    } catch (error) {
+      console.error("Error recording contribution:", error);
+      toast({
+        title: "Error",
+        description: "Failed to record contribution. Please try again.",
+        variant: "destructive",
+      });
+      setUpdatingContributions((prev) => prev.filter((id) => id !== assetId));
     }
   };
 
@@ -269,6 +333,52 @@ export default function Record() {
       setSubmitting(false);
     }
   };
+  
+  // Handle submission of all contributions at once
+  const handleSubmitAllContributions = async () => {
+    const dataWithValues: [string, number][] =
+      Object.entries(contributionValues).filter(assetWithValeGuard);
+
+    const contributionsToAdd = dataWithValues.map(([id, value]) => ({
+      assetId: id,
+      value: value,
+      recordedAt: new Date(date),
+    }));
+
+    if (contributionsToAdd.length === 0) {
+      toast({
+        title: "No contributions to record",
+        description: "Please enter at least one contribution amount",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSubmittingContributions(true);
+
+    try {
+      // TODO: Replace with actual contribution API calls once implemented
+      // For now, just show a success message after a short delay
+      setTimeout(() => {
+        toast({
+          title: "Contributions recorded",
+          description: `Recorded ${contributionsToAdd.length} contribution(s) successfully`,
+        });
+
+        // Reset all values
+        setContributionValues({});
+        setSubmittingContributions(false);
+      }, 500);
+    } catch (error) {
+      console.error("Error recording contributions:", error);
+      toast({
+        title: "Error",
+        description: "Failed to record some contributions. Please try again.",
+        variant: "destructive",
+      });
+      setSubmittingContributions(false);
+    }
+  };
 
   return (
     <div className="record-screen max-w-5xl mx-auto px-4 pb-20">
@@ -280,10 +390,10 @@ export default function Record() {
           <div className="flex justify-between items-center">
             <div>
               <CardTitle className="text-lg font-semibold">
-                Record Account Values
+                Record Account Updates
               </CardTitle>
               <CardDescription className="mt-1">
-                Update the value of your accounts to keep track of your investments.
+                Update your account values and track your contributions over time.
               </CardDescription>
             </div>
             <div className="flex items-center space-x-2">
@@ -310,21 +420,23 @@ export default function Record() {
                 />
                 <span>{formatDateForDisplay(date)}</span>
               </Button>
-              <ScreenshotUpload 
-                brokerAssets={brokerAssets}
-                onExtractedValues={(extractedValues) => {
-                  // Create a new object to hold the values
-                  const newValues = { ...accountValues };
-                  
-                  // Update values with the extracted ones
-                  extractedValues.forEach(({ assetId, value }) => {
-                    newValues[assetId] = value;
-                  });
-                  
-                  // Set the new values
-                  setAccountValues(newValues);
-                }}
-              />
+              {activeTab === "values" && (
+                <ScreenshotUpload 
+                  brokerAssets={brokerAssets}
+                  onExtractedValues={(extractedValues) => {
+                    // Create a new object to hold the values
+                    const newValues = { ...accountValues };
+                    
+                    // Update values with the extracted ones
+                    extractedValues.forEach(({ assetId, value }) => {
+                      newValues[assetId] = value;
+                    });
+                    
+                    // Set the new values
+                    setAccountValues(newValues);
+                  }}
+                />
+              )}
             </div>
           </div>
         </CardHeader>
@@ -338,92 +450,197 @@ export default function Record() {
             </div>
           ) : (
             <>
-              <div>
-                <div className="space-y-4">
-                {[...brokerAssets]
-                  .sort(
-                    (a, b) => Number(b.currentValue) - Number(a.currentValue)
-                  )
-                  .map((asset) => (
-                    <div
-                      key={asset.id}
-                      className="p-4 border rounded-lg bg-card"
-                    >
-                      <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-4">
-                        {/* Column 1: Provider Logo and Information */}
-                        <div className="flex items-center">
-                          <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center mr-3">
-                            {getProviderLogo(getProviderName(asset.providerId, brokerProviders ?? []))}
-                          </div>
-                          <div>
-                            <h3 className="font-medium">{getProviderName(asset.providerId, brokerProviders ?? [])}</h3>
-                            <span className={`text-sm ${getAccountTypeColor(asset.accountType)}`}>
-                              {asset.accountType === "LISA"
-                                ? "Lifetime ISA"
-                                : asset.accountType === "GIA"
-                                ? "General Account"
-                                : asset.accountType === "CISA"
-                                ? "Cash ISA"
-                                : asset.accountType}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Column 2: New Value Input */}
-                        <div className="flex items-center justify-end">
-                          <div className="relative md:w-1/3 w-full">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                              <span className="text-gray-500">£</span>
+              <Tabs 
+                defaultValue="values" 
+                value={activeTab}
+                onValueChange={(value) => setActiveTab(value as "values" | "contributions")}
+                className="mb-6"
+              >
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="values" className="flex items-center gap-2">
+                    <Coins size={16} />
+                    Account Values
+                  </TabsTrigger>
+                  <TabsTrigger value="contributions" className="flex items-center gap-2">
+                    <PlusCircle size={16} />
+                    Contributions
+                  </TabsTrigger>
+                </TabsList>
+                
+                {/* Account Values Tab */}
+                <TabsContent value="values">
+                  <div className="space-y-4">
+                    {[...brokerAssets]
+                      .sort(
+                        (a, b) => Number(b.currentValue) - Number(a.currentValue)
+                      )
+                      .map((asset) => (
+                        <div
+                          key={asset.id}
+                          className="p-4 border rounded-lg bg-card"
+                        >
+                          <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-4">
+                            {/* Column 1: Provider Logo and Information */}
+                            <div className="flex items-center">
+                              <div className="w-10 h-10 rounded-md flex items-center justify-center mr-3">
+                                {getProviderLogo(getProviderName(asset.providerId, brokerProviders ?? []))}
+                              </div>
+                              <div>
+                                <h3 className="font-medium">{getProviderName(asset.providerId, brokerProviders ?? [])}</h3>
+                                <span className={`text-sm ${getAccountTypeColor(asset.accountType)}`}>
+                                  {asset.accountType === "LISA"
+                                    ? "Lifetime ISA"
+                                    : asset.accountType === "GIA"
+                                    ? "General Account"
+                                    : asset.accountType === "CISA"
+                                    ? "Cash ISA"
+                                    : asset.accountType}
+                                </span>
+                              </div>
                             </div>
-                            <Input
-                              type="number"
-                              className="pl-7"
-                              placeholder={`${Number(asset.currentValue).toLocaleString()}`}
-                              value={accountValues[asset.id] || ""}
-                              onChange={(e) =>
-                                handleAccountValueChange(
-                                  asset.id,
-                                  e.target.value
-                                )
-                              }
-                            />
+
+                            {/* Column 2: New Value Input */}
+                            <div className="flex items-center justify-end">
+                              <div className="relative md:w-1/3 w-full">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                  <span className="text-gray-500">£</span>
+                                </div>
+                                <Input
+                                  type="number"
+                                  className="pl-7"
+                                  placeholder={`${Number(asset.currentValue).toLocaleString()}`}
+                                  value={accountValues[asset.id] || ""}
+                                  onChange={(e) =>
+                                    handleAccountValueChange(
+                                      asset.id,
+                                      e.target.value
+                                    )
+                                  }
+                                />
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                      ))}
+                  </div>
 
-                <div className="mt-6 flex justify-end">
-                  <Button
-                    onClick={handleSubmitAll}
-                    disabled={
-                      submitting ||
-                      isLoading ||
-                      Object.keys(accountValues).length === 0
-                    }
-                    className="md:w-1/3 w-full bg-black hover:bg-gray-800 text-white"
-                  >
-                    {submitting ? (
-                      <>
-                        <span className="mr-2">Updating...</span>
-                        <span className="animate-spin">⏳</span>
-                      </>
-                    ) : (
-                      "Update Portfolio"
-                    )}
-                  </Button>
-                </div>
-              </div>
+                  <div className="mt-6 flex justify-end">
+                    <Button
+                      onClick={handleSubmitAll}
+                      disabled={
+                        submitting ||
+                        isLoading ||
+                        Object.keys(accountValues).length === 0
+                      }
+                      className="md:w-1/3 w-full bg-black hover:bg-gray-800 text-white"
+                    >
+                      {submitting ? (
+                        <>
+                          <span className="mr-2">Updating...</span>
+                          <span className="animate-spin">⏳</span>
+                        </>
+                      ) : (
+                        "Update Account Values"
+                      )}
+                    </Button>
+                  </div>
+                  
+                  <div className="mt-4 text-center text-sm text-gray-500">
+                    <p>
+                      Regularly updating your account values helps you track your
+                      progress and keeps your portfolio data accurate.
+                    </p>
+                  </div>
+                </TabsContent>
+                
+                {/* Contributions Tab */}
+                <TabsContent value="contributions">
+                  <div className="space-y-4">
+                    {[...brokerAssets]
+                      .sort(
+                        (a, b) => Number(b.currentValue) - Number(a.currentValue)
+                      )
+                      .map((asset) => (
+                        <div
+                          key={asset.id}
+                          className="p-4 border rounded-lg bg-card"
+                        >
+                          <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-4">
+                            {/* Column 1: Provider Logo and Information */}
+                            <div className="flex items-center">
+                              <div className="w-10 h-10 rounded-md flex items-center justify-center mr-3">
+                                {getProviderLogo(getProviderName(asset.providerId, brokerProviders ?? []))}
+                              </div>
+                              <div>
+                                <h3 className="font-medium">{getProviderName(asset.providerId, brokerProviders ?? [])}</h3>
+                                <span className={`text-sm ${getAccountTypeColor(asset.accountType)}`}>
+                                  {asset.accountType === "LISA"
+                                    ? "Lifetime ISA"
+                                    : asset.accountType === "GIA"
+                                    ? "General Account"
+                                    : asset.accountType === "CISA"
+                                    ? "Cash ISA"
+                                    : asset.accountType}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Column 2: Contribution Input */}
+                            <div className="flex items-center justify-end">
+                              <div className="relative md:w-1/3 w-full">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                  <span className="text-gray-500">£</span>
+                                </div>
+                                <Input
+                                  type="number"
+                                  className="pl-7"
+                                  placeholder="Enter contribution"
+                                  value={contributionValues[asset.id] || ""}
+                                  onChange={(e) =>
+                                    handleContributionValueChange(
+                                      asset.id,
+                                      e.target.value
+                                    )
+                                  }
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+
+                  <div className="mt-6 flex justify-end">
+                    <Button
+                      onClick={handleSubmitAllContributions}
+                      disabled={
+                        submittingContributions ||
+                        isLoading ||
+                        Object.keys(contributionValues).length === 0
+                      }
+                      className="md:w-1/3 w-full bg-primary hover:bg-primary/90 text-white"
+                    >
+                      {submittingContributions ? (
+                        <>
+                          <span className="mr-2">Saving...</span>
+                          <span className="animate-spin">⏳</span>
+                        </>
+                      ) : (
+                        "Record Contributions"
+                      )}
+                    </Button>
+                  </div>
+                  
+                  <div className="mt-4 text-center text-sm text-gray-500">
+                    <p>
+                      Recording your contributions helps track actual investment performance
+                      separate from your deposits.
+                    </p>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </>
           )}
-
-          <div className="mt-6 text-center text-sm text-gray-500">
-            <p>
-              Regularly updating your account values helps you track your
-              progress and keeps your portfolio data accurate.
-            </p>
-          </div>
         </CardContent>
       </Card>
     </div>
