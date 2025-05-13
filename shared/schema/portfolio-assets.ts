@@ -11,6 +11,9 @@ import {
   BrokerProviderAssetAPIKeyConnectionSelect as DBBrokerProviderAssetAPIKeyConnection,
   BrokerProviderSelect as DBBrokerProvider,
   AccountType as DBAccountType,
+  RecurringContributionInsert as DBRecurringContributionInsert,
+  RecurringContributionSelect as DBRecurringContributionSelect,
+  ContributionInterval as DBContributionInterval,
  } from "@server/db/schema/index";
 import { ExtractCommonFields, IfConstructorEquals, Orphan, WithAccountChange, WithCurrentBalance, WithInitialBalance } from "./utils";
 
@@ -96,6 +99,30 @@ export type AssetDebitInsert = IfConstructorEquals<ZodAssetDebitInsert, DBAssetD
 assetDebitInsertSchema satisfies ZodType<AssetDebitInsert>;
 
 export type AssetDebit = DBAssetDebitSelect;
+
+export type ContributionInterval = DBContributionInterval;
+
+export const recurringContributionOrphanInsertSchema = z.object({
+  amount: z.number().positive(),
+  startDate: z.coerce.date(),
+  interval: z.enum(['weekly', 'biweekly', 'monthly']),
+  isActive: z.boolean().default(true),
+  lastProcessedDate: z.coerce.date(),
+});
+
+type ZodRecurringContributionOrphanInsert = z.infer<typeof recurringContributionOrphanInsertSchema>;
+export type RecurringContributionOrphanInsert = IfConstructorEquals<ZodRecurringContributionOrphanInsert, Omit<DBRecurringContributionInsert, "assetId">, never>;
+recurringContributionOrphanInsertSchema satisfies ZodType<RecurringContributionOrphanInsert>;
+
+export const recurringContributionInsertSchema = recurringContributionOrphanInsertSchema.extend({
+  assetId: z.string()
+});
+
+type ZodRecurringContributionInsert = z.infer<typeof recurringContributionInsertSchema>;
+export type RecurringContributionInsert = IfConstructorEquals<ZodRecurringContributionInsert, DBRecurringContributionInsert, never>;
+recurringContributionInsertSchema satisfies ZodType<RecurringContributionInsert>;
+
+export type RecurringContribution = DBRecurringContributionSelect;
 
 export type Asset = ExtractCommonFields<GeneralAsset, BrokerProviderAsset>;
 
