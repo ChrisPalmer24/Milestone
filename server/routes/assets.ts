@@ -146,6 +146,59 @@ export async function registerRoutes(
       res.json(history);
     }
   );
+  
+  // Broker asset contributions (debits)
+  router.post(
+    `/broker/${uuidRouteParam("assetId")}/contributions`,
+    requireUser,
+    async (req: AuthRequest, res) => {
+      const data = assetDebitOrphanInsertSchema.parse(req.body);
+      const contribution = await assetService.createBrokerProviderAssetDebitHistory(
+        req.params.assetId,
+        data
+      );
+      res.json(contribution);
+    }
+  );
+  
+  router.get(
+    `/broker/${uuidRouteParam("assetId")}/contributions`,
+    requireUser,
+    async (req: AuthRequest, res) => {
+      const query = brokerProviderAssetsQueryBuilder.buildQuery(req.query);
+      const contributions = await assetService.getBrokerProviderAssetDebitHistory(
+        req.params.assetId,
+        query
+      );
+      res.json(contributions);
+    }
+  );
+  
+  router.put(
+    `/broker/${uuidRouteParam("assetId")}/contributions/${uuidRouteParam("contributionId")}`,
+    requireUser,
+    async (req: AuthRequest, res) => {
+      const data = assetDebitOrphanInsertSchema.parse(req.body);
+      const contribution = await assetService.updateBrokerProviderAssetDebitHistory(
+        req.params.assetId,
+        req.params.contributionId,
+        data
+      );
+      res.json(contribution);
+    }
+  );
+  
+  router.delete(
+    `/broker/${uuidRouteParam("assetId")}/contributions/${uuidRouteParam("contributionId")}`,
+    requireUser,
+    async (req: AuthRequest, res) => {
+      const result = await assetService.deleteBrokerProviderAssetDebitHistory(
+        req.params.assetId,
+        req.params.contributionId
+      );
+      res.json({ success: result });
+    }
+  );
 
   router.put(
     `/broker/${uuidRouteParam("assetId")}/history/${uuidRouteParam(
