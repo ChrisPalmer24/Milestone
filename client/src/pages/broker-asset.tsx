@@ -33,6 +33,14 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -96,6 +104,31 @@ export default function AccountPage() {
     updateBrokerAssetContribution,
     deleteBrokerAssetContribution,
   } = usePortfolio();
+  
+  // Mutations for recurring contributions
+  const addRecurringContribution = useMutation({
+    mutationFn: (data: { assetId: string, amount: number, startDate: Date, interval: "weekly" | "biweekly" | "monthly", isActive: boolean }) => 
+      apiRequest("POST", `/api/assets/broker/${data.assetId}/recurring-contributions`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["broker-asset-recurring-contributions", assetId] });
+    }
+  });
+  
+  const updateRecurringContribution = useMutation({
+    mutationFn: (data: { assetId: string, contributionId: string, amount: number, startDate: Date, interval: "weekly" | "biweekly" | "monthly", isActive: boolean }) => 
+      apiRequest("PUT", `/api/assets/broker/${data.assetId}/recurring-contributions/${data.contributionId}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["broker-asset-recurring-contributions", assetId] });
+    }
+  });
+  
+  const deleteRecurringContribution = useMutation({
+    mutationFn: (data: { assetId: string, contributionId: string }) => 
+      apiRequest("DELETE", `/api/assets/broker/${data.assetId}/recurring-contributions/${data.contributionId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["broker-asset-recurring-contributions", assetId] });
+    }
+  });
 
   const { data: providers, isLoading: isProvidersLoading } =
     useBrokerProviders();
@@ -186,6 +219,17 @@ export default function AccountPage() {
     defaultValues: {
       value: "",
       recordedAt: new Date().toISOString().split("T")[0],
+    },
+  });
+  
+  // Form for recurring contributions
+  const recurringForm = useForm<z.infer<typeof recurringContributionSchema>>({
+    resolver: zodResolver(recurringContributionSchema),
+    defaultValues: {
+      amount: "",
+      startDate: new Date().toISOString().split("T")[0],
+      interval: "monthly",
+      isActive: true,
     },
   });
 
@@ -282,6 +326,65 @@ export default function AccountPage() {
       setContributionToDelete(null);
     } catch (error) {
       console.error("Error deleting contribution:", error);
+    }
+  };
+  
+  // State for recurring contributions modal
+  const [isAddRecurringOpen, setIsAddRecurringOpen] = useState(false);
+  const [isEditRecurringOpen, setIsEditRecurringOpen] = useState(false);
+  const [recurringToEdit, setRecurringToEdit] = useState<RecurringContribution | null>(null);
+  const [recurringToDelete, setRecurringToDelete] = useState<string | null>(null);
+  
+  // Handlers for recurring contributions
+  const handleCreateRecurringContribution = async (values: z.infer<typeof recurringContributionSchema>) => {
+    if (!assetId) return;
+
+    try {
+      await addRecurringContribution.mutateAsync({
+        assetId: assetId,
+        amount: Number(values.amount),
+        startDate: new Date(values.startDate),
+        interval: values.interval,
+        isActive: values.isActive,
+      });
+      setIsAddRecurringOpen(false);
+      recurringForm.reset();
+    } catch (error) {
+      console.error("Error creating recurring contribution:", error);
+    }
+  };
+
+  const handleEditRecurringContribution = async (values: z.infer<typeof recurringContributionSchema>) => {
+    if (!recurringToEdit || !assetId) return;
+    
+    try {
+      await updateRecurringContribution.mutateAsync({
+        contributionId: recurringToEdit.id,
+        assetId: assetId,
+        amount: Number(values.amount),
+        startDate: new Date(values.startDate),
+        interval: values.interval,
+        isActive: values.isActive,
+      });
+      setIsEditRecurringOpen(false);
+      recurringForm.reset();
+      setRecurringToEdit(null);
+    } catch (error) {
+      console.error("Error updating recurring contribution:", error);
+    }
+  };
+
+  const handleDeleteRecurringContribution = async () => {
+    if (!recurringToDelete || !assetId) return;
+
+    try {
+      await deleteRecurringContribution.mutateAsync({
+        assetId: assetId,
+        contributionId: recurringToDelete,
+      });
+      setRecurringToDelete(null);
+    } catch (error) {
+      console.error("Error deleting recurring contribution:", error);
     }
   };
 
@@ -711,7 +814,7 @@ export default function AccountPage() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-medium">Recurring Contributions</h3>
-                  <Dialog>
+                  <Dialog open={isAddRecurringOpen} onOpenChange={setIsAddRecurringOpen}>
                     <DialogTrigger asChild>
                       <Button size="sm">
                         <Plus className="h-4 w-4 mr-2" />
@@ -725,7 +828,99 @@ export default function AccountPage() {
                           Set up regular contributions to your investment account
                         </DialogDescription>
                       </DialogHeader>
-                      {/* Recurring contribution form will go here */}
+                      
+                      <Form {...recurringForm}>
+                        <form
+                          onSubmit={recurringForm.handleSubmit(handleCreateRecurringContribution)}
+                          className="space-y-4"
+                        >
+                          <FormField
+                            control={recurringForm.control}
+                            name="amount"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Amount (£)</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="Enter amount"
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={recurringForm.control}
+                            name="startDate"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Start Date</FormLabel>
+                                <FormControl>
+                                  <Input type="date" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={recurringForm.control}
+                            name="interval"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Frequency</FormLabel>
+                                <Select 
+                                  onValueChange={field.onChange} 
+                                  defaultValue={field.value}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select frequency" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="weekly">Weekly</SelectItem>
+                                    <SelectItem value="biweekly">Biweekly</SelectItem>
+                                    <SelectItem value="monthly">Monthly</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={recurringForm.control}
+                            name="isActive"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                                <div className="space-y-1 leading-none">
+                                  <FormLabel>
+                                    Active
+                                  </FormLabel>
+                                  <p className="text-sm text-muted-foreground">
+                                    Enable or disable this recurring contribution
+                                  </p>
+                                </div>
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <DialogFooter>
+                            <Button type="submit">Add Recurring Contribution</Button>
+                          </DialogFooter>
+                        </form>
+                      </Form>
                       <div className="p-4">
                         <p className="text-center text-sm text-muted-foreground">
                           Recurring contributions feature is coming soon. This will allow you to 
