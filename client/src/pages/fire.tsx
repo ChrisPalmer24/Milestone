@@ -303,9 +303,39 @@ export default function Fire() {
                   />
                 </div>
               </div>
+              
+              <div>
+                <Label className="block text-sm font-medium text-gray-700 mb-2">
+                  UK State Pension Age
+                </Label>
+                <div className="flex flex-col space-y-1">
+                  <ToggleGroup 
+                    type="single" 
+                    variant="outline"
+                    value={formState.statePensionAge.toString()}
+                    onValueChange={(value) => {
+                      if (value) { // prevent deselection
+                        handleInputChange("statePensionAge", value);
+                      }
+                    }}
+                  >
+                    <ToggleGroupItem value="66" className="flex-1 text-center">
+                      66
+                      <span className="block text-xs text-gray-500">Born before April 6, 1960</span>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="67" className="flex-1 text-center">
+                      67
+                      <span className="block text-xs text-gray-500">Born after April 6, 1960</span>
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                  <p className="text-xs text-gray-500 italic mt-1">
+                    The UK State Pension age is used in retirement planning calculations
+                  </p>
+                </div>
+              </div>
 
               <Button
-                className="w-full bg-primary text-white py-2 rounded-lg font-medium"
+                className="w-full bg-primary text-white py-2 rounded-lg font-medium mt-4"
                 onClick={handleSaveSettings}
               >
                 Save FIRE Settings
@@ -470,10 +500,40 @@ export default function Fire() {
                   Adjust for inflation <span className="italic font-normal text-gray-500">(average 2.8% over the past 30 years)</span>
                 </Label>
               </div>
+              
+              <div className="mt-4">
+                <Label className="block text-sm font-medium text-gray-700 mb-2">
+                  UK State Pension Age
+                </Label>
+                <div className="flex flex-col space-y-1">
+                  <ToggleGroup 
+                    type="single" 
+                    variant="outline"
+                    value={formState.statePensionAge.toString()}
+                    onValueChange={(value) => {
+                      if (value) { // prevent deselection
+                        handleInputChange("statePensionAge", value);
+                      }
+                    }}
+                  >
+                    <ToggleGroupItem value="66" className="flex-1 text-center">
+                      66
+                      <span className="block text-xs text-gray-500">Born before April 6, 1960</span>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="67" className="flex-1 text-center">
+                      67
+                      <span className="block text-xs text-gray-500">Born after April 6, 1960</span>
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                  <p className="text-xs text-gray-500 italic">
+                    The UK State Pension age is used in retirement planning calculations
+                  </p>
+                </div>
+              </div>
             </div>
 
             <Button
-              className="w-full bg-primary text-white py-2 rounded-lg font-medium"
+              className="w-full bg-primary text-white py-2 rounded-lg font-medium mt-4"
               onClick={handleSaveSettings}
             >
               Save Settings
