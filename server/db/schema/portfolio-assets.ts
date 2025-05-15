@@ -39,7 +39,7 @@ export const recurringContributions = pgTable("recurring_contributions", {
   amount: real("amount").notNull(),
   startDate: timestamp("start_date").notNull(),
   interval: contributionIntervalEnum("interval").notNull(),
-  lastProcessedDate: timestamp("last_processed_date").notNull(),
+  lastProcessedDate: timestamp("last_processed_date"),
   isActive: boolean("is_active").notNull().default(true),
   ...timestampColumns()
 });
