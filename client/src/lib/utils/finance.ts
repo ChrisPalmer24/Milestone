@@ -91,15 +91,21 @@ export function calculateFireProjection({
   adjustInflation?: boolean;
   inflationRate?: number;
 }): { projectionData: any[]; yearsToFire: number } {
+  // Adjust expected return for inflation if needed
+  const effectiveReturn = adjustInflation 
+    ? expectedReturn - inflationRate 
+    : expectedReturn;
+
   const yearsToFire = calculateYearsToTarget(
     currentAmount,
     monthlyInvestment,
-    expectedReturn,
+    effectiveReturn,
     targetAmount
   );
   
   const projectionData = [];
   let currentValue = currentAmount;
+  let currentMonthlyInvestment = monthlyInvestment;
   
   // Calculate until age 87 or until we reach a sensible maximum
   const maxAge = 87;
@@ -109,10 +115,15 @@ export function calculateFireProjection({
     const age = currentAge + year;
     
     if (year > 0) {
+      // If adjusting for inflation, increase monthly contributions with inflation
+      if (adjustInflation && year > 0) {
+        currentMonthlyInvestment *= (1 + (inflationRate / 100));
+      }
+      
       currentValue = calculateFutureValueWithContributions(
         currentValue,
-        monthlyInvestment,
-        expectedReturn,
+        currentMonthlyInvestment,
+        effectiveReturn,
         1 // 1 year at a time
       );
     }
@@ -123,7 +134,7 @@ export function calculateFireProjection({
       target: targetAmount
     });
     
-    // Stop if we've reached age 100
+    // Stop if we've reached max age
     if (age >= maxAge) break;
   }
   

@@ -9,6 +9,7 @@ type FireChartProps = {
   monthlyInvestment: number;
   targetAmount: number;
   expectedReturn: number;
+  adjustInflation?: boolean;
   className?: string;
 };
 
@@ -18,6 +19,7 @@ export default function FireChart({
   monthlyInvestment,
   targetAmount,
   expectedReturn,
+  adjustInflation = true,
   className
 }: FireChartProps) {
   // Calculate projection data
@@ -26,7 +28,8 @@ export default function FireChart({
     monthlyInvestment,
     expectedReturn,
     targetAmount,
-    currentAge
+    currentAge,
+    adjustInflation
   });
 
   // Format currency values

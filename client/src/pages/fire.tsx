@@ -321,6 +321,7 @@ export default function Fire() {
             monthlyInvestment={formState.monthlyInvestment}
             targetAmount={fireNumber}
             expectedReturn={formState.expectedReturn}
+            adjustInflation={formState.adjustInflation}
             className="mb-6"
           />
 
