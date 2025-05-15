@@ -32,6 +32,8 @@ export default function Fire() {
     safeWithdrawalRate: "4",
     monthlyInvestment: "300",
     currentAge: 35,
+    adjustInflation: true,
+    statePensionAge: 66,
   };
 
   // Form state with defaults
@@ -42,6 +44,7 @@ export default function Fire() {
     monthlyInvestment: number;
     targetRetirementAge: number;
     adjustInflation: boolean;
+    statePensionAge: number;
   }>({
     annualIncome:
       Number(fireSettings?.annualIncomeGoal) ||
@@ -62,6 +65,9 @@ export default function Fire() {
       fireSettings?.adjustInflation !== undefined
         ? Boolean(fireSettings.adjustInflation)
         : true,
+    statePensionAge:
+      Number(fireSettings?.statePensionAge) ||
+      Number(defaultSettings.statePensionAge),
   });
 
   // Update form state when fireSettings loads

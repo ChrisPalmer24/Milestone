@@ -9,6 +9,7 @@ const DEFAULT_SAFE_WITHDRAWAL_RATE = 4;
 const DEFAULT_MONTHLY_INVESTMENT = 300;
 const DEFAULT_CURRENT_AGE = 35;
 const DEFAULT_ADJUST_INFLATION = true;
+const DEFAULT_STATE_PENSION_AGE = 66; // UK State Pension age (66 or 67)
 
 export const defaultValues = {
   targetRetirementAge: DEFAULT_TARGET_RETIREMENT_AGE,
@@ -18,6 +19,7 @@ export const defaultValues = {
   monthlyInvestment: DEFAULT_MONTHLY_INVESTMENT,
   currentAge: DEFAULT_CURRENT_AGE,
   adjustInflation: DEFAULT_ADJUST_INFLATION,
+  statePensionAge: DEFAULT_STATE_PENSION_AGE,
 };
 
 export const fireSettingsOrphanSchema = z.object({
@@ -28,6 +30,7 @@ export const fireSettingsOrphanSchema = z.object({
   monthlyInvestment: z.string(),
   currentAge: z.number().int(),
   adjustInflation: z.boolean().default(DEFAULT_ADJUST_INFLATION),
+  statePensionAge: z.number().int().default(DEFAULT_STATE_PENSION_AGE),
 });
 
 type ZodFireSettingsOrphan = z.infer<typeof fireSettingsOrphanSchema>;
