@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { usePortfolio } from "@/context/PortfolioContext";
 import {
   calculateFireNumber,
@@ -82,9 +83,12 @@ export default function Fire() {
         adjustInflation: fireSettings.adjustInflation !== undefined 
           ? Boolean(fireSettings.adjustInflation) 
           : true,
+        statePensionAge: fireSettings.statePensionAge !== undefined
+          ? Number(fireSettings.statePensionAge)
+          : defaultSettings.statePensionAge,
       });
     }
-  }, [fireSettings]);
+  }, [fireSettings, defaultSettings.statePensionAge]);
 
   // Calculate FIRE number based on desired income and withdrawal rate
   const fireNumber = calculateFireNumber(
@@ -139,6 +143,8 @@ export default function Fire() {
         expectedAnnualReturn: fireSettings.expectedAnnualReturn,
         safeWithdrawalRate: fireSettings.safeWithdrawalRate,
         currentAge: fireSettings.currentAge,
+        adjustInflation: fireSettings.adjustInflation,
+        statePensionAge: fireSettings.statePensionAge,
       });
 
       setFormState((prev) => ({
@@ -160,6 +166,7 @@ export default function Fire() {
       monthlyInvestment: formState.monthlyInvestment.toString(),
       currentAge: defaultSettings.currentAge,
       adjustInflation: formState.adjustInflation,
+      statePensionAge: formState.statePensionAge,
     };
 
     try {
