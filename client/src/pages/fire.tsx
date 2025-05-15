@@ -321,6 +321,7 @@ export default function Fire() {
             monthlyInvestment={formState.monthlyInvestment}
             targetAmount={fireNumber}
             expectedReturn={formState.expectedReturn}
+            targetRetirementAge={formState.targetRetirementAge}
             className="mb-6"
           />
 

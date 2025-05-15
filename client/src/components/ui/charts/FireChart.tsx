@@ -41,6 +41,16 @@ export default function FireChart({
   // Use the target retirement age if provided, otherwise use the calculated FIRE achievement age
   const retirementAge = targetRetirementAge || fireAchievedAge;
   
+  // Create a point specifically for the retirement marker
+  const retirementPoint = projectionData.find(point => point.age === retirementAge);
+  const retirementMarker = retirementPoint ? [
+    { 
+      age: retirementAge, 
+      portfolio: retirementPoint.portfolio,
+      marker: retirementPoint.portfolio
+    }
+  ] : [];
+  
   // Generate reasonable ticks for the X axis (age)
   const xAxisTicks = [];
   // Start with current age
@@ -123,28 +133,33 @@ export default function FireChart({
                 labelFormatter={(age) => `Age: ${age}`}
               />
               
-              {/* Add a reference line for FIRE achieved date */}
+              {/* Add a reference line for retirement age */}
               <ReferenceLine
                 x={retirementAge}
                 stroke="#10b981"
                 strokeWidth={1}
                 strokeDasharray="3 3"
                 label={{
-                  value: `FIRE at ${retirementAge}`,
+                  value: targetRetirementAge 
+                    ? `Retirement at ${retirementAge}` 
+                    : `FIRE at ${retirementAge}`,
                   position: 'top',
                   fill: '#10b981',
                   fontSize: 12
                 }}
               />
               
+              {/* Portfolio growth line - ending at retirement age */}
               <Line 
                 type="monotone" 
                 dataKey="portfolio" 
                 stroke="#3B82F6" 
                 strokeWidth={2}
-                dot={false}
                 activeDot={{ r: 5 }}
                 name="Portfolio Growth"
+                // Filter data points to only show up to retirement age
+                data={projectionData.filter(point => point.age <= retirementAge)}
+                dot={false}
               />
               <Line 
                 type="monotone" 
