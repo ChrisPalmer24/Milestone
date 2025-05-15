@@ -8,6 +8,7 @@ const DEFAULT_EXPECTED_ANNUAL_RETURN = 7;
 const DEFAULT_SAFE_WITHDRAWAL_RATE = 4;
 const DEFAULT_MONTHLY_INVESTMENT = 300;
 const DEFAULT_CURRENT_AGE = 35;
+const DEFAULT_ADJUST_INFLATION = true;
 
 export const defaultValues = {
   targetRetirementAge: DEFAULT_TARGET_RETIREMENT_AGE,
@@ -16,6 +17,7 @@ export const defaultValues = {
   safeWithdrawalRate: DEFAULT_SAFE_WITHDRAWAL_RATE,
   monthlyInvestment: DEFAULT_MONTHLY_INVESTMENT,
   currentAge: DEFAULT_CURRENT_AGE,
+  adjustInflation: DEFAULT_ADJUST_INFLATION,
 };
 
 export const fireSettingsOrphanSchema = z.object({
@@ -25,6 +27,7 @@ export const fireSettingsOrphanSchema = z.object({
   safeWithdrawalRate: z.string(),
   monthlyInvestment: z.string(),
   currentAge: z.number().int(),
+  adjustInflation: z.boolean().default(DEFAULT_ADJUST_INFLATION),
 });
 
 type ZodFireSettingsOrphan = z.infer<typeof fireSettingsOrphanSchema>;

@@ -1,4 +1,4 @@
-import { pgTable, integer, numeric, uuid } from "drizzle-orm/pg-core";
+import { pgTable, integer, numeric, uuid, boolean } from "drizzle-orm/pg-core";
 import { userAccounts } from "./user-account";
 import { InferInsertModelBasic, timestampColumns } from "./utils";
 import { InferSelectModel, sql } from "drizzle-orm";
@@ -12,6 +12,7 @@ export const fireSettings = pgTable("fire_settings", {
   safeWithdrawalRate: numeric("safe_withdrawal_rate").notNull(), // Percentage
   monthlyInvestment: numeric("monthly_investment").notNull(),
   currentAge: integer("current_age").notNull(),
+  adjustInflation: boolean("adjust_inflation").default(true).notNull(),
   ...timestampColumns()
 });
 
