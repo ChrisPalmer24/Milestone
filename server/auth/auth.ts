@@ -94,9 +94,29 @@ export async function authorizeAPIKey(
   attributes: AuthorizeAPIKeyAttributesExtended,
   tokenPersistence: TokenPersistence,
 ): Promise<AuthorizeTenantResult | null> {
+
   const { apiKey, apiKeySecret } = attributes;
   const apiKeyEnitity = await tokenPersistence.getAPIKey(apiKey);
+
   if (!apiKeyEnitity) {
+    return null;
+  }
+
+  const { expiresAt, allowedDomains, allowedIPs, isRevoked, key } = apiKeyEnitity;
+
+  if (expiresAt && expiresAt < new Date()) {
+    return null;
+  }
+
+  if (isRevoked) {
+    return null;
+  }
+
+  if (allowedDomains && !allowedDomains.includes(attributes.reqDomain)) {
+    return null;
+  }
+
+  if (allowedIPs && !allowedIPs.includes(attributes.reqIP)) {
     return null;
   }
 

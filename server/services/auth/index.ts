@@ -49,9 +49,18 @@ const authService = new AuthService({
       await db.update(refreshTokens).set({ isRevoked: true }).where(and(eq(refreshTokens.userAccountId, tenantAccountId), eq(refreshTokens.familyId, familyId)));
     },
 
-    getAPIKey: async (apiKey) => {
-      //Milestone does not support API Keys
-      return null
+    getAPIKey: async (apiKey: string) => {
+      return {
+        id: "123",
+        key: apiKey,
+        deviceInfo: null,
+        isRevoked: false,
+        expiry: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
+        lastUsedAt: null,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
+        allowedDomains: [],
+        allowedIPs: [],
+      }
     }
   }
 });

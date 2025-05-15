@@ -5,6 +5,7 @@ import { IncomingHttpHeaders } from "node:http";
 
 const createAuthMiddleware = (allowedAuthTypes: TenantType[], authoriseUser: AuthoriseUser, authoriseAPIKey: AuthoriseAPIKey) => {
   return async (req: AuthRequest, res: Response, next: NextFunction) => {
+
     try {
       // Try browser session auth if allowed
       if (allowedAuthTypes.includes('user')) {
@@ -26,7 +27,8 @@ const createAuthMiddleware = (allowedAuthTypes: TenantType[], authoriseUser: Aut
 
       // Try API auth if allowed
       if (allowedAuthTypes.includes('api')) {
-        const apiKey = req.headers['x-api-key']?.[0] as string | undefined;
+        const apiKey = req.headers['x-api-key'] as string | undefined;
+
         if (apiKey) {
 
           const authResult = await authoriseAPIKey({

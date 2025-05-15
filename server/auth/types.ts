@@ -71,6 +71,8 @@ export interface AuthorizeAPIKeyAttributes {
 
 export interface AuthorizeAPIKeyAttributesExtended extends AuthorizeAPIKeyAttributes {
   apiKeySecret: string,
+  reqDomain: string,
+  reqIP: string,
 }
 
 export interface AuthorizeUserResult {
@@ -85,20 +87,25 @@ export interface AuthorizeTenantResult {
 }
 
 export interface APIKeyAttributes {
-  key: string;
+  key: string;  
   deviceInfo: string | null;
   isRevoked: boolean;
   expiry: string;
 }
 
-export interface APIKeyInsert extends Omit<APIKeyAttributes, "expiry"> {
+export type APIKeyInsert = Omit<APIKeyAttributes, "expiry"> & {
   lastUsedAt: Date | null;
   expiresAt: Date | null;
   isRevoked: boolean;
 }
 
-export interface APIKeyPerssisted extends APIKeyInsert {
+export type APIKeyPerssisted = APIKeyInsert & {
   id: string;
+  key: string;
+  expiresAt?: Date | null;
+  isRevoked?: boolean;
+  allowedDomains?: string[];
+  allowedIPs?: string[];
 }
 
 export type PersistRefreshToken = (tokenInsert: RefreshTokenInsert) => Promise<RefreshTokenPerssisted>;
