@@ -9,6 +9,7 @@ type FireChartProps = {
   monthlyInvestment: number;
   targetAmount: number;
   expectedReturn: number;
+  targetRetirementAge?: number;
   className?: string;
 };
 
@@ -18,6 +19,7 @@ export default function FireChart({
   monthlyInvestment,
   targetAmount,
   expectedReturn,
+  targetRetirementAge,
   className
 }: FireChartProps) {
   // Calculate projection data
@@ -34,8 +36,10 @@ export default function FireChart({
     return `£${value.toLocaleString()}`;
   };
 
-  // Determine retirement age
-  const retirementAge = Math.ceil(currentAge + yearsToFire);
+  // Determine retirement age based on when FIRE is achieved or user's target age (whichever comes first)
+  const fireAchievedAge = Math.ceil(currentAge + yearsToFire);
+  // Use the target retirement age if provided, otherwise use the calculated FIRE achievement age
+  const retirementAge = targetRetirementAge || fireAchievedAge;
   
   // Generate reasonable ticks for the X axis (age)
   const xAxisTicks = [];

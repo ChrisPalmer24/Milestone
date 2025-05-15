@@ -362,86 +362,6 @@ export default function Fire() {
           {/* FIRE Settings */}
           <div className="bg-gray-50 rounded-lg p-4 mb-6">
             <h3 className="font-medium mb-3">Your FIRE Settings</h3>
-          
-          {/* Adjust Investment */}
-          <div className="bg-gray-50 rounded-lg p-4 mt-6">
-            <h3 className="font-medium mb-3">Adjust Your Investment</h3>
-
-            <div className="mb-4">
-              <Label
-                htmlFor="monthly-investment"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Current Monthly Investment
-              </Label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500">£</span>
-                </div>
-                <Input
-                  id="monthly-investment"
-                  type="number"
-                  className="pl-7"
-                  value={formState.monthlyInvestment}
-                  onChange={(e) =>
-                    handleInputChange("monthlyInvestment", e.target.value)
-                  }
-                />
-              </div>
-            </div>
-
-            <div className="flex space-x-2 mb-4">
-              <Button
-                variant="outline"
-                className="flex-1 py-2 px-3"
-                onClick={() => handleAdjustInvestment(-100)}
-                disabled={formState.monthlyInvestment <= 100}
-              >
-                -£100/month
-              </Button>
-              <Button
-                className="flex-1 py-2 px-3 bg-primary text-white"
-                onClick={() => handleAdjustInvestment(100)}
-              >
-                +£100/month
-              </Button>
-            </div>
-
-            <div className="px-3 py-2 bg-blue-50 rounded-lg text-blue-700 text-sm">
-              {increaseImpact.monthsDifference > 0 ? (
-                <p>
-                  By increasing your monthly investment by £100, you could
-                  retire{" "}
-                  <span className="font-medium">
-                    {increaseImpact.monthsDifference > 12
-                      ? `${Math.floor(
-                          increaseImpact.monthsDifference / 12
-                        )} years and ${
-                          increaseImpact.monthsDifference % 12
-                        } months`
-                      : `${increaseImpact.monthsDifference} months`}{" "}
-                    earlier
-                  </span>
-                  .
-                </p>
-              ) : (
-                <p>
-                  By decreasing your monthly investment by £100, your retirement
-                  would be delayed by{" "}
-                  <span className="font-medium">
-                    {decreaseImpact.monthsDifference > 12
-                      ? `${Math.floor(
-                          Math.abs(decreaseImpact.monthsDifference) / 12
-                        )} years and ${
-                          Math.abs(decreaseImpact.monthsDifference) % 12
-                        } months`
-                      : `${Math.abs(decreaseImpact.monthsDifference)} months`}
-                  </span>
-                  .
-                </p>
-              )}
-            </div>
-          </div>
             
             <div className="mb-4">
               <Label
@@ -544,6 +464,86 @@ export default function Fire() {
             >
               Save Settings
             </Button>
+          </div>
+          
+          {/* Adjust Investment */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h3 className="font-medium mb-3">Adjust Your Investment</h3>
+
+            <div className="mb-4">
+              <Label
+                htmlFor="monthly-investment"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Current Monthly Investment
+              </Label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">£</span>
+                </div>
+                <Input
+                  id="monthly-investment"
+                  type="number"
+                  className="pl-7"
+                  value={formState.monthlyInvestment}
+                  onChange={(e) =>
+                    handleInputChange("monthlyInvestment", e.target.value)
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="flex space-x-2 mb-4">
+              <Button
+                variant="outline"
+                className="flex-1 py-2 px-3"
+                onClick={() => handleAdjustInvestment(-100)}
+                disabled={formState.monthlyInvestment <= 100}
+              >
+                -£100/month
+              </Button>
+              <Button
+                className="flex-1 py-2 px-3 bg-primary text-white"
+                onClick={() => handleAdjustInvestment(100)}
+              >
+                +£100/month
+              </Button>
+            </div>
+
+            <div className="px-3 py-2 bg-blue-50 rounded-lg text-blue-700 text-sm">
+              {increaseImpact.monthsDifference > 0 ? (
+                <p>
+                  By increasing your monthly investment by £100, you could
+                  retire{" "}
+                  <span className="font-medium">
+                    {increaseImpact.monthsDifference > 12
+                      ? `${Math.floor(
+                          increaseImpact.monthsDifference / 12
+                        )} years and ${
+                          increaseImpact.monthsDifference % 12
+                        } months`
+                      : `${increaseImpact.monthsDifference} months`}{" "}
+                    earlier
+                  </span>
+                  .
+                </p>
+              ) : (
+                <p>
+                  By decreasing your monthly investment by £100, your retirement
+                  would be delayed by{" "}
+                  <span className="font-medium">
+                    {decreaseImpact.monthsDifference > 12
+                      ? `${Math.floor(
+                          Math.abs(decreaseImpact.monthsDifference) / 12
+                        )} years and ${
+                          Math.abs(decreaseImpact.monthsDifference) % 12
+                        } months`
+                      : `${Math.abs(decreaseImpact.monthsDifference)} months`}
+                  </span>
+                  .
+                </p>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
