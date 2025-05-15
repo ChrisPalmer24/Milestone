@@ -503,6 +503,41 @@ export default function Fire() {
               />
             </div>
 
+            <div className="mb-4">
+              <Label
+                htmlFor="target-retirement-age"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Desired Retirement Age
+              </Label>
+              <Input
+                id="target-retirement-age"
+                type="number"
+                value={formState.targetRetirementAge}
+                onChange={(e) =>
+                  handleInputChange("targetRetirementAge", e.target.value)
+                }
+              />
+            </div>
+            
+            <div className="mb-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="adjust-inflation" 
+                  checked={formState.adjustInflation}
+                  onCheckedChange={(checked) => 
+                    handleInputChange("adjustInflation", checked === true)
+                  }
+                />
+                <Label 
+                  htmlFor="adjust-inflation" 
+                  className="text-sm cursor-pointer"
+                >
+                  Adjust for inflation (2.8%)
+                </Label>
+              </div>
+            </div>
+
             <Button
               className="w-full bg-primary text-white py-2 rounded-lg font-medium"
               onClick={handleSaveSettings}

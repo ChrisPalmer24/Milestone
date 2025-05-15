@@ -79,13 +79,17 @@ export function calculateFireProjection({
   monthlyInvestment,
   expectedReturn,
   targetAmount,
-  currentAge
+  currentAge,
+  adjustInflation = true,
+  inflationRate = 2.8
 }: {
   currentAmount: number;
   monthlyInvestment: number;
   expectedReturn: number;
   targetAmount: number;
   currentAge: number;
+  adjustInflation?: boolean;
+  inflationRate?: number;
 }): { projectionData: any[]; yearsToFire: number } {
   const yearsToFire = calculateYearsToTarget(
     currentAmount,
