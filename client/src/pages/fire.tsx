@@ -533,7 +533,7 @@ export default function Fire() {
                   htmlFor="adjust-inflation" 
                   className="text-sm cursor-pointer"
                 >
-                  Adjust for inflation <i>(average 2.8% over the past 30 years)</i>
+                  Adjust for inflation <span className="italic font-normal text-gray-500">(average 2.8% over the past 30 years)</span>
                 </Label>
               </div>
             </div>
