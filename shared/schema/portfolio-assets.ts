@@ -105,13 +105,11 @@ export type ContributionInterval = DBContributionInterval;
 export const recurringContributionOrphanInsertSchema = z.object({
   amount: z.number().positive(),
   startDate: z.coerce.date(),
-  interval: z.enum(['weekly', 'biweekly', 'monthly']),
-  isActive: z.boolean().default(true),
-  lastProcessedDate: z.coerce.date(),
+  interval: z.enum(['weekly', 'biweekly', 'monthly', 'quarterly', 'yearly']),
 });
 
 type ZodRecurringContributionOrphanInsert = z.infer<typeof recurringContributionOrphanInsertSchema>;
-export type RecurringContributionOrphanInsert = IfConstructorEquals<ZodRecurringContributionOrphanInsert, Omit<DBRecurringContributionInsert, "assetId">, never>;
+export type RecurringContributionOrphanInsert = IfConstructorEquals<ZodRecurringContributionOrphanInsert, Omit<DBRecurringContributionInsert, "isActive" | "lastProcessedDate" | "assetId">, never>;
 recurringContributionOrphanInsertSchema satisfies ZodType<RecurringContributionOrphanInsert>;
 
 export const recurringContributionInsertSchema = recurringContributionOrphanInsertSchema.extend({
@@ -119,7 +117,7 @@ export const recurringContributionInsertSchema = recurringContributionOrphanInse
 });
 
 type ZodRecurringContributionInsert = z.infer<typeof recurringContributionInsertSchema>;
-export type RecurringContributionInsert = IfConstructorEquals<ZodRecurringContributionInsert, DBRecurringContributionInsert, never>;
+export type RecurringContributionInsert = IfConstructorEquals<ZodRecurringContributionInsert, Omit<DBRecurringContributionInsert, "isActive" | "lastProcessedDate">, never>;
 recurringContributionInsertSchema satisfies ZodType<RecurringContributionInsert>;
 
 export type RecurringContribution = DBRecurringContributionSelect;
