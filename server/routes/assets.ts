@@ -3,7 +3,6 @@ import { ServiceFactory } from "../services/factory";
 import {
   AuthRequest,
   AuthService,
-  requireTenant,
   requireTenantWithUserAccountId,
 } from "server/auth";
 import {
@@ -68,7 +67,7 @@ export async function registerRoutes(
   router: Router,
   authService: AuthService
 ): Promise<Router> {
-  const { requireUser } = authService.getAuthMiddlewares();
+  const { requireUser, requireApiKey } = authService.getAuthMiddlewares();
 
   router.get("/broker", requireUser, async (req: AuthRequest, res) => {
     const response = await requireTenantWithUserAccountId(
@@ -490,7 +489,7 @@ export async function registerRoutes(
   // Add a route to manually trigger processing of recurring contributions (for admin/testing)
   router.post(
     `/recurring-contributions/process`,
-    requireTenant,
+    requireApiKey,
     async (req: AuthRequest, res) => {
       const processCount = await assetService.processRecurringContributions();
       res.json({ processedCount: processCount });
