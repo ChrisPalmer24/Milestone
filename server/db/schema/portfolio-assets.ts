@@ -5,7 +5,7 @@ import { relations, InferSelectModel, sql } from "drizzle-orm";
 import { IncludeRelation } from "../types/utils";
 import { InferResultType } from "../types/utils";
 export const accountTypeEnum = pgEnum('account_type', ['ISA', 'CISA', 'SIPP', 'LISA', 'GIA']);
-export const contributionIntervalEnum = pgEnum('contribution_interval', ['weekly', 'biweekly', 'monthly']);
+export const contributionIntervalEnum = pgEnum('contribution_interval', ['weekly', 'biweekly', 'monthly', 'quarterly', 'yearly']);
 
 export type AccountType = (typeof accountTypeEnum.enumValues)[number];
 
