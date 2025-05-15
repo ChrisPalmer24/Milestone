@@ -5,9 +5,11 @@ import {
   BrokerProviderAssetSelect as DBBrokerProviderAsset,
   GeneralAssetSelect as DBGeneralAsset,
   AssetValueInsert as DBAssetValueInsert,
-  AssetDebitInsert as DBAssetDebitInsert,
   AssetValueSelect as DBAssetValueSelect,
-  AssetDebitSelect as DBAssetDebitSelect,
+  AssetContributionInsert as DBAssetContributionInsert,
+  AssetContributionSelect as DBAssetContribution,
+  // AssetDebitInsert as DBAssetDebitInsert,
+  // AssetDebitSelect as DBAssetDebitSelect,
   BrokerProviderAssetAPIKeyConnectionSelect as DBBrokerProviderAssetAPIKeyConnection,
   BrokerProviderSelect as DBBrokerProvider,
   AccountType as DBAccountType,
@@ -81,24 +83,43 @@ assetValueInsertSchema satisfies ZodType<AssetValueInsert>;
 
 export type AssetValue = DBAssetValueSelect
 
-export const assetDebitOrphanInsertSchema = z.object({
+// export const assetDebitOrphanInsertSchema = z.object({
+//   value: z.number(),
+//   recordedAt: z.coerce.date(),
+// })
+
+// type ZodAssetDebitOrphanInsert = z.infer<typeof assetDebitOrphanInsertSchema>;
+// export type AssetDebitOrphanInsert = IfConstructorEquals<ZodAssetDebitOrphanInsert, Omit<DBAssetDebitInsert, "assetId">, never>;
+// assetDebitOrphanInsertSchema satisfies ZodType<AssetDebitOrphanInsert>;
+
+// export const assetDebitInsertSchema = assetDebitOrphanInsertSchema.extend({
+//   assetId: z.string()
+// })
+
+// type ZodAssetDebitInsert = z.infer<typeof assetDebitInsertSchema>;
+// export type AssetDebitInsert = IfConstructorEquals<ZodAssetDebitInsert, DBAssetDebitInsert, never>;
+// assetDebitInsertSchema satisfies ZodType<AssetDebitInsert>;
+
+// export type AssetDebit = DBAssetDebitSelect;
+
+export const assetContributionOrphanInsertSchema = z.object({
   value: z.number(),
   recordedAt: z.coerce.date(),
 })
 
-type ZodAssetDebitOrphanInsert = z.infer<typeof assetDebitOrphanInsertSchema>;
-export type AssetDebitOrphanInsert = IfConstructorEquals<ZodAssetDebitOrphanInsert, Omit<DBAssetDebitInsert, "assetId">, never>;
-assetDebitOrphanInsertSchema satisfies ZodType<AssetDebitOrphanInsert>;
+type ZodAssetContributionOrphanInsert = z.infer<typeof assetContributionOrphanInsertSchema>;
+export type AssetContributionOrphanInsert = IfConstructorEquals<ZodAssetContributionOrphanInsert, Omit<DBAssetContributionInsert, "assetId">, never>;
+assetContributionOrphanInsertSchema satisfies ZodType<AssetContributionOrphanInsert>;
 
-export const assetDebitInsertSchema = assetDebitOrphanInsertSchema.extend({
+export const assetContributionInsertSchema = assetContributionOrphanInsertSchema.extend({
   assetId: z.string()
 })
 
-type ZodAssetDebitInsert = z.infer<typeof assetDebitInsertSchema>;
-export type AssetDebitInsert = IfConstructorEquals<ZodAssetDebitInsert, DBAssetDebitInsert, never>;
-assetDebitInsertSchema satisfies ZodType<AssetDebitInsert>;
+type ZodAssetContributionInsert = z.infer<typeof assetContributionInsertSchema>;
+export type AssetContributionInsert = IfConstructorEquals<ZodAssetContributionInsert, DBAssetContributionInsert, never>;
+assetContributionInsertSchema satisfies ZodType<AssetContributionInsert>;
 
-export type AssetDebit = DBAssetDebitSelect;
+export type AssetContribution = DBAssetContribution;
 
 export type ContributionInterval = DBContributionInterval;
 

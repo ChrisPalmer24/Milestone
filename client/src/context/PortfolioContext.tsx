@@ -23,8 +23,8 @@ import {
   AssetsChange,
   AssetValue,
   AssetValueInsert,
-  AssetDebit,
-  AssetDebitInsert,
+  AssetContribution,
+  AssetContributionInsert,
   MilestoneOrphanInsert,
   FireSettingsInsert,
   BrokerProviderAssetWithAccountChange,
@@ -52,8 +52,8 @@ type AssetValueUpdate = AssetValueInsert & {
   historyId: AssetValue["id"];
 };
 
-type AssetDebitUpdate = AssetDebitInsert & {
-  contributionId: AssetDebit["id"];
+type AssetContributionUpdate = AssetContributionInsert & {
+  contributionId: AssetContribution["id"];
 };
 
 type AssetValueDelete = {
@@ -422,16 +422,16 @@ export const usePortfolio = (startDate?: Date, endDate?: Date) => {
       });
     },
   });
-  
+
   // Asset contribution mutations
   const addBrokerAssetContribution = useMutation<
-    AssetDebitInsert,
+    AssetContributionInsert,
     Error,
-    AssetDebitInsert
+    AssetContributionInsert
   >({
-    mutationFn: (data: AssetDebitInsert) => {
+    mutationFn: (data: AssetContributionInsert) => {
       const { assetId, ...rest } = data;
-      return apiRequest<AssetDebit>(
+      return apiRequest<AssetContribution>(
         "POST",
         `/api/assets/broker/${assetId}/contributions`,
         {
@@ -456,15 +456,15 @@ export const usePortfolio = (startDate?: Date, endDate?: Date) => {
       });
     },
   });
-  
+
   const updateBrokerAssetContribution = useMutation<
-    AssetDebit,
+    AssetContribution,
     Error,
-    AssetDebitUpdate
+    AssetContributionUpdate
   >({
     mutationFn: (data) => {
       const { assetId, contributionId, ...rest } = data;
-      return apiRequest<AssetDebit>(
+      return apiRequest<AssetContribution>(
         "PUT",
         `/api/assets/broker/${assetId}/contributions/${contributionId}`,
         {
@@ -488,11 +488,14 @@ export const usePortfolio = (startDate?: Date, endDate?: Date) => {
       });
     },
   });
-  
+
   const deleteBrokerAssetContribution = useMutation<
     void,
     Error,
-    { assetId: BrokerProviderAsset["id"]; contributionId: AssetDebit["id"] }
+    {
+      assetId: BrokerProviderAsset["id"];
+      contributionId: AssetContribution["id"];
+    }
   >({
     mutationFn: ({ assetId, contributionId }) =>
       apiRequest(

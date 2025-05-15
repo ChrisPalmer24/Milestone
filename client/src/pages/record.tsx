@@ -24,15 +24,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger
-} from "@/components/ui/tabs";
-import { 
-  History, Edit, Check, X, Calendar, PlusCircle, Coins, 
-  RotateCcw, Clock, EyeOff, AlertCircle 
+  History,
+  Edit,
+  Check,
+  X,
+  Calendar,
+  PlusCircle,
+  Coins,
+  RotateCcw,
+  Clock,
+  EyeOff,
+  AlertCircle,
 } from "lucide-react";
 import { SiTradingview, SiCoinbase } from "react-icons/si";
 import { BsPiggyBank } from "react-icons/bs";
@@ -40,7 +44,12 @@ import { usePortfolio } from "@/context/PortfolioContext";
 import { useToast } from "@/hooks/use-toast";
 import DateRangeBar from "@/components/layout/DateRangeBar";
 import { getProviderName } from "@/lib/broker";
-import { BrokerProviderAsset, AssetValue, AssetDebit, AssetDebitInsert } from "shared/schema";
+import {
+  BrokerProviderAsset,
+  AssetValue,
+  AssetContribution,
+  AssetContributionInsert,
+} from "shared/schema";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Link } from "wouter";
@@ -71,24 +80,24 @@ export default function Record() {
   } = usePortfolio();
 
   const { data: brokerProviders } = useBrokerProviders();
-  
+
   // Create a function to handle contribution submissions
-  const addContributionToAsset = async (assetId: string, value: number, date: Date) => {
+  const addContributionToAsset = async (
+    assetId: string,
+    value: number,
+    date: Date
+  ) => {
     try {
-      await apiRequest(
-        "POST",
-        `/api/assets/broker/${assetId}/contributions`,
-        {
-          value,
-          recordedAt: date,
-        }
-      );
-      
+      await apiRequest("POST", `/api/assets/broker/${assetId}/contributions`, {
+        value,
+        recordedAt: date,
+      });
+
       toast({
         title: "Contribution recorded",
         description: "Your contribution has been recorded successfully.",
       });
-      
+
       return true;
     } catch (error) {
       console.error("Error recording contribution:", error);
@@ -97,14 +106,16 @@ export default function Record() {
         description: "Failed to record contribution. Please try again.",
         variant: "destructive",
       });
-      
+
       return false;
     }
   };
-  
+
   // State to manage which tab is currently active
-  const [activeTab, setActiveTab] = useState<"values" | "contributions">("values");
-  
+  const [activeTab, setActiveTab] = useState<"values" | "contributions">(
+    "values"
+  );
+
   // Helper to get logo for provider
   const getProviderLogo = (providerName: string) => {
     switch (providerName.toLowerCase()) {
@@ -133,55 +144,65 @@ export default function Record() {
 
   const { toast } = useToast();
   const [accountValues, setAccountValues] = useState<AccountFormData>({});
-  const [contributionValues, setContributionValues] = useState<AccountFormData>({});
+  const [contributionValues, setContributionValues] = useState<AccountFormData>(
+    {}
+  );
   const [date, setDate] = useState<string>(
     new Date().toISOString().split("T")[0]
   );
-  
+
   // Format date for display
   const formatDateForDisplay = (dateString: string): string => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-GB', { 
-      day: '2-digit', 
-      month: 'short', 
-      year: 'numeric' 
+    return date.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
     });
   };
   const [submitting, setSubmitting] = useState(false);
   const [submittingContributions, setSubmittingContributions] = useState(false);
   const [updatingAccounts, setUpdatingAccounts] = useState<string[]>([]);
-  const [updatingContributions, setUpdatingContributions] = useState<string[]>([]);
-  
+  const [updatingContributions, setUpdatingContributions] = useState<string[]>(
+    []
+  );
+
   // State for the recurring contributions info box visibility
-  const [showRecurringInfo, setShowRecurringInfo] = useState<boolean | null>(null);
-  
+  const [showRecurringInfo, setShowRecurringInfo] = useState<boolean | null>(
+    null
+  );
+
   // Handle permanently hiding the info box
   const handleHideInfoBox = () => {
-    localStorage.setItem('hideRecurringContributionInfo', 'true');
+    localStorage.setItem("hideRecurringContributionInfo", "true");
     setShowRecurringInfo(false);
   };
-  
+
   // Handle "Remind Me Later" for the info box
   const handleRemindLater = () => {
     const now = new Date();
-    localStorage.setItem('remindRecurringContributionLater', now.toISOString());
-    localStorage.removeItem('hideRecurringContributionInfo'); // Clear any permanent hide setting
+    localStorage.setItem("remindRecurringContributionLater", now.toISOString());
+    localStorage.removeItem("hideRecurringContributionInfo"); // Clear any permanent hide setting
     setShowRecurringInfo(false);
   };
-  
+
   // Check localStorage for the user's preference on info box visibility
   useEffect(() => {
-    const hideRecurringInfo = localStorage.getItem('hideRecurringContributionInfo');
-    const lastRemindDate = localStorage.getItem('remindRecurringContributionLater');
-    
-    if (hideRecurringInfo === 'true') {
+    const hideRecurringInfo = localStorage.getItem(
+      "hideRecurringContributionInfo"
+    );
+    const lastRemindDate = localStorage.getItem(
+      "remindRecurringContributionLater"
+    );
+
+    if (hideRecurringInfo === "true") {
       setShowRecurringInfo(false);
     } else if (lastRemindDate) {
       // Check if it's been at least a day since "Remind Me Later" was clicked
       const lastDate = new Date(lastRemindDate);
       const now = new Date();
       const oneDayMs = 24 * 60 * 60 * 1000; // One day in milliseconds
-      
+
       if (now.getTime() - lastDate.getTime() >= oneDayMs) {
         // It's been at least a day, show the message again
         setShowRecurringInfo(true);
@@ -193,11 +214,11 @@ export default function Record() {
       setShowRecurringInfo(true);
     }
   }, []);
-  
+
   // Initialize values with current values button
   const initializeWithCurrentValues = () => {
     const initialValues: AccountFormData = {};
-    brokerAssets.forEach(asset => {
+    brokerAssets.forEach((asset) => {
       initialValues[asset.id] = Number(asset.currentValue);
     });
     setAccountValues(initialValues);
@@ -266,7 +287,7 @@ export default function Record() {
       [assetId]: value === "" ? undefined : Number(value),
     }));
   };
-  
+
   // Handle input change for contributions
   const handleContributionValueChange = (assetId: string, value: string) => {
     setContributionValues((prev) => ({
@@ -319,7 +340,7 @@ export default function Record() {
       setUpdatingAccounts((prev) => prev.filter((id) => id !== assetId));
     }
   };
-  
+
   // Handle form submission for a single account contribution
   const handleSubmitContribution = async (assetId: string) => {
     const value = contributionValues[assetId];
@@ -336,8 +357,12 @@ export default function Record() {
     setUpdatingContributions((prev) => [...prev, assetId]);
 
     try {
-      const success = await addContributionToAsset(assetId, value, new Date(date));
-      
+      const success = await addContributionToAsset(
+        assetId,
+        value,
+        new Date(date)
+      );
+
       if (success) {
         // Clear the value for this account
         setContributionValues((prev) => {
@@ -404,7 +429,7 @@ export default function Record() {
       setSubmitting(false);
     }
   };
-  
+
   // Handle submission of all contributions at once
   const handleSubmitAllContributions = async () => {
     const dataWithValues: [string, number][] =
@@ -431,15 +456,15 @@ export default function Record() {
       const results = await Promise.all(
         contributionsToAdd.map(async (contributionData) => {
           return await addContributionToAsset(
-            contributionData.assetId, 
-            contributionData.value, 
+            contributionData.assetId,
+            contributionData.value,
             contributionData.recordedAt
           );
         })
       );
-      
+
       // Check if all contributions were successful
-      const successCount = results.filter(result => result === true).length;
+      const successCount = results.filter((result) => result === true).length;
 
       if (successCount > 0) {
         toast({
@@ -475,7 +500,8 @@ export default function Record() {
                 Record Account Updates
               </CardTitle>
               <CardDescription className="mt-1">
-                Update your account values and track your contributions over time.
+                Update your account values and track your contributions over
+                time.
               </CardDescription>
             </div>
             <div className="flex items-center space-x-2">
@@ -485,7 +511,8 @@ export default function Record() {
                 className="flex items-center gap-2 text-primary border-primary hover:bg-primary hover:text-white relative h-9"
                 onClick={() => {
                   // Create a click event on the date input
-                  const dateInput = document.getElementById('record-date-input');
+                  const dateInput =
+                    document.getElementById("record-date-input");
                   if (dateInput) {
                     dateInput.click();
                   }
@@ -503,17 +530,17 @@ export default function Record() {
                 <span>{formatDateForDisplay(date)}</span>
               </Button>
               {activeTab === "values" && (
-                <ScreenshotUpload 
+                <ScreenshotUpload
                   brokerAssets={brokerAssets}
                   onExtractedValues={(extractedValues) => {
                     // Create a new object to hold the values
                     const newValues = { ...accountValues };
-                    
+
                     // Update values with the extracted ones
                     extractedValues.forEach(({ assetId, value }) => {
                       newValues[assetId] = value;
                     });
-                    
+
                     // Set the new values
                     setAccountValues(newValues);
                   }}
@@ -532,29 +559,38 @@ export default function Record() {
             </div>
           ) : (
             <>
-              <Tabs 
-                defaultValue="values" 
+              <Tabs
+                defaultValue="values"
                 value={activeTab}
-                onValueChange={(value) => setActiveTab(value as "values" | "contributions")}
+                onValueChange={(value) =>
+                  setActiveTab(value as "values" | "contributions")
+                }
                 className="mb-6"
               >
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="values" className="flex items-center gap-2">
+                  <TabsTrigger
+                    value="values"
+                    className="flex items-center gap-2"
+                  >
                     <Coins size={16} />
                     Account Values
                   </TabsTrigger>
-                  <TabsTrigger value="contributions" className="flex items-center gap-2">
+                  <TabsTrigger
+                    value="contributions"
+                    className="flex items-center gap-2"
+                  >
                     <PlusCircle size={16} />
                     Contributions
                   </TabsTrigger>
                 </TabsList>
-                
+
                 {/* Account Values Tab */}
                 <TabsContent value="values">
                   <div className="space-y-4">
                     {[...brokerAssets]
                       .sort(
-                        (a, b) => Number(b.currentValue) - Number(a.currentValue)
+                        (a, b) =>
+                          Number(b.currentValue) - Number(a.currentValue)
                       )
                       .map((asset) => (
                         <div
@@ -565,11 +601,25 @@ export default function Record() {
                             {/* Column 1: Provider Logo and Information */}
                             <div className="flex items-center">
                               <div className="w-10 h-10 rounded-md flex items-center justify-center mr-3">
-                                {getProviderLogo(getProviderName(asset.providerId, brokerProviders ?? []))}
+                                {getProviderLogo(
+                                  getProviderName(
+                                    asset.providerId,
+                                    brokerProviders ?? []
+                                  )
+                                )}
                               </div>
                               <div>
-                                <h3 className="font-medium">{getProviderName(asset.providerId, brokerProviders ?? [])}</h3>
-                                <span className={`text-sm ${getAccountTypeColor(asset.accountType)}`}>
+                                <h3 className="font-medium">
+                                  {getProviderName(
+                                    asset.providerId,
+                                    brokerProviders ?? []
+                                  )}
+                                </h3>
+                                <span
+                                  className={`text-sm ${getAccountTypeColor(
+                                    asset.accountType
+                                  )}`}
+                                >
                                   {asset.accountType === "LISA"
                                     ? "Lifetime ISA"
                                     : asset.accountType === "GIA"
@@ -590,7 +640,9 @@ export default function Record() {
                                 <Input
                                   type="number"
                                   className="pl-7"
-                                  placeholder={`${Number(asset.currentValue).toLocaleString()}`}
+                                  placeholder={`${Number(
+                                    asset.currentValue
+                                  ).toLocaleString()}`}
                                   value={accountValues[asset.id] || ""}
                                   onChange={(e) =>
                                     handleAccountValueChange(
@@ -626,15 +678,15 @@ export default function Record() {
                       )}
                     </Button>
                   </div>
-                  
+
                   <div className="mt-4 text-center text-sm text-gray-500">
                     <p>
-                      Regularly updating your account values helps you track your
-                      progress and keeps your portfolio data accurate.
+                      Regularly updating your account values helps you track
+                      your progress and keeps your portfolio data accurate.
                     </p>
                   </div>
                 </TabsContent>
-                
+
                 {/* Contributions Tab */}
                 <TabsContent value="contributions">
                   {showRecurringInfo && (
@@ -644,14 +696,18 @@ export default function Record() {
                           <RotateCcw className="h-5 w-5 text-blue-500" />
                         </div>
                         <div className="flex-grow pr-4">
-                          <h4 className="font-medium text-blue-900">Want to add recurring contributions?</h4>
+                          <h4 className="font-medium text-blue-900">
+                            Want to add recurring contributions?
+                          </h4>
                           <p className="text-sm text-blue-700 mt-1">
-                            You can record one-off contributions here, or set up recurring contributions by clicking on any 
-                            individual account in your portfolio and using the "Add Contribution" dialog's Recurring tab.
+                            You can record one-off contributions here, or set up
+                            recurring contributions by clicking on any
+                            individual account in your portfolio and using the
+                            "Add Contribution" dialog's Recurring tab.
                           </p>
                           <Link href="/portfolio">
-                            <Button 
-                              variant="link" 
+                            <Button
+                              variant="link"
                               className="text-blue-600 h-auto p-0 mt-1"
                             >
                               Go to Portfolio →
@@ -662,9 +718,9 @@ export default function Record() {
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
                                   className="h-8 w-8 text-blue-600 rounded-full"
                                   onClick={handleRemindLater}
                                 >
@@ -676,13 +732,13 @@ export default function Record() {
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
-                          
+
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
                                   className="h-8 w-8 text-slate-500 rounded-full"
                                   onClick={handleHideInfoBox}
                                 >
@@ -698,11 +754,12 @@ export default function Record() {
                       </div>
                     </div>
                   )}
-                  
+
                   <div className="space-y-4">
                     {[...brokerAssets]
                       .sort(
-                        (a, b) => Number(b.currentValue) - Number(a.currentValue)
+                        (a, b) =>
+                          Number(b.currentValue) - Number(a.currentValue)
                       )
                       .map((asset) => (
                         <div
@@ -713,11 +770,25 @@ export default function Record() {
                             {/* Column 1: Provider Logo and Information */}
                             <div className="flex items-center">
                               <div className="w-10 h-10 rounded-md flex items-center justify-center mr-3">
-                                {getProviderLogo(getProviderName(asset.providerId, brokerProviders ?? []))}
+                                {getProviderLogo(
+                                  getProviderName(
+                                    asset.providerId,
+                                    brokerProviders ?? []
+                                  )
+                                )}
                               </div>
                               <div>
-                                <h3 className="font-medium">{getProviderName(asset.providerId, brokerProviders ?? [])}</h3>
-                                <span className={`text-sm ${getAccountTypeColor(asset.accountType)}`}>
+                                <h3 className="font-medium">
+                                  {getProviderName(
+                                    asset.providerId,
+                                    brokerProviders ?? []
+                                  )}
+                                </h3>
+                                <span
+                                  className={`text-sm ${getAccountTypeColor(
+                                    asset.accountType
+                                  )}`}
+                                >
                                   {asset.accountType === "LISA"
                                     ? "Lifetime ISA"
                                     : asset.accountType === "GIA"
@@ -774,11 +845,11 @@ export default function Record() {
                       )}
                     </Button>
                   </div>
-                  
+
                   <div className="mt-4 text-center text-sm text-gray-500">
                     <p>
-                      Recording your contributions helps track actual investment performance
-                      separate from your deposits.
+                      Recording your contributions helps track actual investment
+                      performance separate from your deposits.
                     </p>
                   </div>
                 </TabsContent>

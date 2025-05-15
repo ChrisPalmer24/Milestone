@@ -1,9 +1,9 @@
 
 
-import { assetDebits, assetValues, brokerProviderAssets, brokerProviders, generalAssets, brokerProviderAssetAPIKeyConnections, recurringContributions } from "server/db/schema";
+import { assetContributions, assetValues, brokerProviderAssets, brokerProviders, generalAssets, brokerProviderAssetAPIKeyConnections, recurringContributions } from "server/db/schema";
 import { Database } from "../../db";
 import { and, between, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
-import { Asset, AssetDebit, AssetDebitInsert, assetDebitInsertSchema, AssetType, AssetValue, AssetValueInsert, assetValueInsertSchema, BrokerProvider, BrokerProviderAsset, BrokerProviderAssetAPIKeyConnection, BrokerProviderAssetInsert, BrokerProviderAssetWithAccountChange, GeneralAsset, GeneralAssetInsert, GeneralAssetWithAccountChange, PortfolioHistoryTimePoint, UserAccount, WithAccountChange, AssetsChange, AssetValueOrphanInsert, AssetDebitOrphanInsert, RecurringContribution, RecurringContributionOrphanInsert, ContributionInterval } from "@shared/schema";
+import { Asset, AssetContribution, AssetContributionInsert, assetContributionInsertSchema, AssetType, AssetValue, AssetValueInsert, assetValueInsertSchema, BrokerProvider, BrokerProviderAsset, BrokerProviderAssetAPIKeyConnection, BrokerProviderAssetInsert, BrokerProviderAssetWithAccountChange, GeneralAsset, GeneralAssetInsert, GeneralAssetWithAccountChange, PortfolioHistoryTimePoint, UserAccount, WithAccountChange, AssetsChange, AssetValueOrphanInsert, AssetContributionOrphanInsert, RecurringContribution, RecurringContributionOrphanInsert, ContributionInterval } from "@shared/schema";
 import { IAssetService } from "./types";
 import { QueryParts } from "@server/utils/resource-query-builder";
 import { NodePgTransaction } from "drizzle-orm/node-postgres";
@@ -121,10 +121,10 @@ export class DatabaseAssetService implements IAssetService {
     return this.db.query.assetValues.findMany({ where: and(eq(assetValues.assetId, id), where), orderBy, limit, offset });
   }
   
-  async getBrokerProviderAssetDebitHistory(id: BrokerProviderAsset["id"], query: QueryParts): Promise<AssetDebit[]> {
+  async getBrokerProviderAssetContributionHistory(id: BrokerProviderAsset["id"], query: QueryParts): Promise<AssetContribution[]> {
     const { where, orderBy, limit, offset } = query;
 
-    return this.db.query.assetDebits.findMany({ where: and(eq(assetDebits.assetId, id), where), orderBy, limit, offset });
+    return this.db.query.assetContributions.findMany({ where: and(eq(assetContributions.assetId, id), where), orderBy, limit, offset });
   }
 
   async createBrokerProviderAsset(data: BrokerProviderAssetInsert): Promise<BrokerProviderAsset> {
@@ -170,12 +170,12 @@ export class DatabaseAssetService implements IAssetService {
     }, "broker", id);
   }
 
-  async createBrokerProviderAssetDebitHistory(id: BrokerProviderAsset["id"], data: AssetDebitOrphanInsert): Promise<AssetDebit> {
-    const [insertedAssetDebit] = await this.db.insert(assetDebits).values({
+  async createBrokerProviderAssetContributionHistory(id: BrokerProviderAsset["id"], data: AssetContributionOrphanInsert): Promise<AssetContribution> {
+    const [insertedAssetContribution] = await this.db.insert(assetContributions).values({
       ...data,
       assetId: id
     }).returning();
-    return insertedAssetDebit;
+    return insertedAssetContribution;
   }
 
   async updateBrokerProviderAssetValueHistory(id: BrokerProviderAsset["id"], assetValueId: AssetValue["id"], data: AssetValueOrphanInsert): Promise<AssetValue> {
@@ -183,9 +183,9 @@ export class DatabaseAssetService implements IAssetService {
     return updatedAssetValue;
   }
 
-  async updateBrokerProviderAssetDebitHistory(id: BrokerProviderAsset["id"], assetDebitId: AssetDebit["id"], data: AssetValueOrphanInsert): Promise<AssetDebit> {
-    const [updatedAssetDebit] = await this.db.update(assetDebits).set(data).where(and(eq(assetDebits.assetId, id), eq(assetDebits.id, assetDebitId))).returning();
-    return updatedAssetDebit;
+  async updateBrokerProviderAssetContributionHistory(id: BrokerProviderAsset["id"], assetContributionId: AssetContribution["id"], data: AssetContributionOrphanInsert): Promise<AssetContribution> {
+    const [updatedAssetContribution] = await this.db.update(assetContributions).set(data).where(and(eq(assetContributions.assetId, id), eq(assetContributions.id, assetContributionId))).returning();
+    return updatedAssetContribution;
   }
 
   async deleteBrokerProviderAssetValueHistory(id: BrokerProviderAsset["id"], assetValueId: AssetValue["id"]): Promise<boolean> {
@@ -193,8 +193,8 @@ export class DatabaseAssetService implements IAssetService {
     return (result?.rowCount ?? 0) > 0;
   }
 
-  async deleteBrokerProviderAssetDebitHistory(id: BrokerProviderAsset["id"], assetDebitId: AssetDebit["id"]): Promise<boolean> {
-    const result = await this.db.delete(assetDebits).where(and(eq(assetDebits.assetId, id), eq(assetDebits.id, assetDebitId)));
+  async deleteBrokerProviderAssetContributionHistory(id: BrokerProviderAsset["id"], assetContributionId: AssetContribution["id"]): Promise<boolean> {
+    const result = await this.db.delete(assetContributions).where(and(eq(assetContributions.assetId, id), eq(assetContributions.id, assetContributionId)));
     return (result?.rowCount ?? 0) > 0;
   }
 
@@ -292,9 +292,9 @@ export class DatabaseAssetService implements IAssetService {
     return this.db.query.assetValues.findMany({ where: and(eq(assetValues.assetId, id), where), orderBy, limit, offset });
   }
 
-  async getGeneralAssetsDebitHistory(id: GeneralAsset["id"], query: QueryParts): Promise<AssetDebit[]> {
+  async getGeneralAssetsContributionHistory(id: GeneralAsset["id"], query: QueryParts): Promise<AssetContribution[]> {
     const { where, orderBy, limit, offset } = query;
-    return this.db.query.assetDebits.findMany({ where: and(eq(assetDebits.assetId, id), where), orderBy, limit, offset });
+    return this.db.query.assetContributions.findMany({ where: and(eq(assetContributions.assetId, id), where), orderBy, limit, offset });
   }
 
   async createGeneralAssetValueHistory(id: GeneralAsset["id"], data: AssetValueOrphanInsert): Promise<AssetValue> {
@@ -309,12 +309,12 @@ export class DatabaseAssetService implements IAssetService {
 
   }
 
-  async createGeneralAssetDebitHistory(id: GeneralAsset["id"], data: AssetDebitOrphanInsert): Promise<AssetDebit> {
-    const [insertedAssetDebit] = await this.db.insert(assetDebits).values({
+  async createGeneralAssetContributionHistory(id: GeneralAsset["id"], data: AssetContributionOrphanInsert): Promise<AssetContribution> {
+    const [insertedAssetContribution] = await this.db.insert(assetContributions).values({
       ...data,
       assetId: id
     }).returning();
-    return insertedAssetDebit;
+    return insertedAssetContribution;
   }
 
   async updateGeneralAssetValueHistory(id: GeneralAsset["id"], assetValueId: AssetValue["id"], data: AssetValueOrphanInsert): Promise<AssetValue> {
@@ -323,10 +323,10 @@ export class DatabaseAssetService implements IAssetService {
     return updatedAssetValue;
   }
 
-  async updateGeneralAssetDebitHistory(id: GeneralAsset["id"], assetDebitId: AssetDebit["id"], data: AssetDebitOrphanInsert): Promise<AssetDebit> {
-    const parsedData = assetDebitInsertSchema.parse(data);
-    const [updatedAssetDebit] = await this.db.update(assetDebits).set(parsedData).where(and(eq(assetDebits.assetId, id), eq(assetDebits.id, assetDebitId))).returning();
-    return updatedAssetDebit;
+  async updateGeneralAssetContributionHistory(id: GeneralAsset["id"], assetContributionId: AssetContribution["id"], data: AssetContributionOrphanInsert): Promise<AssetContribution> {
+    const parsedData = assetContributionInsertSchema.parse(data);
+    const [updatedAssetContribution] = await this.db.update(assetContributions).set(parsedData).where(and(eq(assetContributions.assetId, id), eq(assetContributions.id, assetContributionId))).returning();
+    return updatedAssetContribution;
   }
 
   async deleteGeneralAssetValueHistory(id: GeneralAsset["id"], assetValueId: AssetValue["id"]): Promise<boolean> {
@@ -334,8 +334,8 @@ export class DatabaseAssetService implements IAssetService {
     return (result?.rowCount ?? 0) > 0;
   }
 
-  async deleteGeneralAssetDebitHistory(id: GeneralAsset["id"], assetDebitId: AssetDebit["id"]): Promise<boolean> {
-    const result = await this.db.delete(assetDebits).where(and(eq(assetDebits.assetId, id), eq(assetDebits.id, assetDebitId)));
+  async deleteGeneralAssetContributionHistory(id: GeneralAsset["id"], assetContributionId: AssetContribution["id"]): Promise<boolean> {
+    const result = await this.db.delete(assetContributions).where(and(eq(assetContributions.assetId, id), eq(assetContributions.id, assetContributionId)));
     return (result?.rowCount ?? 0) > 0;
   }
 
@@ -581,8 +581,6 @@ export class DatabaseAssetService implements IAssetService {
     const [insertedContribution] = await this.db.insert(recurringContributions).values({
       ...data,
       assetId,
-      createdAt: new Date(),
-      updatedAt: new Date(),
     }).returning();
 
     return insertedContribution;
@@ -650,7 +648,7 @@ export class DatabaseAssetService implements IAssetService {
       // Check if the next processing date is due
       if (nextDate <= now) {
         // Create a contribution (debit) entry
-        await this.createBrokerProviderAssetDebitHistory(contribution.assetId, {
+        await this.createBrokerProviderAssetContributionHistory(contribution.assetId, {
           value: contribution.amount,
           recordedAt: new Date(),
         });

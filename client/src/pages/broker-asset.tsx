@@ -33,12 +33,12 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -49,15 +49,15 @@ import { z } from "zod";
 import { SiTradingview, SiCoinbase } from "react-icons/si";
 import { BsPiggyBank } from "react-icons/bs";
 import { usePortfolio } from "@/context/PortfolioContext";
-import { AssetValue, AssetDebit, BrokerProviderAsset, RecurringContribution } from "shared/schema";
+import {
+  AssetValue,
+  AssetContribution,
+  BrokerProviderAsset,
+  RecurringContribution,
+} from "shared/schema";
 import { getProviderName } from "@/lib/broker";
 import { useBrokerProviders } from "@/hooks/use-broker-providers";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Form schema for history entry
 const historySchema = z.object({
@@ -105,30 +105,60 @@ export default function AccountPage() {
     updateBrokerAssetContribution,
     deleteBrokerAssetContribution,
   } = usePortfolio();
-  
+
   // Mutations for recurring contributions
   const addRecurringContribution = useMutation({
-    mutationFn: (data: { assetId: string, amount: number, startDate: Date, interval: "weekly" | "biweekly" | "monthly", isActive: boolean }) => 
-      apiRequest("POST", `/api/assets/broker/${data.assetId}/recurring-contributions`, data),
+    mutationFn: (data: {
+      assetId: string;
+      amount: number;
+      startDate: Date;
+      interval: "weekly" | "biweekly" | "monthly";
+      isActive: boolean;
+    }) =>
+      apiRequest(
+        "POST",
+        `/api/assets/broker/${data.assetId}/recurring-contributions`,
+        data
+      ),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["broker-asset-recurring-contributions", assetId] });
-    }
+      queryClient.invalidateQueries({
+        queryKey: ["broker-asset-recurring-contributions", assetId],
+      });
+    },
   });
-  
+
   const updateRecurringContribution = useMutation({
-    mutationFn: (data: { assetId: string, contributionId: string, amount: number, startDate: Date, interval: "weekly" | "biweekly" | "monthly", isActive: boolean }) => 
-      apiRequest("PUT", `/api/assets/broker/${data.assetId}/recurring-contributions/${data.contributionId}`, data),
+    mutationFn: (data: {
+      assetId: string;
+      contributionId: string;
+      amount: number;
+      startDate: Date;
+      interval: "weekly" | "biweekly" | "monthly";
+      isActive: boolean;
+    }) =>
+      apiRequest(
+        "PUT",
+        `/api/assets/broker/${data.assetId}/recurring-contributions/${data.contributionId}`,
+        data
+      ),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["broker-asset-recurring-contributions", assetId] });
-    }
+      queryClient.invalidateQueries({
+        queryKey: ["broker-asset-recurring-contributions", assetId],
+      });
+    },
   });
-  
+
   const deleteRecurringContribution = useMutation({
-    mutationFn: (data: { assetId: string, contributionId: string }) => 
-      apiRequest("DELETE", `/api/assets/broker/${data.assetId}/recurring-contributions/${data.contributionId}`),
+    mutationFn: (data: { assetId: string; contributionId: string }) =>
+      apiRequest(
+        "DELETE",
+        `/api/assets/broker/${data.assetId}/recurring-contributions/${data.contributionId}`
+      ),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["broker-asset-recurring-contributions", assetId] });
-    }
+      queryClient.invalidateQueries({
+        queryKey: ["broker-asset-recurring-contributions", assetId],
+      });
+    },
   });
 
   const { data: providers, isLoading: isProvidersLoading } =
@@ -139,18 +169,24 @@ export default function AccountPage() {
   const [isEditHistoryOpen, setIsEditHistoryOpen] = useState(false);
   const [historyToDelete, setHistoryToDelete] = useState<string | null>(null);
   const [historyToEdit, setHistoryToEdit] = useState<any>(null);
-  
+
   // State for contributions tab
   const [isAddContributionOpen, setIsAddContributionOpen] = useState(false);
   const [isEditContributionOpen, setIsEditContributionOpen] = useState(false);
-  const [contributionToDelete, setContributionToDelete] = useState<string | null>(null);
+  const [contributionToDelete, setContributionToDelete] = useState<
+    string | null
+  >(null);
   const [contributionToEdit, setContributionToEdit] = useState<any>(null);
-  
+
   // Active tab state
-  const [activeTab, setActiveTab] = useState<"values" | "contributions">("values");
-  
+  const [activeTab, setActiveTab] = useState<"values" | "contributions">(
+    "values"
+  );
+
   // State for recurring contributions
-  const [recurringContributions, setRecurringContributions] = useState<RecurringContribution[]>([]);
+  const [recurringContributions, setRecurringContributions] = useState<
+    RecurringContribution[]
+  >([]);
   const [isLoadingRecurring, setIsLoadingRecurring] = useState(false);
 
   const {
@@ -177,33 +213,30 @@ export default function AccountPage() {
         ),
     }
   );
-  
+
   // Query for asset contributions history
-  const { 
-    data: contributions, 
-    isLoading: isContributionsLoading 
-  } = useQuery<AssetDebit[]>({
+  const { data: contributions, isLoading: isContributionsLoading } = useQuery<
+    AssetContribution[]
+  >({
     queryKey: ["broker-asset-contributions", assetId],
     queryFn: () =>
-      apiRequest<AssetDebit[]>(
+      apiRequest<AssetContribution[]>(
         "GET",
         `/api/assets/broker/${assetId}/contributions`
       ),
   });
-  
+
   // Query for recurring contributions
-  const {
-    data: recurringContributionsData,
-    isLoading: isRecurringLoading
-  } = useQuery<RecurringContribution[]>({
-    queryKey: ["broker-asset-recurring-contributions", assetId],
-    queryFn: () => 
-      apiRequest<RecurringContribution[]>(
-        "GET", 
-        `/api/assets/broker/${assetId}/recurring-contributions`
-      ),
-    enabled: !!assetId
-  });
+  const { data: recurringContributionsData, isLoading: isRecurringLoading } =
+    useQuery<RecurringContribution[]>({
+      queryKey: ["broker-asset-recurring-contributions", assetId],
+      queryFn: () =>
+        apiRequest<RecurringContribution[]>(
+          "GET",
+          `/api/assets/broker/${assetId}/recurring-contributions`
+        ),
+      enabled: !!assetId,
+    });
 
   // Form for adding/editing history
   const form = useForm<z.infer<typeof historySchema>>({
@@ -213,7 +246,7 @@ export default function AccountPage() {
       recordedAt: new Date().toISOString().split("T")[0],
     },
   });
-  
+
   // Form for adding/editing contributions
   const contributionForm = useForm<z.infer<typeof contributionSchema>>({
     resolver: zodResolver(contributionSchema),
@@ -222,7 +255,7 @@ export default function AccountPage() {
       recordedAt: new Date().toISOString().split("T")[0],
     },
   });
-  
+
   // Form for recurring contributions
   const recurringForm = useForm<z.infer<typeof recurringContributionSchema>>({
     resolver: zodResolver(recurringContributionSchema),
@@ -281,9 +314,11 @@ export default function AccountPage() {
       console.error("Error deleting history:", error);
     }
   };
-  
+
   // Handlers for contributions
-  const handleCreateContribution = async (values: z.infer<typeof contributionSchema>) => {
+  const handleCreateContribution = async (
+    values: z.infer<typeof contributionSchema>
+  ) => {
     if (!assetId) return;
 
     try {
@@ -299,7 +334,9 @@ export default function AccountPage() {
     }
   };
 
-  const handleEditContribution = async (values: z.infer<typeof contributionSchema>) => {
+  const handleEditContribution = async (
+    values: z.infer<typeof contributionSchema>
+  ) => {
     if (!contributionToEdit || !assetId) return;
     try {
       await updateBrokerAssetContribution.mutateAsync({
@@ -329,15 +366,20 @@ export default function AccountPage() {
       console.error("Error deleting contribution:", error);
     }
   };
-  
+
   // State for recurring contributions modal
   const [isAddRecurringOpen, setIsAddRecurringOpen] = useState(false);
   const [isEditRecurringOpen, setIsEditRecurringOpen] = useState(false);
-  const [recurringToEdit, setRecurringToEdit] = useState<RecurringContribution | null>(null);
-  const [recurringToDelete, setRecurringToDelete] = useState<string | null>(null);
-  
+  const [recurringToEdit, setRecurringToEdit] =
+    useState<RecurringContribution | null>(null);
+  const [recurringToDelete, setRecurringToDelete] = useState<string | null>(
+    null
+  );
+
   // Handlers for recurring contributions
-  const handleCreateRecurringContribution = async (values: z.infer<typeof recurringContributionSchema>) => {
+  const handleCreateRecurringContribution = async (
+    values: z.infer<typeof recurringContributionSchema>
+  ) => {
     if (!assetId) return;
 
     try {
@@ -355,9 +397,11 @@ export default function AccountPage() {
     }
   };
 
-  const handleEditRecurringContribution = async (values: z.infer<typeof recurringContributionSchema>) => {
+  const handleEditRecurringContribution = async (
+    values: z.infer<typeof recurringContributionSchema>
+  ) => {
     if (!recurringToEdit || !assetId) return;
-    
+
     try {
       await updateRecurringContribution.mutateAsync({
         contributionId: recurringToEdit.id,
@@ -483,12 +527,21 @@ export default function AccountPage() {
           </div>
 
           {/* Tabs for Values/Contributions */}
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "values" | "contributions")}>
+          <Tabs
+            value={activeTab}
+            onValueChange={(value) =>
+              setActiveTab(value as "values" | "contributions")
+            }
+          >
             <TabsList className="mb-4 w-full">
-              <TabsTrigger value="values" className="flex-1">Account Values</TabsTrigger>
-              <TabsTrigger value="contributions" className="flex-1">Contributions</TabsTrigger>
+              <TabsTrigger value="values" className="flex-1">
+                Account Values
+              </TabsTrigger>
+              <TabsTrigger value="contributions" className="flex-1">
+                Contributions
+              </TabsTrigger>
             </TabsList>
-            
+
             {/* Values Tab Content */}
             <TabsContent value="values">
               <div>
@@ -515,7 +568,7 @@ export default function AccountPage() {
                           Add a new value record for this account.
                         </DialogDescription>
                       </DialogHeader>
-    
+
                       <Form {...form}>
                         <form
                           onSubmit={form.handleSubmit(handleCreateHistory)}
@@ -539,7 +592,7 @@ export default function AccountPage() {
                               </FormItem>
                             )}
                           />
-    
+
                           <FormField
                             control={form.control}
                             name="recordedAt"
@@ -553,7 +606,7 @@ export default function AccountPage() {
                               </FormItem>
                             )}
                           />
-    
+
                           <DialogFooter>
                             <Button type="submit">Add Entry</Button>
                           </DialogFooter>
@@ -562,7 +615,7 @@ export default function AccountPage() {
                     </DialogContent>
                   </Dialog>
                 </div>
-    
+
                 {/* History List */}
                 <div className="space-y-4">
                   {history?.length === 0 && (
@@ -580,11 +633,14 @@ export default function AccountPage() {
                           £{Number(entry.value).toLocaleString()}
                         </p>
                         <p className="text-sm text-gray-600">
-                          {new Date(entry.recordedAt).toLocaleDateString("en-GB", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                          })}
+                          {new Date(entry.recordedAt).toLocaleDateString(
+                            "en-GB",
+                            {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            }
+                          )}
                         </p>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -619,7 +675,7 @@ export default function AccountPage() {
                 </div>
               </div>
             </TabsContent>
-            
+
             {/* Contributions Tab Content */}
             <TabsContent value="contributions">
               <div>
@@ -632,23 +688,39 @@ export default function AccountPage() {
                     </h3>
                     <div className="grid grid-cols-2 gap-4 mt-3">
                       <div>
-                        <p className="text-sm text-gray-600">Total Contributed</p>
+                        <p className="text-sm text-gray-600">
+                          Total Contributed
+                        </p>
                         <p className="text-xl font-semibold">
-                          £{contributions
+                          £
+                          {contributions
                             .reduce((sum, item) => sum + Number(item.value), 0)
-                            .toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            .toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Number of Contributions</p>
-                        <p className="text-xl font-semibold">{contributions.length}</p>
+                        <p className="text-sm text-gray-600">
+                          Number of Contributions
+                        </p>
+                        <p className="text-xl font-semibold">
+                          {contributions.length}
+                        </p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">First Contribution</p>
+                        <p className="text-sm text-gray-600">
+                          First Contribution
+                        </p>
                         <p className="text-base font-medium">
                           {contributions.length > 0
                             ? new Date(
-                                Math.min(...contributions.map(c => new Date(c.recordedAt).getTime()))
+                                Math.min(
+                                  ...contributions.map((c) =>
+                                    new Date(c.recordedAt).getTime()
+                                  )
+                                )
                               ).toLocaleDateString("en-GB", {
                                 day: "2-digit",
                                 month: "short",
@@ -658,11 +730,17 @@ export default function AccountPage() {
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Latest Contribution</p>
+                        <p className="text-sm text-gray-600">
+                          Latest Contribution
+                        </p>
                         <p className="text-base font-medium">
                           {contributions.length > 0
                             ? new Date(
-                                Math.max(...contributions.map(c => new Date(c.recordedAt).getTime()))
+                                Math.max(
+                                  ...contributions.map((c) =>
+                                    new Date(c.recordedAt).getTime()
+                                  )
+                                )
                               ).toLocaleDateString("en-GB", {
                                 day: "2-digit",
                                 month: "short",
@@ -674,7 +752,7 @@ export default function AccountPage() {
                     </div>
                   </div>
                 )}
-                
+
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-lg font-medium">Contributions</h2>
                   <Dialog
@@ -698,7 +776,7 @@ export default function AccountPage() {
                           Record a new contribution to this account.
                         </DialogDescription>
                       </DialogHeader>
-    
+
                       <Tabs defaultValue="single" className="mt-4">
                         <TabsList className="grid w-full grid-cols-2 mb-4">
                           <TabsTrigger value="single">Single</TabsTrigger>
@@ -708,7 +786,9 @@ export default function AccountPage() {
                         <TabsContent value="single">
                           <Form {...contributionForm}>
                             <form
-                              onSubmit={contributionForm.handleSubmit(handleCreateContribution)}
+                              onSubmit={contributionForm.handleSubmit(
+                                handleCreateContribution
+                              )}
                               className="space-y-4"
                             >
                               <div className="grid grid-cols-2 gap-4">
@@ -725,7 +805,7 @@ export default function AccountPage() {
                                     </FormItem>
                                   )}
                                 />
-                                
+
                                 <FormField
                                   control={contributionForm.control}
                                   name="value"
@@ -745,7 +825,7 @@ export default function AccountPage() {
                                   )}
                                 />
                               </div>
-        
+
                               <DialogFooter>
                                 <Button type="submit">Add Contribution</Button>
                               </DialogFooter>
@@ -756,7 +836,9 @@ export default function AccountPage() {
                         <TabsContent value="recurring">
                           <Form {...recurringForm}>
                             <form
-                              onSubmit={recurringForm.handleSubmit(handleCreateRecurringContribution)}
+                              onSubmit={recurringForm.handleSubmit(
+                                handleCreateRecurringContribution
+                              )}
                               className="space-y-4"
                             >
                               <div className="grid grid-cols-2 gap-4">
@@ -773,7 +855,7 @@ export default function AccountPage() {
                                     </FormItem>
                                   )}
                                 />
-                                
+
                                 <FormField
                                   control={recurringForm.control}
                                   name="amount"
@@ -793,7 +875,7 @@ export default function AccountPage() {
                                   )}
                                 />
                               </div>
-                              
+
                               <FormField
                                 control={recurringForm.control}
                                 name="interval"
@@ -807,13 +889,22 @@ export default function AccountPage() {
                                         defaultValue={field.value}
                                         className="justify-start"
                                       >
-                                        <ToggleGroupItem value="weekly" aria-label="Weekly">
+                                        <ToggleGroupItem
+                                          value="weekly"
+                                          aria-label="Weekly"
+                                        >
                                           Weekly
                                         </ToggleGroupItem>
-                                        <ToggleGroupItem value="biweekly" aria-label="Biweekly">
+                                        <ToggleGroupItem
+                                          value="biweekly"
+                                          aria-label="Biweekly"
+                                        >
                                           Biweekly
                                         </ToggleGroupItem>
-                                        <ToggleGroupItem value="monthly" aria-label="Monthly">
+                                        <ToggleGroupItem
+                                          value="monthly"
+                                          aria-label="Monthly"
+                                        >
                                           Monthly
                                         </ToggleGroupItem>
                                       </ToggleGroup>
@@ -822,7 +913,7 @@ export default function AccountPage() {
                                   </FormItem>
                                 )}
                               />
-                              
+
                               <FormField
                                 control={recurringForm.control}
                                 name="isActive"
@@ -835,25 +926,27 @@ export default function AccountPage() {
                                       />
                                     </FormControl>
                                     <div className="space-y-1 leading-none">
-                                      <FormLabel>
-                                        Active
-                                      </FormLabel>
+                                      <FormLabel>Active</FormLabel>
                                       <p className="text-sm text-muted-foreground">
-                                        Enable or disable this recurring contribution
+                                        Enable or disable this recurring
+                                        contribution
                                       </p>
                                     </div>
                                   </FormItem>
                                 )}
                               />
-                              
+
                               <DialogFooter>
-                                <Button type="submit">Add Recurring Contribution</Button>
+                                <Button type="submit">
+                                  Add Recurring Contribution
+                                </Button>
                               </DialogFooter>
                             </form>
                           </Form>
                           <div className="mt-4">
                             <p className="text-center text-sm text-muted-foreground">
-                              Set up recurring contributions to automatically track regular investments to your portfolio.
+                              Set up recurring contributions to automatically
+                              track regular investments to your portfolio.
                             </p>
                           </div>
                         </TabsContent>
@@ -861,7 +954,7 @@ export default function AccountPage() {
                     </DialogContent>
                   </Dialog>
                 </div>
-    
+
                 {/* Contributions List */}
                 <div className="space-y-4">
                   {contributions?.length === 0 && (
@@ -882,11 +975,14 @@ export default function AccountPage() {
                           </p>
                         </div>
                         <p className="text-sm text-gray-600">
-                          {new Date(contribution.recordedAt).toLocaleDateString("en-GB", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                          })}
+                          {new Date(contribution.recordedAt).toLocaleDateString(
+                            "en-GB",
+                            {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            }
+                          )}
                         </p>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -911,7 +1007,9 @@ export default function AccountPage() {
                           variant="outline"
                           size="icon"
                           className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => setContributionToDelete(contribution.id)}
+                          onClick={() =>
+                            setContributionToDelete(contribution.id)
+                          }
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -921,9 +1019,8 @@ export default function AccountPage() {
                 </div>
               </div>
             </TabsContent>
-            
-            {/* Recurring Contributions Tab Content */}
 
+            {/* Recurring Contributions Tab Content */}
           </Tabs>
         </CardContent>
       </Card>
@@ -983,9 +1080,12 @@ export default function AccountPage() {
           </Form>
         </DialogContent>
       </Dialog>
-      
+
       {/* Edit Contribution Dialog */}
-      <Dialog open={isEditContributionOpen} onOpenChange={setIsEditContributionOpen}>
+      <Dialog
+        open={isEditContributionOpen}
+        onOpenChange={setIsEditContributionOpen}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Contribution</DialogTitle>
@@ -1064,7 +1164,7 @@ export default function AccountPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
+
       {/* Delete Contribution Confirmation Dialog */}
       <AlertDialog
         open={!!contributionToDelete}
@@ -1074,8 +1174,8 @@ export default function AccountPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Contribution</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this contribution record? This action
-              cannot be undone.
+              Are you sure you want to delete this contribution record? This
+              action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

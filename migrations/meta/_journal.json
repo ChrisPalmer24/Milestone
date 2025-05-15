@@ -29,6 +29,13 @@
       "when": 1747294750696,
       "tag": "0003_recurring-contributions",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1747295499387,
+      "tag": "0004_contribution-not-debit",
+      "breakpoints": true
     }
   ]
 }

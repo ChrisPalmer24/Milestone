@@ -14,7 +14,7 @@ import { ResourceQueryBuilder } from "@server/utils/resource-query-builder";
 import {
   assetValueInsertSchema,
   assetValueOrphanInsertSchema,
-  assetDebitOrphanInsertSchema,
+  assetContributionOrphanInsertSchema,
   brokerProviderAssetInsertSchema,
   generalAssetInsertSchema,
   recurringContributionOrphanInsertSchema,
@@ -171,8 +171,8 @@ export async function registerRoutes(
     `/broker/${uuidRouteParam("assetId")}/contributions`,
     requireUser,
     async (req: AuthRequest, res) => {
-      const data = assetDebitOrphanInsertSchema.parse(req.body);
-      const contribution = await assetService.createBrokerProviderAssetDebitHistory(
+      const data = assetContributionOrphanInsertSchema.parse(req.body);
+      const contribution = await assetService.createBrokerProviderAssetContributionHistory(
         req.params.assetId,
         data
       );
@@ -185,11 +185,11 @@ export async function registerRoutes(
     requireUser,
     async (req: AuthRequest, res) => {
       const query = brokerProviderAssetsQueryBuilder.buildQuery(req.query);
-      const contributions = await assetService.getBrokerProviderAssetDebitHistory(
+      const contributions = await assetService.getBrokerProviderAssetContributionHistory(
         req.params.assetId,
         query
       );
-      res.json(contributions);
+      res.json(contributions);  
     }
   );
   
@@ -197,8 +197,8 @@ export async function registerRoutes(
     `/broker/${uuidRouteParam("assetId")}/contributions/${uuidRouteParam("contributionId")}`,
     requireUser,
     async (req: AuthRequest, res) => {
-      const data = assetDebitOrphanInsertSchema.parse(req.body);
-      const contribution = await assetService.updateBrokerProviderAssetDebitHistory(
+      const data = assetContributionOrphanInsertSchema.parse(req.body);
+      const contribution = await assetService.updateBrokerProviderAssetContributionHistory(
         req.params.assetId,
         req.params.contributionId,
         data
@@ -211,7 +211,7 @@ export async function registerRoutes(
     `/broker/${uuidRouteParam("assetId")}/contributions/${uuidRouteParam("contributionId")}`,
     requireUser,
     async (req: AuthRequest, res) => {
-      const result = await assetService.deleteBrokerProviderAssetDebitHistory(
+      const result = await assetService.deleteBrokerProviderAssetContributionHistory(
         req.params.assetId,
         req.params.contributionId
       );

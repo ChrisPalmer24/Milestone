@@ -20,7 +20,8 @@ export const assetValues = pgTable("asset_values", {
 export type AssetValueSelect = InferSelectModel<typeof assetValues>;
 export type AssetValueInsert = InferInsertModelBasic<typeof assetValues>;
 
-export const assetDebits = pgTable("asset_debits", {
+
+export const assetContributions = pgTable("asset_contributions", {
   id: uuid('id').notNull().default(sql`gen_random_uuid()`),
   value: real("value").notNull(),
   recordedAt: timestamp("recorded_at").notNull(),
@@ -28,8 +29,19 @@ export const assetDebits = pgTable("asset_debits", {
   ...timestampColumns()
 });
 
-export type AssetDebitSelect = InferSelectModel<typeof assetDebits>;
-export type AssetDebitInsert = InferInsertModelBasic<typeof assetDebits>;
+export type AssetContributionSelect = InferSelectModel<typeof assetContributions>;
+export type AssetContributionInsert = InferInsertModelBasic<typeof assetContributions>;
+
+// export const assetDebits = pgTable("asset_debits", {
+//   id: uuid('id').notNull().default(sql`gen_random_uuid()`),
+//   value: real("value").notNull(),
+//   recordedAt: timestamp("recorded_at").notNull(),
+//   assetId: uuid("asset_id").notNull(),
+//   ...timestampColumns()
+// });
+
+// export type AssetDebitSelect = InferSelectModel<typeof assetDebits>;
+// export type AssetDebitInsert = InferInsertModelBasic<typeof assetDebits>;
 
 export type ContributionInterval = (typeof contributionIntervalEnum.enumValues)[number];
 
