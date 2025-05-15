@@ -1,4 +1,4 @@
-import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, ReferenceLine, ReferenceArea } from "recharts";
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, ReferenceLine, ReferenceArea, Scatter } from "recharts";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { calculateFireProjection } from "@/lib/utils/finance";
@@ -41,13 +41,35 @@ export default function FireChart({
   // Use the target retirement age if provided, otherwise use the calculated FIRE achievement age
   const retirementAge = targetRetirementAge || fireAchievedAge;
   
-  // Create a point specifically for the retirement marker
-  const retirementPoint = projectionData.find(point => point.age === retirementAge);
+  // Find the exact retirement point or the closest one
+  let retirementPoint = projectionData.find(point => point.age === retirementAge);
+  
+  // If we don't have an exact match, find the closest point
+  if (!retirementPoint) {
+    // Find the closest age point to the retirement age
+    const closest = projectionData.reduce((prev, curr) => {
+      return (Math.abs(curr.age - retirementAge) < Math.abs(prev.age - retirementAge)) ? curr : prev;
+    }, projectionData[0]);
+    
+    // Create an interpolated point at the retirement age
+    if (closest) {
+      retirementPoint = {
+        age: retirementAge,
+        portfolio: closest.portfolio,
+        target: closest.target
+      };
+    }
+  }
+  
+  // Create marker data for the retirement point
+  // Scatter requires x, y coordinates
   const retirementMarker = retirementPoint ? [
     { 
-      age: retirementAge, 
-      portfolio: retirementPoint.portfolio,
-      marker: retirementPoint.portfolio
+      x: retirementAge, 
+      y: retirementPoint.portfolio,
+      // Keep these for tooltip formatting
+      age: retirementAge,
+      portfolio: retirementPoint.portfolio
     }
   ] : [];
   
@@ -151,7 +173,7 @@ export default function FireChart({
               <ReferenceLine
                 x={retirementAge}
                 stroke="#10b981"
-                strokeWidth={1}
+                strokeWidth={2}
                 strokeDasharray="3 3"
                 label={{
                   value: targetRetirementAge 
@@ -159,8 +181,10 @@ export default function FireChart({
                     : `FIRE at ${retirementAge}`,
                   position: 'top',
                   fill: '#10b981',
-                  fontSize: 12
+                  fontSize: 12,
+                  fontWeight: 'bold'
                 }}
+
               />
               
               {/* Portfolio growth line - ending at retirement age */}
@@ -185,20 +209,17 @@ export default function FireChart({
                 name="FIRE Target"
               />
               
-              {/* Special marker for retirement point */}
+              {/* Add a scatter plot specifically for the retirement point */}
               {retirementMarker.length > 0 && (
-                <Line 
-                  dataKey="marker"
-                  data={retirementMarker}
-                  stroke="none"
-                  dot={{
-                    r: 8,
-                    fill: "#10b981", 
-                    stroke: "#ffffff",
-                    strokeWidth: 2
-                  }}
+                <Scatter
                   name="Retirement Point"
-                  isAnimationActive={false}
+                  data={retirementMarker}
+                  fill="#10b981"
+                  stroke="#ffffff"
+                  strokeWidth={2}
+                  line={false}
+                  shape="circle"
+                  legendType="none"
                 />
               )}
             </LineChart>
