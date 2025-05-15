@@ -97,8 +97,8 @@ export function calculateFireProjection({
   const projectionData = [];
   let currentValue = currentAmount;
   
-  // Calculate until age 100 or until we reach a sensible maximum
-  const maxAge = 100;
+  // Calculate until age 87 or until we reach a sensible maximum
+  const maxAge = 87;
   const maxYearsToCalculate = maxAge - currentAge;
   
   for (let year = 0; year <= maxYearsToCalculate; year++) {

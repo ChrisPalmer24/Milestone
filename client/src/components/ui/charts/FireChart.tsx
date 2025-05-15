@@ -47,16 +47,16 @@ export default function FireChart({
     xAxisTicks.push(retirementAge);
   }
   
-  // Add regular intervals up to 100
-  for (let age = Math.ceil(currentAge / 10) * 10; age <= 100; age += 10) {
+  // Add regular intervals up to 87
+  for (let age = Math.ceil(currentAge / 10) * 10; age <= 87; age += 10) {
     if (!xAxisTicks.includes(age)) {
       xAxisTicks.push(age);
     }
   }
   
-  // Add age 100 if not already included
-  if (!xAxisTicks.includes(100)) {
-    xAxisTicks.push(100);
+  // Add age 87 if not already included
+  if (!xAxisTicks.includes(87)) {
+    xAxisTicks.push(87);
   }
   
   // Sort the ticks in ascending order
@@ -76,7 +76,7 @@ export default function FireChart({
               {/* Add a reference area for the retirement phase */}
               <ReferenceArea
                 x1={retirementAge}
-                x2={100}
+                x2={87}
                 fill="#f2f9ff"
                 fillOpacity={0.4}
                 strokeOpacity={0}
@@ -89,7 +89,7 @@ export default function FireChart({
                 tick={{ fontSize: 12 }}
                 label={{ value: 'Age', position: 'insideBottom', offset: -5 }}
                 ticks={xAxisTicks}
-                domain={[currentAge, 100]}
+                domain={[currentAge, 87]}
               />
               <YAxis 
                 tickFormatter={(value) => {
