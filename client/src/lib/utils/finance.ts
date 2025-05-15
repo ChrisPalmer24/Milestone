@@ -94,13 +94,14 @@ export function calculateFireProjection({
     targetAmount
   );
   
-  // Cap years to something reasonable for display
-  const maxYearsToDisplay = Math.min(Math.ceil(yearsToFire) + 3, 40);
-  
   const projectionData = [];
   let currentValue = currentAmount;
   
-  for (let year = 0; year <= maxYearsToDisplay; year++) {
+  // Calculate until age 100 or until we reach a sensible maximum
+  const maxAge = 100;
+  const maxYearsToCalculate = maxAge - currentAge;
+  
+  for (let year = 0; year <= maxYearsToCalculate; year++) {
     const age = currentAge + year;
     
     if (year > 0) {
@@ -118,8 +119,8 @@ export function calculateFireProjection({
       target: targetAmount
     });
     
-    // Stop once we've well exceeded the target
-    if (currentValue > targetAmount * 1.5) break;
+    // Stop if we've reached age 100
+    if (age >= maxAge) break;
   }
   
   return { projectionData, yearsToFire };
