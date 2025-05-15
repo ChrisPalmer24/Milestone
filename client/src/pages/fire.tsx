@@ -359,8 +359,12 @@ export default function Fire() {
             </div>
           </div>
 
-          {/* Adjust Investment */}
+          {/* FIRE Settings */}
           <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <h3 className="font-medium mb-3">Your FIRE Settings</h3>
+          
+          {/* Adjust Investment */}
+          <div className="bg-gray-50 rounded-lg p-4 mt-6">
             <h3 className="font-medium mb-3">Adjust Your Investment</h3>
 
             <div className="mb-4">
@@ -438,11 +442,7 @@ export default function Fire() {
               )}
             </div>
           </div>
-
-          {/* FIRE Settings */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="font-medium mb-3">Your FIRE Settings</h3>
-
+            
             <div className="mb-4">
               <Label
                 htmlFor="annual-income"
