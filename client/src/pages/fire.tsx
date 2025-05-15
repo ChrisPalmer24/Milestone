@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { usePortfolio } from "@/context/PortfolioContext";
 import {
   calculateFireNumber,
@@ -39,6 +40,8 @@ export default function Fire() {
     expectedReturn: number;
     withdrawalRate: number;
     monthlyInvestment: number;
+    targetRetirementAge: number;
+    adjustInflation: boolean;
   }>({
     annualIncome:
       Number(fireSettings?.annualIncomeGoal) ||
@@ -52,6 +55,13 @@ export default function Fire() {
     monthlyInvestment:
       Number(fireSettings?.monthlyInvestment) ||
       Number(defaultSettings.monthlyInvestment),
+    targetRetirementAge:
+      Number(fireSettings?.targetRetirementAge) ||
+      Number(defaultSettings.targetRetirementAge),
+    adjustInflation:
+      fireSettings?.adjustInflation !== undefined
+        ? Boolean(fireSettings.adjustInflation)
+        : true,
   });
 
   // Update form state when fireSettings loads
@@ -62,6 +72,10 @@ export default function Fire() {
         expectedReturn: Number(fireSettings.expectedAnnualReturn),
         withdrawalRate: Number(fireSettings.safeWithdrawalRate),
         monthlyInvestment: Number(fireSettings.monthlyInvestment),
+        targetRetirementAge: Number(fireSettings.targetRetirementAge),
+        adjustInflation: fireSettings.adjustInflation !== undefined 
+          ? Boolean(fireSettings.adjustInflation) 
+          : true,
       });
     }
   }, [fireSettings]);
@@ -133,12 +147,13 @@ export default function Fire() {
   // Handle form submission
   const handleSaveSettings = async () => {
     const settings: Omit<FireSettingsInsert, "id" | "userAccountId"> = {
-      targetRetirementAge: defaultSettings.targetRetirementAge,
+      targetRetirementAge: formState.targetRetirementAge,
       annualIncomeGoal: formState.annualIncome.toString(),
       expectedAnnualReturn: formState.expectedReturn.toString(),
       safeWithdrawalRate: formState.withdrawalRate.toString(),
       monthlyInvestment: formState.monthlyInvestment.toString(),
       currentAge: defaultSettings.currentAge,
+      adjustInflation: formState.adjustInflation,
     };
 
     try {
@@ -163,13 +178,20 @@ export default function Fire() {
   };
 
   // Handle input changes
-  const handleInputChange = (field: keyof typeof formState, value: string) => {
-    const numValue = parseFloat(value);
-    if (!isNaN(numValue)) {
+  const handleInputChange = (field: keyof typeof formState, value: string | boolean) => {
+    if (typeof value === 'boolean') {
       setFormState((prev) => ({
         ...prev,
-        [field]: numValue,
+        [field]: value,
       }));
+    } else {
+      const numValue = parseFloat(value);
+      if (!isNaN(numValue)) {
+        setFormState((prev) => ({
+          ...prev,
+          [field]: numValue,
+        }));
+      }
     }
   };
 
@@ -443,12 +465,7 @@ export default function Fire() {
                 />
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                This sets your FIRE number to £
-                {(
-                  formState.annualIncome *
-                  (100 / formState.withdrawalRate)
-                ).toLocaleString()}{" "}
-                ({100 / formState.withdrawalRate}x)
+                Your desired annual income in today's money.
               </p>
             </div>
 
