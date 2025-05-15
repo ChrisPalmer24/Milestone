@@ -125,12 +125,26 @@ export default function FireChart({
                   } else {
                     formattedValue = `£${value.toLocaleString()}`;
                   }
-                  return [
-                    formattedValue, 
-                    name === "portfolio" ? "Portfolio Growth" : "FIRE Target"
-                  ];
+                  
+                  // Customize label based on data series
+                  let label = name;
+                  if (name === "portfolio") {
+                    label = "Portfolio Growth";
+                  } else if (name === "target") {
+                    label = "FIRE Target";
+                  } else if (name === "marker") {
+                    label = "Retirement Point";
+                  }
+                  
+                  return [formattedValue, label];
                 }}
-                labelFormatter={(age) => `Age: ${age}`}
+                labelFormatter={(age) => {
+                  // Add special indicator if this is the retirement age
+                  if (age === retirementAge) {
+                    return `Age: ${age} (Retirement)`;
+                  }
+                  return `Age: ${age}`;
+                }}
               />
               
               {/* Add a reference line for retirement age */}
@@ -170,6 +184,23 @@ export default function FireChart({
                 dot={false}
                 name="FIRE Target"
               />
+              
+              {/* Special marker for retirement point */}
+              {retirementMarker.length > 0 && (
+                <Line 
+                  dataKey="marker"
+                  data={retirementMarker}
+                  stroke="none"
+                  dot={{
+                    r: 8,
+                    fill: "#10b981", 
+                    stroke: "#ffffff",
+                    strokeWidth: 2
+                  }}
+                  name="Retirement Point"
+                  isAnimationActive={false}
+                />
+              )}
             </LineChart>
           </ResponsiveContainer>
         </div>
