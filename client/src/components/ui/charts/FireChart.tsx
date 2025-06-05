@@ -126,8 +126,6 @@ export default function FireChart({
                 label={{ value: 'Age', position: 'insideBottom', offset: -5 }}
                 ticks={xAxisTicks}
                 domain={[currentAge, 87]}
-                allowDecimals={false}
-                type="number"
               />
               <YAxis 
                 tickFormatter={(value) => {
@@ -211,20 +209,17 @@ export default function FireChart({
                 name="FIRE Target"
               />
               
-              {/* Add a Line specifically for the retirement point - as a single dot */}
+              {/* Add a scatter plot specifically for the retirement point */}
               {retirementMarker.length > 0 && (
-                <Line
+                <Scatter
                   name="Retirement Point"
                   data={retirementMarker}
-                  dataKey="portfolio"
-                  dot={{
-                    r: 8,
-                    fill: "#10b981",
-                    stroke: "#ffffff",
-                    strokeWidth: 2
-                  }}
-                  activeDot={{ r: 10 }}
-                  stroke="none"
+                  fill="#10b981"
+                  stroke="#ffffff"
+                  strokeWidth={2}
+                  line={false}
+                  shape="circle"
+                  legendType="none"
                 />
               )}
             </LineChart>

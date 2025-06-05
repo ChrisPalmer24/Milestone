@@ -13,7 +13,6 @@ export const fireSettings = pgTable("fire_settings", {
   monthlyInvestment: numeric("monthly_investment").notNull(),
   currentAge: integer("current_age").notNull(),
   adjustInflation: boolean("adjust_inflation").default(true).notNull(),
-  statePensionAge: integer("state_pension_age").default(66).notNull(), // UK State Pension age (66 or 67)
   ...timestampColumns()
 });
 
