@@ -28,7 +28,7 @@ const chartConfig = {
     label: "FIRE Target",
     color: "hsl(var(--chart-2))",
   },
-  retirement: {
+  retirementMarker: {
     label: "Retirement Point",
     color: "hsl(var(--chart-3))",
   },
@@ -200,7 +200,8 @@ export default function FireChart({
             {/* Retirement point marker */}
             {retirementMarker.length > 0 && (
               <Line
-                name="retirement"
+                key="retirement-marker"
+                name="retirementMarker"
                 data={retirementMarker}
                 dataKey="portfolio"
                 dot={{
