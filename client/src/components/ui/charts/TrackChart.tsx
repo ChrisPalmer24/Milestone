@@ -1,5 +1,11 @@
-import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from "recharts";
+import { Line, LineChart, XAxis, YAxis, CartesianGrid } from "recharts";
 import { Card, CardContent } from "@/components/ui/card";
+import { 
+  ChartContainer, 
+  ChartTooltip, 
+  ChartTooltipContent,
+  type ChartConfig 
+} from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 
@@ -10,6 +16,17 @@ type TrackChartProps = {
   currentAmount: number;
   className?: string;
 };
+
+const chartConfig = {
+  projected: {
+    label: "Projected Growth",
+    color: "hsl(var(--chart-1))",
+  },
+  actual: {
+    label: "Your Progress",
+    color: "hsl(var(--chart-2))",
+  },
+} satisfies ChartConfig;
 
 export default function TrackChart({
   targetAge,
@@ -48,47 +65,55 @@ export default function TrackChart({
   return (
     <Card className={cn("w-full", className)}>
       <CardContent className="p-4">
-        <div className="chart-container h-[240px] w-full mb-5">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-              <XAxis 
-                dataKey="age" 
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 12 }}
-                label={{ value: 'Age', position: 'insideBottom', offset: -5 }}
-              />
-              <YAxis 
-                tickFormatter={(value) => `£${(value / 1000)}k`}
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 12 }}
-              />
-              <Tooltip 
-                formatter={(value: number) => [`£${value.toLocaleString()}`, value === currentAmount ? 'Your Progress' : 'Projected Growth']}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="projected" 
-                stroke="#3B82F6" 
-                strokeWidth={2}
-                dot={false}
-                activeDot={{ r: 5 }}
-                name="Projected Growth"
-              />
-              <Line 
-                type="monotone" 
-                dataKey="actual" 
-                stroke="#10B981" 
-                strokeWidth={3}
-                dot={{ r: 5 }}
-                activeDot={{ r: 6 }}
-                name="Your Progress"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        <ChartContainer
+          config={chartConfig}
+          className="min-h-[240px] w-full"
+        >
+          <LineChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis 
+              dataKey="age" 
+              axisLine={false}
+              tickLine={false}
+              tick={{ fontSize: 12 }}
+              label={{ value: 'Age', position: 'insideBottom', offset: -5 }}
+            />
+            <YAxis 
+              tickFormatter={(value) => `£${(value / 1000)}k`}
+              axisLine={false}
+              tickLine={false}
+              tick={{ fontSize: 12 }}
+            />
+            <ChartTooltip 
+              content={
+                <ChartTooltipContent 
+                  formatter={(value: any, name: any) => {
+                    const formattedValue = `£${Number(value).toLocaleString()}`;
+                    return [formattedValue, chartConfig[name as keyof typeof chartConfig]?.label || name];
+                  }}
+                />
+              }
+            />
+            <Line 
+              type="monotone" 
+              dataKey="projected" 
+              stroke="var(--color-projected)" 
+              strokeWidth={2}
+              dot={false}
+              activeDot={{ r: 5 }}
+              name="projected"
+            />
+            <Line 
+              type="monotone" 
+              dataKey="actual" 
+              stroke="var(--color-actual)" 
+              strokeWidth={3}
+              dot={{ r: 5 }}
+              activeDot={{ r: 6 }}
+              name="actual"
+            />
+          </LineChart>
+        </ChartContainer>
       </CardContent>
     </Card>
   );
