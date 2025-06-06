@@ -1,8 +1,6 @@
 import {
   Line,
   LineChart,
-  ResponsiveContainer,
-  Tooltip,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -20,6 +18,12 @@ import {
 } from "@/components/ui/DateRangeControl";
 import { Check } from "lucide-react";
 import { getDateUrlParams } from "@/lib/date";
+import { 
+  ChartContainer, 
+  ChartTooltip, 
+  ChartTooltipContent,
+  type ChartConfig 
+} from "@/components/ui/chart";
 
 type ChartData = Omit<PortfolioHistoryTimePoint, "date"> & {
   date: string;
@@ -29,6 +33,17 @@ type ChartData = Omit<PortfolioHistoryTimePoint, "date"> & {
     targetValue: number;
   };
 };
+
+const chartConfig = {
+  value: {
+    label: "Portfolio Value",
+    color: "hsl(var(--chart-1))",
+  },
+  milestones: {
+    label: "Milestones",
+    color: "hsl(var(--chart-2))",
+  },
+} satisfies ChartConfig;
 
 // Helper to format currency values
 const formatCurrency = (value: number) => {
