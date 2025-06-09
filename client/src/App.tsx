@@ -16,7 +16,6 @@ import Settings from "@/pages/settings";
 import ApiConnections from "@/pages/api-connections";
 import BrokerAsset from "@/pages/broker-asset";
 import Record from "@/pages/record";
-import Showcase from "@/pages/showcase";
 import { LoginPage } from "@/pages/LoginPage";
 import { RegisterPage } from "@/pages/RegisterPage";
 import { Loader2 } from "lucide-react";
@@ -106,13 +105,6 @@ function Router() {
           {() => (
             <ProtectedRoute>
               <RouteWithLayout component={BrokerAsset} />
-            </ProtectedRoute>
-          )}
-        </Route>
-        <Route path="/showcase">
-          {() => (
-            <ProtectedRoute>
-              <RouteWithLayout component={Showcase} />
             </ProtectedRoute>
           )}
         </Route>

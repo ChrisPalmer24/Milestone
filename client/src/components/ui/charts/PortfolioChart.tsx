@@ -1,6 +1,8 @@
 import {
   Line,
   LineChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -18,12 +20,6 @@ import {
 } from "@/components/ui/DateRangeControl";
 import { Check } from "lucide-react";
 import { getDateUrlParams } from "@/lib/date";
-import { 
-  ChartContainer, 
-  ChartTooltip, 
-  ChartTooltipContent,
-  type ChartConfig 
-} from "@/components/ui/chart";
 
 type ChartData = Omit<PortfolioHistoryTimePoint, "date"> & {
   date: string;
@@ -33,17 +29,6 @@ type ChartData = Omit<PortfolioHistoryTimePoint, "date"> & {
     targetValue: number;
   };
 };
-
-const chartConfig = {
-  value: {
-    label: "Portfolio Value",
-    color: "hsl(var(--chart-1))",
-  },
-  milestones: {
-    label: "Milestones",
-    color: "hsl(var(--chart-2))",
-  },
-} satisfies ChartConfig;
 
 // Helper to format currency values
 const formatCurrency = (value: number) => {
@@ -268,79 +253,122 @@ export default function PortfolioChart({
 
         {chartVisible && (
           <>
-            <ChartContainer
-              config={chartConfig}
-              className="min-h-[240px] w-full mb-5"
-            >
-              <LineChart
-                data={chartData}
-                onClick={(data) => {
-                  if (data && data.activePayload) {
-                    setSelectedPoint(
-                      data.activePayload[0].payload as ChartData
-                    );
-                  }
-                }}
-              >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                />
-                <XAxis
-                  dataKey="date"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 12 }}
-                />
-                <YAxis
-                  tickFormatter={(value) => `£${value.toLocaleString()}`}
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 12 }}
-                  domain={[0, getMaxYValue()]}
-                />
-                <ChartTooltip
-                  content={
-                    <ChartTooltipContent
-                      formatter={(value: any, name: any) => {
-                        const formattedValue = `£${Number(value).toLocaleString()}`;
-                        return [formattedValue, chartConfig[name as keyof typeof chartConfig]?.label || name];
-                      }}
-                      labelFormatter={(label: any) => label}
-                    />
-                  }
-                />
-                {showMilestonesLocal &&
-                  milestones &&
-                  milestones.map((milestone) => (
-                    <ReferenceLine
-                      key={milestone.id}
-                      y={Number(milestone.targetValue)}
-                      stroke="var(--color-milestones)"
-                      strokeWidth={1}
-                      strokeDasharray="5 5"
-                      label={{
-                        value: `£${Number(
-                          milestone.targetValue
-                        ).toLocaleString()}`,
-                        position: "right",
-                        fill: "var(--color-milestones)",
-                        fontSize: 12,
-                      }}
-                    />
-                  ))}
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  stroke="var(--color-value)"
-                  strokeWidth={2}
-                  dot={{ r: 4, fill: "var(--color-value)" }}
-                  activeDot={{ r: 5, fill: "var(--color-value)" }}
-                  isAnimationActive={false}
-                  name="value"
-                />
-              </LineChart>
-            </ChartContainer>
+            <div className="chart-container h-[240px] w-full mb-5">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={chartData}
+                  onClick={(data) => {
+                    if (data && data.activePayload) {
+                      setSelectedPoint(
+                        data.activePayload[0].payload as ChartData
+                      );
+                    }
+                  }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="#f0f0f0"
+                  />
+                  <XAxis
+                    dataKey="date"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <YAxis
+                    tickFormatter={(value) => `£${value.toLocaleString()}`}
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12 }}
+                    domain={[0, getMaxYValue()]}
+                  />
+                  <Tooltip
+                    formatter={(value: number, name: string, props: any) => {
+                      const data = props.payload as ChartData;
+                      const items = [
+                        [`£${value.toLocaleString()}`, "Portfolio Value"],
+                      ];
+
+                      if (data.achievedMilestone) {
+                        items.push([
+                          `£${data.achievedMilestone.targetValue.toLocaleString()}`,
+                          `Milestone: ${data.achievedMilestone.name}`,
+                        ]);
+                      }
+
+                      return items;
+                    }}
+                    cursor={{
+                      stroke: "#3B82F6",
+                      strokeWidth: 1,
+                      strokeDasharray: "3 3",
+                    }}
+                    isAnimationActive={false}
+                    contentStyle={{
+                      backgroundColor: "white",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "0.5rem",
+                      padding: "0.5rem",
+                    }}
+                    labelStyle={{
+                      color: "#374151",
+                      fontWeight: 500,
+                    }}
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload as ChartData;
+                        return (
+                          <div className="bg-gray-100 border-none rounded-lg p-2 shadow-sm">
+                            <p className="font-medium text-gray-900">
+                              {data.date}
+                            </p>
+                            <p className="text-gray-700">
+                              £{data.value.toLocaleString()}
+                            </p>
+                            {data.achievedMilestone && (
+                              <p className="text-green-600 font-medium flex items-center gap-1">
+                                <Check className="h-4 w-4" />
+                                {data.achievedMilestone.name}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  {showMilestonesLocal &&
+                    milestones &&
+                    milestones.map((milestone) => (
+                      <ReferenceLine
+                        key={milestone.id}
+                        y={Number(milestone.targetValue)}
+                        stroke="#F59E0B"
+                        strokeWidth={1}
+                        strokeDasharray="5 5"
+                        label={{
+                          value: `£${Number(
+                            milestone.targetValue
+                          ).toLocaleString()}`,
+                          position: "right",
+                          fill: "#F59E0B",
+                          fontSize: 12,
+                        }}
+                      />
+                    ))}
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#3B82F6"
+                    strokeWidth={2}
+                    dot={{ r: 4, fill: "#3B82F6" }}
+                    activeDot={{ r: 5, fill: "#2563EB" }}
+                    isAnimationActive={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
 
             {/* Date range controls are now provided globally by DateRangeContext */}
 

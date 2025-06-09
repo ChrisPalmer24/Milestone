@@ -1,11 +1,5 @@
-import { Line, LineChart, XAxis, YAxis, CartesianGrid, ReferenceLine } from "recharts";
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, ReferenceLine, ReferenceArea, Scatter } from "recharts";
 import { Card, CardContent } from "@/components/ui/card";
-import { 
-  ChartContainer, 
-  ChartTooltip, 
-  ChartTooltipContent,
-  type ChartConfig 
-} from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
 import { calculateFireProjection } from "@/lib/utils/finance";
 
@@ -18,21 +12,6 @@ type FireChartProps = {
   targetRetirementAge?: number;
   className?: string;
 };
-
-const chartConfig = {
-  portfolio: {
-    label: "Portfolio Value",
-    color: "hsl(var(--chart-1))",
-  },
-  target: {
-    label: "FIRE Target",
-    color: "hsl(var(--chart-2))",
-  },
-  retirementMarker: {
-    label: "Retirement Point",
-    color: "hsl(var(--chart-3))",
-  },
-} satisfies ChartConfig;
 
 export default function FireChart({
   currentAge,
@@ -69,21 +48,34 @@ export default function FireChart({
   if (!retirementPoint) {
     // Find the closest age point to the retirement age
     const closest = projectionData.reduce((prev, curr) => {
-      return Math.abs(curr.age - retirementAge) < Math.abs(prev.age - retirementAge) ? curr : prev;
-    });
-    retirementPoint = { ...closest, age: retirementAge };
+      return (Math.abs(curr.age - retirementAge) < Math.abs(prev.age - retirementAge)) ? curr : prev;
+    }, projectionData[0]);
+    
+    // Create an interpolated point at the retirement age
+    if (closest) {
+      retirementPoint = {
+        age: retirementAge,
+        portfolio: closest.portfolio,
+        target: closest.target
+      };
+    }
   }
-
-  // Create portfolio line data that ends at retirement age
-  const portfolioLineData = projectionData.filter(point => point.age <= retirementAge);
   
-  // Create a marker for the retirement point
-  const retirementMarker = retirementPoint ? [retirementPoint] : [];
-
-  // Generate X-axis ticks intelligently
-  const xAxisTicks: number[] = [];
+  // Create marker data for the retirement point
+  // Scatter requires x, y coordinates
+  const retirementMarker = retirementPoint ? [
+    { 
+      x: retirementAge, 
+      y: retirementPoint.portfolio,
+      // Keep these for tooltip formatting
+      age: retirementAge,
+      portfolio: retirementPoint.portfolio
+    }
+  ] : [];
   
-  // Always include current age
+  // Generate reasonable ticks for the X axis (age)
+  const xAxisTicks = [];
+  // Start with current age
   xAxisTicks.push(currentAge);
   
   // Add the retirement age
@@ -106,116 +98,138 @@ export default function FireChart({
   // Sort the ticks in ascending order
   xAxisTicks.sort((a, b) => a - b);
 
+  // Calculate max value for Y axis formatting
+  const maxValue = Math.max(...projectionData.map(d => d.portfolio));
+
   return (
     <Card className={cn("w-full", className)}>
       <CardContent className="p-4">
-        <ChartContainer
-          config={chartConfig}
-          className="min-h-[240px] w-full"
-        >
-          <LineChart data={projectionData}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            
-            <XAxis 
-              dataKey="age" 
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 12 }}
-              label={{ value: 'Age', position: 'insideBottom', offset: -5 }}
-              ticks={xAxisTicks}
-              domain={[currentAge, 87]}
-              allowDecimals={false}
-              type="number"
-            />
-            <YAxis 
-              tickFormatter={(value) => {
-                if (value >= 1000000) {
-                  return `£${(value / 1000000).toFixed(1)}M`;
-                } else if (value >= 1000) {
-                  return `£${(value / 1000).toFixed(0)}K`;
-                }
-                return `£${value.toLocaleString()}`;
-              }}
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 12 }}
-              width={80}
-            />
-            
-            <ChartTooltip 
-              content={
-                <ChartTooltipContent 
-                  formatter={(value: any, name: any) => {
-                    const formattedValue = formatCurrency(Number(value));
-                    return [formattedValue, chartConfig[name as keyof typeof chartConfig]?.label || name];
-                  }}
-                  labelFormatter={(age: any) => {
-                    const ageValue = Number(age);
-                    const retirementLabel = ageValue >= retirementAge 
-                      ? ` (Retirement at ${retirementAge})` 
-                      : "";
-                    return `Age: ${ageValue}${retirementLabel}`;
-                  }}
-                />
-              } 
-            />
-            
-            {/* FIRE Target Reference Line */}
-            <ReferenceLine
-              y={targetAmount}
-              stroke="var(--color-target)"
-              strokeDasharray="8 8"
-              strokeWidth={2}
-              label={{
-                value: `FIRE Target: ${formatCurrency(targetAmount)}`,
-                position: "insideTopRight",
-                fontSize: 12,
-                fill: "var(--color-target)",
-              }}
-            />
-            
-            {/* Portfolio Growth Line - only to retirement age */}
-            <Line
-              type="monotone"
-              dataKey="portfolio"
-              stroke="var(--color-portfolio)"
-              strokeWidth={3}
-              dot={false}
-              connectNulls={false}
-              data={portfolioLineData}
-              name="portfolio"
-            />
-            
-            {/* Target value line after retirement */}
-            <Line
-              type="monotone"
-              dataKey="target"
-              stroke="var(--color-target)"
-              strokeWidth={2}
-              strokeDasharray="5 5"
-              dot={false}
-              name="target"
-            />
-            
-            {/* Retirement point marker */}
-            {retirementMarker.length > 0 && (
-              <Line
-                key="retirement-marker"
-                name="retirementMarker"
-                data={retirementMarker}
-                dataKey="portfolio"
-                dot={{
-                  r: 8,
-                  fill: "var(--color-retirement)",
-                  stroke: "#ffffff",
-                  strokeWidth: 2
-                }}
-                activeDot={{ r: 10 }}
-                stroke="none"
+        <div className="chart-container h-[240px] w-full mb-5">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={projectionData}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+              
+              {/* Add a reference area for the retirement phase */}
+              <ReferenceArea
+                x1={retirementAge}
+                x2={87}
+                fill="#f2f9ff"
+                fillOpacity={0.4}
+                strokeOpacity={0}
               />
-            )}
-          </LineChart>
-        </ChartContainer>
+              
+              <XAxis 
+                dataKey="age" 
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 12 }}
+                label={{ value: 'Age', position: 'insideBottom', offset: -5 }}
+                ticks={xAxisTicks}
+                domain={[currentAge, 87]}
+                allowDecimals={false}
+                type="number"
+              />
+              <YAxis 
+                tickFormatter={(value) => {
+                  if (value >= 1000000) {
+                    return `£${(value / 1000000).toFixed(1)}M`;
+                  } else {
+                    return `£${(value / 1000).toFixed(0)}k`;
+                  }
+                }}
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 12 }}
+              />
+              <Tooltip 
+                formatter={(value: number, name) => {
+                  let formattedValue = '';
+                  if (value >= 1000000) {
+                    formattedValue = `£${(value / 1000000).toFixed(2)}M`;
+                  } else {
+                    formattedValue = `£${value.toLocaleString()}`;
+                  }
+                  
+                  // Customize label based on data series
+                  let label = name;
+                  if (name === "portfolio") {
+                    label = "Portfolio Growth";
+                  } else if (name === "target") {
+                    label = "FIRE Target";
+                  } else if (name === "marker") {
+                    label = "Retirement Point";
+                  }
+                  
+                  return [formattedValue, label];
+                }}
+                labelFormatter={(age) => {
+                  // Add special indicator if this is the retirement age
+                  if (age === retirementAge) {
+                    return `Age: ${age} (Retirement)`;
+                  }
+                  return `Age: ${age}`;
+                }}
+              />
+              
+              {/* Add a reference line for retirement age */}
+              <ReferenceLine
+                x={retirementAge}
+                stroke="#10b981"
+                strokeWidth={2}
+                strokeDasharray="3 3"
+                label={{
+                  value: targetRetirementAge 
+                    ? `Retirement at ${retirementAge}` 
+                    : `FIRE at ${retirementAge}`,
+                  position: 'top',
+                  fill: '#10b981',
+                  fontSize: 12,
+                  fontWeight: 'bold'
+                }}
+
+              />
+              
+              {/* Portfolio growth line - ending at retirement age */}
+              <Line 
+                type="monotone" 
+                dataKey="portfolio" 
+                stroke="#3B82F6" 
+                strokeWidth={2}
+                activeDot={{ r: 5 }}
+                name="Portfolio Growth"
+                // Filter data points to only show up to retirement age
+                data={projectionData.filter(point => point.age <= retirementAge)}
+                dot={false}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="target" 
+                stroke="#F59E0B" 
+                strokeWidth={2}
+                strokeDasharray="5 5"
+                dot={false}
+                name="FIRE Target"
+              />
+              
+              {/* Add a Line specifically for the retirement point - as a single dot */}
+              {retirementMarker.length > 0 && (
+                <Line
+                  name="Retirement Point"
+                  data={retirementMarker}
+                  dataKey="portfolio"
+                  dot={{
+                    r: 8,
+                    fill: "#10b981",
+                    stroke: "#ffffff",
+                    strokeWidth: 2
+                  }}
+                  activeDot={{ r: 10 }}
+                  stroke="none"
+                />
+              )}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   );
