@@ -43,7 +43,7 @@ import { BsPiggyBank } from "react-icons/bs";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { useToast } from "@/hooks/use-toast";
 import DateRangeBar from "@/components/layout/DateRangeBar";
-import { getProviderName } from "@/lib/broker";
+import { getBrokerName } from "@/lib/broker";
 import {
   BrokerProviderAsset,
   AssetValue,
@@ -235,7 +235,7 @@ export default function Record() {
     const asset = brokerAssets.find((acc) => acc.id === assetId);
 
     return asset
-      ? `${getProviderName(asset.providerId, brokerProviders ?? [])} (${
+      ? `${getBrokerName(asset.providerId, brokerProviders ?? [])} (${
           asset.assetType
         })`
       : "Unknown Account";
@@ -377,7 +377,7 @@ export default function Record() {
   };
 
   const getFullAssetName = (asset: BrokerProviderAsset) => {
-    return `${getProviderName(asset.providerId, brokerProviders ?? [])} (${
+    return `${getBrokerName(asset.providerId, brokerProviders ?? [])} (${
       asset.accountType
     })`;
   };
@@ -602,7 +602,7 @@ export default function Record() {
                             <div className="flex items-center">
                               <div className="w-10 h-10 rounded-md flex items-center justify-center mr-3">
                                 {getProviderLogo(
-                                  getProviderName(
+                                  getBrokerName(
                                     asset.providerId,
                                     brokerProviders ?? []
                                   )
@@ -610,7 +610,7 @@ export default function Record() {
                               </div>
                               <div>
                                 <h3 className="font-medium">
-                                  {getProviderName(
+                                  {getBrokerName(
                                     asset.providerId,
                                     brokerProviders ?? []
                                   )}
@@ -771,7 +771,7 @@ export default function Record() {
                             <div className="flex items-center">
                               <div className="w-10 h-10 rounded-md flex items-center justify-center mr-3">
                                 {getProviderLogo(
-                                  getProviderName(
+                                  getBrokerName(
                                     asset.providerId,
                                     brokerProviders ?? []
                                   )
@@ -779,7 +779,7 @@ export default function Record() {
                               </div>
                               <div>
                                 <h3 className="font-medium">
-                                  {getProviderName(
+                                  {getBrokerName(
                                     asset.providerId,
                                     brokerProviders ?? []
                                   )}

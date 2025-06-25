@@ -33,20 +33,12 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { SiTradingview, SiCoinbase } from "react-icons/si";
 import { BsPiggyBank } from "react-icons/bs";
 import { usePortfolio } from "@/context/PortfolioContext";
 import {
@@ -55,9 +47,14 @@ import {
   BrokerProviderAsset,
   RecurringContribution,
 } from "shared/schema";
-import { getProviderName } from "@/lib/broker";
+import {
+  getBrokerAccountTypeFullName,
+  getBrokerName,
+  getBrokerSlugFromName,
+} from "@/lib/broker";
 import { useBrokerProviders } from "@/hooks/use-broker-providers";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import BrokerLogoBoxed from "@/components/logo/BrokerLogoBoxed";
 
 // Form schema for history entry
 const historySchema = z.object({
@@ -433,26 +430,6 @@ export default function AccountPage() {
     }
   };
 
-  // Helper to get logo for provider
-  const getProviderLogo = (provider: string) => {
-    switch (provider.toLowerCase()) {
-      case "trading 212":
-      case "trading212":
-        return <SiTradingview className="w-6 h-6" />;
-      case "vanguard":
-        return <BsPiggyBank className="w-6 h-6" />;
-      case "invest engine":
-      case "investengine":
-        return <SiCoinbase className="w-6 h-6" />;
-      case "hargreaves lansdown":
-        return <BsPiggyBank className="w-6 h-6" />;
-      case "aj bell":
-        return <SiCoinbase className="w-6 h-6" />;
-      default:
-        return <SiTradingview className="w-6 h-6" />;
-    }
-  };
-
   if (isAssetLoading || isHistoryLoading || isContributionsLoading) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-8">
@@ -493,28 +470,28 @@ export default function AccountPage() {
     );
   }
 
+  const brokerName = getBrokerName(asset.providerId, providers ?? []);
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       <Card>
         <CardContent className="p-4">
           {/* Account Header */}
-          <div className="flex items-center mb-6">
-            <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center mr-3">
-              {getProviderLogo(
-                getProviderName(asset.providerId, providers ?? [])
-              )}
-            </div>
-            <div>
-              <h1 className="text-xl font-semibold">
-                {getProviderName(asset.providerId, providers ?? [])}
-              </h1>
-              <span className="text-sm text-gray-600">
-                {asset.accountType === "LISA"
-                  ? "Lifetime ISA"
-                  : asset.accountType === "GIA"
-                  ? "General Account"
-                  : asset.accountType}
-              </span>
+          <div className="flex flex-col items-start mb-6">
+            <div className="flex items-center gap-2">
+              <BrokerLogoBoxed
+                broker={getBrokerSlugFromName(brokerName)}
+                size="md"
+              />
+              <div>
+                <div className="mb-2">
+                  <h1 className="text-xl ">{asset.name}</h1>
+                </div>
+                <h1 className="text-xl font-semibold">{brokerName}</h1>
+                <span className="text-sm text-gray-600">
+                  {getBrokerAccountTypeFullName(asset.accountType)}
+                </span>
+              </div>
             </div>
           </div>
 

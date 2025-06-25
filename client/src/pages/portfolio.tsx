@@ -14,8 +14,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Pencil, Trash2 } from "lucide-react";
-import { SiTradingview, SiCoinbase } from "react-icons/si";
-import { BsPiggyBank } from "react-icons/bs";
 import PortfolioChart from "@/components/ui/charts/PortfolioChart";
 import DateRangeBar from "@/components/layout/DateRangeBar";
 import { usePortfolio } from "@/context/PortfolioContext";
@@ -30,7 +28,13 @@ import {
   DateRangeOption,
 } from "@/components/ui/DateRangeControl";
 import { useBrokerProviders } from "@/hooks/use-broker-providers";
-import { getProviderName } from "@/lib/broker";
+import {
+  getBrokerAccountTypeFullName,
+  getBrokerName,
+  getBrokerSlug,
+  getBrokerSlugFromName,
+} from "@/lib/broker";
+import BrokerLogoBoxed from "@/components/logo/BrokerLogoBoxed";
 
 function Portfolio() {
   const { dateRange } = useDateRange();
@@ -62,26 +66,6 @@ function Portfolio() {
   const [displayInPercentage, setDisplayInPercentage] = useState(false);
   const [accountToDelete, setAccountToDelete] = useState<string | null>(null);
   const [isAddingAccount, setIsAddingAccount] = useState(false);
-
-  // Helper to get logo for provider
-  const getProviderLogo = (providerName: string) => {
-    switch (providerName.toLowerCase()) {
-      case "trading 212":
-      case "trading212":
-        return <SiTradingview className="w-6 h-6" />;
-      case "vanguard":
-        return <BsPiggyBank className="w-6 h-6" />;
-      case "invest engine":
-      case "investengine":
-        return <SiCoinbase className="w-6 h-6" />;
-      case "hargreaves lansdown":
-        return <BsPiggyBank className="w-6 h-6" />;
-      case "aj bell":
-        return <SiCoinbase className="w-6 h-6" />;
-      default:
-        return <SiTradingview className="w-6 h-6" />;
-    }
-  };
 
   // Get color for account type
   const getAccountTypeColor = (type: string) => {
@@ -258,7 +242,7 @@ function Portfolio() {
             // List of accounts
             <>
               {brokerAssets.map((asset) => {
-                const providerName = getProviderName(
+                const providerName = getBrokerName(
                   asset.providerId,
                   brokerProviders ?? []
                 );
@@ -273,24 +257,24 @@ function Portfolio() {
                     }}
                   >
                     <div className="flex justify-between items-center">
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center mr-3">
-                          {getProviderLogo(providerName)}
-                        </div>
+                      <div className="flex items-center gap-2">
+                        <BrokerLogoBoxed
+                          broker={getBrokerSlugFromName(providerName)}
+                          size="md"
+                        />
                         <div>
-                          <h3 className="font-medium">{providerName}</h3>
+                          <div className="mb-2">
+                            <h2 className="text-lg ">{asset.name}</h2>
+                          </div>
+                          <h3 className="font-medium">
+                            {getBrokerSlugFromName(providerName)}
+                          </h3>
                           <span
                             className={`text-sm ${getAccountTypeColor(
                               asset.accountType
                             )}`}
                           >
-                            {asset.accountType === "LISA"
-                              ? "Lifetime ISA"
-                              : asset.accountType === "GIA"
-                              ? "General Account"
-                              : asset.accountType === "CISA"
-                              ? "Cash ISA"
-                              : asset.accountType}
+                            {getBrokerAccountTypeFullName(asset.accountType)}
                           </span>
                         </div>
                       </div>
