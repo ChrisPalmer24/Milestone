@@ -18,6 +18,8 @@ interface FilterOperator {
   lte?: unknown;
   like?: string;
   notLike?: string;
+  ilike?: string;
+  notILike?: string;
   in?: unknown[];
 }
 
@@ -31,6 +33,68 @@ export interface QueryParams {
   limit?: number;
   q?: string;
 }
+
+/**
+ * Resource Query Builder - URL Parameters Documentation
+ *
+ * This utility parses and builds SQL queries from REST API URL parameters.
+ *
+ * Supported URL Parameters:
+ *
+ * 1. Pagination:
+ *    - offset: number (default: 0)
+ *      Example: ?offset=10
+ *    - limit: number (default: 10, max: 100)
+ *      Example: ?limit=25
+ *
+ * 2. Sorting:
+ *    - sort: field,direction (asc|desc). Can be repeated for multi-sort.
+ *      Example: ?sort=createdAt,desc&sort=title,asc
+ *
+ * 3. Filtering (all operators can be used with any field):
+ *    - field=value (shorthand for eq)
+ *      Example: ?region=WA
+ *    - field[eq]=value (case-insensitive for strings)
+ *      Example: ?name[eq]=John
+ *    - field[neq]=value (case-insensitive for strings)
+ *      Example: ?name[neq]=John
+ *    - field[gt]=value
+ *      Example: ?salary[gt]=100000
+ *    - field[gte]=value
+ *      Example: ?salary[gte]=100000
+ *    - field[lt]=value
+ *      Example: ?salary[lt]=200000
+ *    - field[lte]=value
+ *      Example: ?salary[lte]=200000
+ *    - field[like]=value (case-sensitive substring match)
+ *      Example: ?title[like]=engineer
+ *    - field[notLike]=value (case-sensitive not like)
+ *      Example: ?title[notLike]=manager
+ *    - field[ilike]=value (case-insensitive substring match)
+ *      Example: ?title[ilike]=engineer
+ *    - field[inotlike]=value (case-insensitive not like)
+ *      Example: ?title[inotlike]=manager
+ *    - field[in]=a,b,c (comma-separated values)
+ *      Example: ?status[in]=active,inactive
+ *
+ * 4. OR Groups:
+ *    - or: Array of filter objects, each of which is OR-ed together.
+ *      Example: ?or[0][title][like]=foo&or[1][location][like]=foo
+ *      (SQL: WHERE title LIKE '%foo%' OR location LIKE '%foo%')
+ *
+ * 5. Full-text search:
+ *    - q: string (searches all text-like columns with LIKE '%q%')
+ *      Example: ?q=searchterm
+ *
+ * Notes:
+ * - All filter operators can be combined; multiple filters are AND-ed by default.
+ * - The 'or' parameter allows for advanced OR logic between filter groups.
+ * - String equality and inequality (eq, neq) are case-insensitive for string columns.
+ * - LIKE is case-sensitive; ILIKE/inotlike are case-insensitive.
+ *
+ * Example:
+ *   /api/jobs?offset=0&limit=10&sort=createdAt,desc&region=WA&salary[gt]=100000&or[0][title][like]=foo&or[1][location][like]=foo&q=search
+ */
 
 /**
  * Convert camelCase to snake_case
@@ -64,24 +128,36 @@ function parseSortParamsExpress(sort: string | string[] | undefined): SortParam[
 /**
  * Parse filter parameters from Express query
  * Handles Express's automatic object creation for bracket notation
+ * Supports 'or' key for OR groups: { or: [ { title: { like: 'foo' } }, { location: { like: 'foo' } } ] }
  * Examples: 
  * - ?region=WA becomes { region: { eq: 'WA' } }
  * - ?salary[gt]=100000 becomes { salary: { gt: '100000' } }
  * - ?skills[in]=js,ts becomes { skills: { in: ['js', 'ts'] } }
+ * - ?or[0][title][like]=foo&or[1][location][like]=foo becomes { or: [ { title: { like: 'foo' } }, { location: { like: 'foo' } } ] }
  */
 function parseFilterParamsExpress(query: Record<string, any>): FilterParams | undefined {
   const filter: FilterParams = {};
   
   for (const [key, value] of Object.entries(query)) {
     // Skip pagination and sort parameters
-    if (['offset', 'limit', 'sort'].includes(key)) continue;
+    if (["offset", "limit", "sort"].includes(key)) continue;
+
+    // Special handling for 'or' group
+    if (key === 'or' && Array.isArray(value)) {
+      // Each element is a filter object
+      filter.or = value.map((v: any) => parseFilterParamsExpress(v));
+      continue;
+    }
 
     // Handle nested objects from Express's bracket notation
     if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
       // Express has already parsed this into an object due to bracket notation
       const operators = value as Record<string, unknown>;
       const validOperators = Object.entries(operators).filter(([op]) => 
-        ['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'like', 'notLike', 'in'].includes(op)
+        [
+          'eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'like', 'notLike', 'in',
+          'ilike', 'notILike', 'notlike', 'inotlike'
+        ].includes(op)
       );
 
       if (validOperators.length > 0) {
@@ -126,6 +202,7 @@ const queryParamsSchema = z.object({
  */
 export function parseQueryParamsExpress(query: any): QueryParams {
   try {
+
     const parsed = queryParamsSchema.parse(query);
     
     return {
@@ -146,12 +223,11 @@ export function parseQueryParamsExpress(query: any): QueryParams {
   }
 }
 
-export interface QueryParts {
+interface QueryParts {
   where?: SQL<unknown>;
   orderBy: SQL<unknown>[];
   limit?: number;
   offset?: number;
-  [key: string]: unknown;
 }
 
 export class ResourceQueryBuilder<T extends Table> {
@@ -187,33 +263,89 @@ export class ResourceQueryBuilder<T extends Table> {
     const column = this.getColumn(field);
     if (!column) return undefined;
 
+    // Helper to check if column is string-like
+    const isStringColumn = () => {
+      const dataType = (column as any).dataType?.toLowerCase();
+      return dataType && (
+        dataType.includes('text') ||
+        dataType.includes('char') ||
+        dataType.includes('varchar') ||
+        dataType.includes('string')
+      );
+    };
+
     if (typeof operator !== 'object' || operator === null) {
+      // For direct value, use eq. If string column, use case-insensitive eq
+      if (isStringColumn() && typeof operator === 'string') {
+        return sql`${sql.raw('LOWER(')}${column}${sql.raw(')')} = LOWER(${operator})`;
+      }
       return eq(column, operator);
     }
 
     const conditions: SQL<unknown>[] = [];
     const ops = operator as FilterOperator;
 
-    if ('eq' in ops) conditions.push(eq(column, ops.eq));
-    if ('neq' in ops) conditions.push(ne(column, ops.neq));
+    // Case-insensitive eq/neq for string columns
+    if ('eq' in ops) {
+      if (isStringColumn() && typeof ops.eq === 'string') {
+        conditions.push(sql`${sql.raw('LOWER(')}${column}${sql.raw(')')} = LOWER(${ops.eq})`);
+      } else {
+        conditions.push(eq(column, ops.eq));
+      }
+    }
+    if ('neq' in ops) {
+      if (isStringColumn() && typeof ops.neq === 'string') {
+        conditions.push(sql`${sql.raw('LOWER(')}${column}${sql.raw(')')} != LOWER(${ops.neq})`);
+      } else {
+        conditions.push(ne(column, ops.neq));
+      }
+    }
     if ('gt' in ops) conditions.push(gt(column, ops.gt));
     if ('gte' in ops) conditions.push(gte(column, ops.gte));
     if ('lt' in ops) conditions.push(lt(column, ops.lt));
     if ('lte' in ops) conditions.push(lte(column, ops.lte));
     if ('like' in ops) conditions.push(like(column, `%${ops.like}%`));
-    if ('notLike' in ops) conditions.push(notLike(column, `%${ops.notLike}%`));
+    if ('notlike' in ops) conditions.push(notLike(column, `%${ops.notLike}%`));
+    if ('ilike' in ops) conditions.push(sql`${sql.raw('LOWER(')}${column}${sql.raw(')')} LIKE LOWER(${`%${ops.ilike}%`})`);
+    if ('inotlike' in ops) conditions.push(sql`${sql.raw('LOWER(')}${column}${sql.raw(')')} NOT LIKE LOWER(${`%${ops.notILike}%`})`);
     if ('in' in ops && Array.isArray(ops.in)) conditions.push(inArray(column, ops.in));
 
     return conditions.length === 1 ? conditions[0] : and(...conditions);
   }
 
   private buildWhereConditions(filter?: FilterParams, q?: string): SQL<unknown>[] {
-
     if (!filter) return [];
 
     const conditions: SQL<unknown>[] = [];
 
+    // Handle 'or' group
+    if ('or' in filter && Array.isArray((filter as any).or)) {
+      const orConditions: SQL<unknown>[] = [];
+      for (const f of (filter as any).or as (FilterParams | undefined)[]) {
+        if (!f) continue;
+        // Instead of AND-ing, OR the fields in this group
+        const subConds = Object.entries(f)
+          .filter(([field]) => field !== 'or')
+          .map(([field, operator]) => this.buildWhereCondition(field, operator))
+          .filter(Boolean) as SQL<unknown>[];
+        if (subConds.length === 1) {
+          orConditions.push(subConds[0]);
+        } else if (subConds.length > 1) {
+          const orCond = or(...subConds);
+          if (orCond) orConditions.push(orCond);
+        }
+      }
+      if (orConditions.length) {
+        const orExpr = or(...orConditions);
+        if (orExpr) {
+          conditions.push(orExpr);
+        }
+      }
+    }
+
+    // Handle normal fields
     for (const [field, operator] of Object.entries(filter)) {
+      if (field === 'or') continue; // already handled
       if (!this.allowedFilterFields.size || this.allowedFilterFields.has(field as keyof T['_']['columns'] & string)) {
         const condition = this.buildWhereCondition(field, operator);
         if (condition) conditions.push(condition);
@@ -223,7 +355,6 @@ export class ResourceQueryBuilder<T extends Table> {
     // Handle full-text search query parameter 'q'
     if (filter && q && q.trim()) {
       const searchTerm = `%${q.trim()}%`;
-      
       // Find all text-like columns for full-text search
       const textColumns = Object.entries(this.columns)
         .filter(([_, column]) => {
@@ -236,7 +367,6 @@ export class ResourceQueryBuilder<T extends Table> {
           );
         })
         .map(([_, column]) => column);
-      
       if (textColumns.length > 0) {
         // Create OR conditions for each text column
         const searchConditions = textColumns.map(column => like(column, searchTerm)).filter(Boolean);
