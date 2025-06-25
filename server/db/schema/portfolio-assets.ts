@@ -4,10 +4,13 @@ import { InferInsertModelBasic, timestampColumns } from "./utils";
 import { relations, InferSelectModel, sql } from "drizzle-orm";
 import { IncludeRelation } from "../types/utils";
 import { InferResultType } from "../types/utils";
-export const accountTypeEnum = pgEnum('account_type', ['ISA', 'CISA', 'SIPP', 'LISA', 'GIA']);
-export const contributionIntervalEnum = pgEnum('contribution_interval', ['weekly', 'biweekly', 'monthly', 'quarterly', 'yearly']);
+export const accountType = ['ISA', 'CISA', 'SIPP', 'LISA', 'GIA'] as const;
+export const accountTypeEnum = pgEnum('account_type', accountType);
+export const contributionInterval = ['weekly', 'biweekly', 'monthly', 'quarterly', 'yearly'] as const;
+export const contributionIntervalEnum = pgEnum('contribution_interval', contributionInterval);
 
-export type AccountType = (typeof accountTypeEnum.enumValues)[number];
+export type AccountType = (typeof accountType)[number];
+export type ContributionInterval = (typeof contributionInterval)[number];
 
 export const assetValues = pgTable("asset_values", {
   id: uuid('id').notNull().default(sql`gen_random_uuid()`),
@@ -42,8 +45,6 @@ export type AssetContributionInsert = InferInsertModelBasic<typeof assetContribu
 
 // export type AssetDebitSelect = InferSelectModel<typeof assetDebits>;
 // export type AssetDebitInsert = InferInsertModelBasic<typeof assetDebits>;
-
-export type ContributionInterval = (typeof contributionIntervalEnum.enumValues)[number];
 
 export const recurringContributions = pgTable("recurring_contributions", {
   id: uuid('id').notNull().default(sql`gen_random_uuid()`),
