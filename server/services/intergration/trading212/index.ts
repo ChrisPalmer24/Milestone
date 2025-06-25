@@ -4,35 +4,63 @@ import fetch from 'node-fetch';
 
 const API_KEY = process.env.TRADING_212_API_KEY;
 
-
-
 export async function getExchanges() {
 
-  if (!API_KEY) {
-    throw new Error('TRADING_212_API_KEY is not set');
-  }
+  try {
 
-  console.log(API_KEY);
-
-  const resp = await fetch(
-    `https://demo.trading212.com/api/v0/equity/metadata/exchanges`,
-    {
-      method: 'GET',
-      headers: {
-        Authorization: API_KEY,
-      },
+    if (!API_KEY) {
+      throw new Error('TRADING_212_API_KEY is not set');
     }
-  );
 
-  console.log(resp);
+    const resp = await fetch(
+      `https://live.trading212.com/api/v0/equity/metadata/exchanges`,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `${API_KEY}`,
+          'User-Agent': 'Node.js',
+          'Accept': 'application/json'
+        },
+      }
+    );
 
-  if (!resp.ok) {
+    if (!resp.ok) {
+      throw new Error('Failed to fetch exchanges');
+    }
+    const data = await resp.json();
+
+    return data;
+  } catch (error) {
     throw new Error('Failed to fetch exchanges');
   }
+}
 
+export async function getOpenPositions() {
 
+  try {
 
-  const data = await resp.json();
+    const resp = await fetch(
+      `https://live.trading212.com/api/v0/equity/portfolio`,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `${API_KEY}`,
+          // 'User-Agent': 'Node.js',w
+          // 'Accept': 'application/json'
+        }
+      }
+    );
 
-  return data;
+    console.log(resp) ;
+
+    if (!resp.ok) {
+      throw new Error('Failed to fetch exchanges');
+    }
+
+    const data = await resp.text();
+    return data;
+  } catch (error) {
+    throw new Error('Failed to fetch open positions');
+  }
+
 }
