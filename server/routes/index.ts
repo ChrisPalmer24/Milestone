@@ -16,7 +16,6 @@ export async function registerRoutes(router: Router, authService: AuthService): 
   router.use("/assets", await registerAssetsRoutes(Router(), authService));
   router.use("/milestones", await registerMilestonesRoutes(Router(), authService));
   router.use("/fire-settings", await registerFireRoutes(Router(), authService));
-  //router.use("/portfolio", await registerPortfolioRoutes(Router(), authService));
   router.use("/auth", await registerAuthRoutes(Router(), authService));
   router.use("/ocr", await registerOcrRoutes(Router()));
   //router.use("/verification", await registerVerificationRoutes(Router(), authService));
