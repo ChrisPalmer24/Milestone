@@ -1,6 +1,6 @@
 import { pgTable, text, timestamp, boolean, real, pgEnum, check, uuid } from "drizzle-orm/pg-core";
 import { userAccounts } from "./user-account";
-import { InferInsertModelBasic, timestampColumns } from "./utils";
+import { InferInsertModelBasic, timestampColumns, slugify } from "./utils";
 import { relations, InferSelectModel, sql } from "drizzle-orm";
 import { IncludeRelation } from "../types/utils";
 import { InferResultType } from "../types/utils";
@@ -78,6 +78,7 @@ export type GeneralAssetInsert = InferInsertModelBasic<typeof generalAssets>;
 export const brokerProviders = pgTable("broker_providers", {
   id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull().unique(),
+  //slug: text("slug").notNull().unique().default(slugify("name")),
   supportsAPIKey: boolean("supports_api_key").notNull().default(false),
   supportedAccountTypes: accountTypeEnum("supported_account_types").array().notNull(),
   ...timestampColumns()

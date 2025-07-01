@@ -1,5 +1,5 @@
 import { timestamp } from "drizzle-orm/pg-core";
-import { InferInsertModel as DrizzleInferInsertModel, Table } from "drizzle-orm";
+import { InferInsertModel as DrizzleInferInsertModel, sql, Table } from "drizzle-orm";
 
 // Common timestamp columns
 export const createdAtColumn = () => ({ createdAt: timestamp("created_at").defaultNow() });
@@ -24,5 +24,7 @@ export type InferInsertModelBasic<
     override: false;
   }
 > = Omit<DrizzleInferInsertModel<TTable, TConfig>, "id" | "createdAt" | "updatedAt">;
+
+export const slugify = (column: string) => sql`regexp_replace(regexp_replace(regexp_replace(lower(${column}), '[^a-z0-9]+', '-', 'g'), '^-+|-+$', '', 'g'), '-+', '-', 'g')`
 
 
