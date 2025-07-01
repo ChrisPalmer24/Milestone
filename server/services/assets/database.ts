@@ -3,13 +3,52 @@
 import { assetContributions, assetValues, brokerProviderAssets, brokerProviders, generalAssets, brokerProviderAssetAPIKeyConnections, recurringContributions } from "server/db/schema";
 import { Database } from "../../db";
 import { and, between, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
-import { Asset, AssetContribution, AssetContributionInsert, assetContributionInsertSchema, AssetType, AssetValue, AssetValueInsert, assetValueInsertSchema, BrokerProvider, BrokerProviderAsset, BrokerProviderAssetAPIKeyConnection, BrokerProviderAssetInsert, BrokerProviderAssetWithAccountChange, GeneralAsset, GeneralAssetInsert, GeneralAssetWithAccountChange, PortfolioHistoryTimePoint, UserAccount, WithAccountChange, AssetsChange, AssetValueOrphanInsert, AssetContributionOrphanInsert, RecurringContribution, RecurringContributionOrphanInsert, ContributionInterval } from "@shared/schema";
+import { Asset, AssetContribution, AssetContributionInsert, assetContributionInsertSchema, AssetType, AssetValue, AssetValueInsert, assetValueInsertSchema, BrokerProvider, BrokerProviderAsset, BrokerProviderAssetAPIKeyConnection, BrokerProviderAssetInsert, BrokerProviderAssetWithAccountChange, GeneralAsset, GeneralAssetInsert, GeneralAssetWithAccountChange, PortfolioHistoryTimePoint, UserAccount, WithAccountChange, AssetsChange, AssetValueOrphanInsert, AssetContributionOrphanInsert, RecurringContribution, RecurringContributionOrphanInsert, ContributionInterval, WithAssetHistory, DataRangeQuery } from "@shared/schema";
 import { IAssetService } from "./types";
 import { NodePgTransaction } from "drizzle-orm/node-postgres";
 import { Schema, TSchema } from "server/db/types/utils";
-import { calculateAssetsChange } from "./utils";
+import { QueryParams, QueryParts, ResourceQueryBuilder } from "@server/utils/resource-query-builder";
+import { getPortfolioValueHistoryForAssets, resolveAssetsWithChange, resolveAssetWithChangeForDateRange, resolveDate, calculateAssetsChange, getPortfolioOverviewForAssets } from "@shared/utils/assets";
 
 type Transaction = NodePgTransaction<Schema, TSchema>;
+
+const brokerProviderAssetsQueryBuilder = new ResourceQueryBuilder({
+  table: brokerProviderAssets,
+  allowedSortFields: [
+    "createdAt",
+    "updatedAt",
+    "name",
+    "providerId",
+    "accountType",
+  ],
+  allowedFilterFields: ["providerId", "accountType"],
+  defaultSort: { field: "createdAt", direction: "desc" },
+  maxLimit: 50,
+});
+
+const recurringContributionsQueryBuilder = new ResourceQueryBuilder({
+  table: recurringContributions,
+  allowedSortFields: [
+    "createdAt",
+    "updatedAt",
+    "amount",
+    "startDate",
+    "lastProcessedDate",
+    "interval",
+    "isActive"
+  ],
+  allowedFilterFields: ["interval", "isActive"],
+  defaultSort: { field: "createdAt", direction: "desc" },
+  maxLimit: 50,
+});
+
+const generalAssetsQueryBuilder = new ResourceQueryBuilder({
+  table: generalAssets,
+  allowedSortFields: ["createdAt", "updatedAt", "name", "assetType"],
+  allowedFilterFields: ["assetType"],
+  defaultSort: { field: "createdAt", direction: "desc" },
+  maxLimit: 50,
+});
 
 
 export class DatabaseAssetService implements IAssetService {
@@ -59,53 +98,48 @@ export class DatabaseAssetService implements IAssetService {
    * Broker Provider Assets
    */
 
-  private async getLatestAssetValuesForAssets(assetIds: string[]): Promise<AssetValue[]> {
-    const result = await this.db.execute(sql`
-      SELECT DISTINCT ON (${assetValues.assetId}) 
-        id,
-        value,
-        recordedAt,
-        assetId,
-        createdAt,
-        updatedAt
-      FROM ${assetValues}
-      WHERE ${inArray(assetValues.assetId, assetIds)}
-      ORDER BY ${assetValues.assetId}, ${assetValues.recordedAt} DESC
-    `);
+  // private async getLatestAssetValuesForAssets(assetIds: string[]): Promise<AssetValue[]> {
+  //   const result = await this.db.execute(sql`
+  //     SELECT DISTINCT ON (${assetValues.assetId}) 
+  //       id,
+  //       value,
+  //       recordedAt,
+  //       assetId,
+  //       createdAt,
+  //       updatedAt
+  //     FROM ${assetValues}
+  //     WHERE ${inArray(assetValues.assetId, assetIds)}
+  //     ORDER BY ${assetValues.assetId}, ${assetValues.recordedAt} DESC
+  //   `);
 
-    return result.rows.map(row => ({
-      id: row.id as string,
-      value: Number(row.value),
-      recordedAt: new Date(row.recorded_at as string),
-      assetId: row.asset_id as string,
-      createdAt: row.created_at ? new Date(row.created_at as string) : null,
-      updatedAt: row.updated_at ? new Date(row.updated_at as string) : null,
-    }));
-  }
+  //   return result.rows.map(row => ({
+  //     id: row.id as string,
+  //     value: Number(row.value),
+  //     recordedAt: new Date(row.recorded_at as string),
+  //     assetId: row.asset_id as string,
+  //     createdAt: row.created_at ? new Date(row.created_at as string) : null,
+  //     updatedAt: row.updated_at ? new Date(row.updated_at as string) : null,
+  //   }));
+  // }
 
+  async getBrokerProviderAssetsForUser(userId: UserAccount["id"], query: QueryParams): Promise<BrokerProviderAsset[]> {
 
-  async getBrokerProviderAssetsForUser(userId: UserAccount["id"], query: QueryParts): Promise<BrokerProviderAsset[]> {
-
-    const { where, orderBy, limit, offset } = query;
+    const { where, orderBy, limit, offset } = brokerProviderAssetsQueryBuilder.buildQuery(query);
     const brokerAssets = await this.db.query.brokerProviderAssets.findMany({ with: { provider: true }, where: and(eq(brokerProviderAssets.userAccountId, userId), where), orderBy, limit, offset });
     return brokerAssets;
   }
 
-  async getBrokerProviderAssetsWithAccountChangeForUser(userId: UserAccount["id"], query: QueryParts): Promise<BrokerProviderAssetWithAccountChange[]> {
+  async getBrokerProviderAssetsWithAccountChangeForUser(userId: UserAccount["id"], query: QueryParams): Promise<BrokerProviderAssetWithAccountChange[]> {
+    console.log("getBrokerProviderAssetsWithAccountChangeForUser", query);
     const brokerAssets = await this.getBrokerProviderAssetsForUser(userId, query);
-    const resolvedAssets = await this.resolveAssetsWithChange(brokerAssets, { ...query });
-    return resolvedAssets;
+    const assetsWithHistory = await Promise.all(brokerAssets.map(async (asset) => {
+      const assetValues = await this.getPortfolioAssetValuesForAssetsForDateRange([asset.id]);
+      return { ...asset, history: assetValues };
+    }));
+    return resolveAssetsWithChange(assetsWithHistory);
   }
 
   async getBrokerProviderAsset(id: BrokerProviderAsset["id"]): Promise<BrokerProviderAsset> {
-
-    const g = this.db.transaction(async (tx) => {
-      const brokerProviderAsset = await tx.query.brokerProviderAssets.findFirst({ where: eq(brokerProviderAssets.id, id) });
-      if (!brokerProviderAsset) {
-        throw new Error("Broker provider asset not found");
-      }
-      return brokerProviderAsset;
-    })
 
     const brokerProviderAsset = await this.db.query.brokerProviderAssets.findFirst({ where: eq(brokerProviderAssets.id, id) });
     if (!brokerProviderAsset) {
@@ -114,15 +148,41 @@ export class DatabaseAssetService implements IAssetService {
     return brokerProviderAsset;
   }
 
-  async getBrokerProviderAssetHistory(id: BrokerProviderAsset["id"], query: QueryParts): Promise<AssetValue[]> {
-    const { where, orderBy, limit, offset } = query;
+  async getBrokerProviderAssetWithHistory(id: BrokerProviderAsset["id"]): Promise<WithAssetHistory<BrokerProviderAsset>> {
+    const brokerAssetWithHistory = await this.db.transaction(async (tx) => {
+      const brokerAsset = await tx.query.brokerProviderAssets.findFirst({ where: eq(brokerProviderAssets.id, id) });
+      if (!brokerAsset) {
+        throw new Error("Broker provider asset not found");
+      }
+      const assetValues = await this.getPortfolioAssetValuesForAssetsForDateRange([brokerAsset.id]);
+      return { ...brokerAsset, history: assetValues };
+    })
+    return brokerAssetWithHistory;
+  }
 
+  async getBrokerProviderAssetWithAccountChangeForUser(id: BrokerProviderAsset["id"]): Promise<BrokerProviderAssetWithAccountChange> {
+
+    const brokerAsset = await this.db.query.brokerProviderAssets.findFirst({ with: { provider: true }, where: eq(brokerProviderAssets.id, id) });
+    if (!brokerAsset) {
+      throw new Error("Broker provider asset not found");
+    }
+    const brokerAssetHistory = await this.db.query.assetValues.findMany({ where: eq(assetValues.assetId, id) });
+
+    return resolveAssetWithChangeForDateRange({
+      ...brokerAsset,
+      history: brokerAssetHistory,
+    });
+    //return { ...brokerAsset, accountChange: resolveAssetWithChange(brokerAsset, { start: query.start, end: query.end }) };
+  }
+  
+
+  async getBrokerProviderAssetHistory(id: BrokerProviderAsset["id"], query: QueryParams): Promise<AssetValue[]> {
+    const { where, orderBy, limit, offset } = brokerProviderAssetsQueryBuilder.buildQuery(query);
     return this.db.query.assetValues.findMany({ where: and(eq(assetValues.assetId, id), where), orderBy, limit, offset });
   }
   
-  async getBrokerProviderAssetContributionHistory(id: BrokerProviderAsset["id"], query: QueryParts): Promise<AssetContribution[]> {
-    const { where, orderBy, limit, offset } = query;
-
+  async getBrokerProviderAssetContributionHistory(id: BrokerProviderAsset["id"], query: QueryParams): Promise<AssetContribution[]> {
+    const { where, orderBy, limit, offset } = brokerProviderAssetsQueryBuilder.buildQuery(query);
     return this.db.query.assetContributions.findMany({ where: and(eq(assetContributions.assetId, id), where), orderBy, limit, offset });
   }
 
@@ -154,8 +214,8 @@ export class DatabaseAssetService implements IAssetService {
     return (result?.rowCount ?? 0) > 0;
   }
 
-  async getBrokerProviderAssetsHistoryForUser(userId: UserAccount["id"], query: QueryParts): Promise<BrokerProviderAsset[]> {
-    const { where, orderBy, limit, offset } = query;
+  async getBrokerProviderAssetsHistoryForUser(userId: UserAccount["id"], query: QueryParams): Promise<BrokerProviderAsset[]> {
+    const { where, orderBy, limit, offset } = brokerProviderAssetsQueryBuilder.buildQuery(query);
     return this.db.query.brokerProviderAssets.findMany({ with: { provider: true }, where: and(eq(brokerProviderAssets.userAccountId, userId), where), orderBy, limit, offset });
   }
 
@@ -229,15 +289,18 @@ export class DatabaseAssetService implements IAssetService {
    * General Assets
    */
 
-  async getGeneralAssetsForUser(userId: UserAccount["id"], query: QueryParts): Promise<GeneralAsset[]> {
-    const { where, orderBy, limit, offset } = query;
+  async getGeneralAssetsForUser(userId: UserAccount["id"], query: QueryParams): Promise<GeneralAsset[]> {
+    const { where, orderBy, limit, offset } = generalAssetsQueryBuilder.buildQuery(query);
     return this.db.query.generalAssets.findMany({ where: and(eq(generalAssets.userAccountId, userId), where), orderBy, limit, offset });
   }
 
-  async getGeneralAssetsWithAccountChangeForUser(userId: UserAccount["id"], query: QueryParts): Promise<GeneralAssetWithAccountChange[]> {
+  async getGeneralAssetsWithAccountChangeForUser(userId: UserAccount["id"], query: QueryParams): Promise<GeneralAssetWithAccountChange[]> {
     const brokerAssets = await this.getGeneralAssetsForUser(userId, query);
-    const resolvedAssets = await this.resolveAssetsWithChange(brokerAssets, { ...query });
-    return resolvedAssets;
+    const assetsWithHistory = await Promise.all(brokerAssets.map(async (asset) => {
+      const assetValues = await this.getPortfolioAssetValuesForAssetsForDateRange([asset.id] /* Add date range query */);
+      return { ...asset, history: assetValues };
+    }));
+    return resolveAssetsWithChange(assetsWithHistory);
   }
 
   async getGeneralAsset(id: GeneralAsset["id"]): Promise<GeneralAsset> {
@@ -248,8 +311,8 @@ export class DatabaseAssetService implements IAssetService {
     return generalAsset;
   }
 
-  async getGeneralAssetHistory(id: GeneralAsset["id"], query: QueryParts): Promise<GeneralAsset[]> {
-    const { where, orderBy, limit, offset } = query;
+  async getGeneralAssetHistory(id: GeneralAsset["id"], query: QueryParams): Promise<GeneralAsset[]> {
+    const { where, orderBy, limit, offset } = generalAssetsQueryBuilder.buildQuery(query);
     return this.db.query.generalAssets.findMany({ where: and(eq(generalAssets.id, id), where), orderBy, limit, offset });
   }
 
@@ -281,18 +344,18 @@ export class DatabaseAssetService implements IAssetService {
     return (result?.rowCount ?? 0) > 0;
   }
 
-  async getGeneralAssetsHistoryForUser(userId: UserAccount["id"], query: QueryParts): Promise<GeneralAsset[]> {
-    const { where, orderBy, limit, offset } = query;
+  async getGeneralAssetsHistoryForUser(userId: UserAccount["id"], query: QueryParams): Promise<GeneralAsset[]> {
+    const { where, orderBy, limit, offset } = generalAssetsQueryBuilder.buildQuery(query);
     return this.db.query.generalAssets.findMany({ where: and(eq(generalAssets.userAccountId, userId), where), orderBy, limit, offset });
   }
 
-  async getGeneralAssetsValueHistory(id: GeneralAsset["id"], query: QueryParts): Promise<AssetValue[]> {
-    const { where, orderBy, limit, offset } = query;
+  async getGeneralAssetsValueHistory(id: GeneralAsset["id"], query: QueryParams): Promise<AssetValue[]> {
+    const { where, orderBy, limit, offset } = generalAssetsQueryBuilder.buildQuery(query);
     return this.db.query.assetValues.findMany({ where: and(eq(assetValues.assetId, id), where), orderBy, limit, offset });
   }
 
-  async getGeneralAssetsContributionHistory(id: GeneralAsset["id"], query: QueryParts): Promise<AssetContribution[]> {
-    const { where, orderBy, limit, offset } = query;
+  async getGeneralAssetsContributionHistory(id: GeneralAsset["id"], query: QueryParams): Promise<AssetContribution[]> {
+    const { where, orderBy, limit, offset } = generalAssetsQueryBuilder.buildQuery(query);
     return this.db.query.assetContributions.findMany({ where: and(eq(assetContributions.assetId, id), where), orderBy, limit, offset });
   }
 
@@ -388,172 +451,27 @@ export class DatabaseAssetService implements IAssetService {
 
     const assetsToCalculate = await this.getCombinedAssetsForUser(userAccountId);
 
-    const assetsValueChnages = await Promise.all(assetsToCalculate.map(async (asset) => {
-      const assetValuesForRange = await this.getPortfolioAssetValuesForAssetsForDateRange([asset.id], startDate, endDate);
-      const withStartValue = startDate ? await this.addStartValueToAssetValues(startDate, assetValuesForRange) : assetValuesForRange;
-      return calculateAssetsChange(withStartValue);
+    const assetsWithHistory = await Promise.all(assetsToCalculate.map(async (asset) => {
+      const assetValues = await this.getPortfolioAssetValuesForAssetsForDateRange([asset.id] /*Need to add query */);
+      return { ...asset, history: assetValues };
     }));
 
-    const assetsValueChanges = assetsValueChnages.reduce((acc: AssetsChange, asset) => {
-
-      const startDate = asset.startDate < acc.startDate ? asset.startDate : acc.startDate;
-      const endDate = asset.endDate > acc.endDate ? asset.endDate : acc.endDate;
-      const startValue = asset.startDate < acc.startDate
-        ? asset.startValue
-        : asset.startDate > acc.startDate
-        ? acc.startValue
-        : asset.startDate === acc.startDate
-        ? acc.startValue + asset.startValue
-        : acc.startValue;
-
-      const value = acc.value + asset.value;
-      const currencyChange = value - startValue;
-      const percentageChange = (currencyChange / startValue) * 100;
-      
-      return {
-        startDate,
-        endDate,
-        startValue,
-        value,
-        currencyChange,
-        percentageChange
-      }
-    }, {
-      startDate: startDate ?? new Date(),
-      endDate: endDate ?? new Date(),
-      startValue: 0,
-      value: 0,
-      currencyChange: 0,
-      percentageChange: 0
-    });
-
-    return assetsValueChanges;
+    return getPortfolioOverviewForAssets(assetsWithHistory, /*Need to add query */)
   }
 
-  async getPortfolioValueHistoryForUserForDateRange(userAccountId: UserAccount["id"], startDate?: Date | null, endDate?: Date | null): Promise<PortfolioHistoryTimePoint[]> {
-
-     // Create a map to track the latest known value for each account
-     const accountLatestValues = new Map<string, number>();
-    
-     // Create a map to store portfolio values and changes at each timestamp
-     const portfolioValues = new Map<string, {
-       value: number;
-       changes: {
-         assetId: Asset["id"];
-         previousValue: number;
-         newValue: number;
-         change: number;
-       }[];
-     }>();
+  async getPortfolioValueHistoryForUserForDateRange(userAccountId: UserAccount["id"], query?: DataRangeQuery): Promise<PortfolioHistoryTimePoint[]> {
 
     const assetsToCalculate = await this.getCombinedAssetsForUser(userAccountId);
+    const assetsWithHistory = await Promise.all(assetsToCalculate.map(async (asset) => {
+      const assetValues = await this.getPortfolioAssetValuesForAssetsForDateRange([asset.id] /*Need to add query */);
+      return { ...asset, history: assetValues };
+    }));
 
-    const assetValuesToCalculate = await this.getPortfolioAssetValuesForAssetsForDateRange(assetsToCalculate.map(asset => asset.id), startDate, endDate);
-
-    const assetValuesForRange = startDate
-      ? await this.addStartValueToAssetValues(startDate, assetValuesToCalculate)
-      : assetValuesToCalculate;
-
-
-    [...assetValuesForRange.sort((a, b) => a.recordedAt.getTime() - b.recordedAt.getTime())].forEach(entry => {
-      const previousValue = accountLatestValues.get(entry.assetId) || 0;
-      const newValue = Number(entry.value);
-      const change = newValue - previousValue;
-      
-      // Update the latest known value for this account
-      accountLatestValues.set(entry.assetId, newValue);
-      
-      // Calculate total portfolio value at this point in time
-      const totalValue = Array.from(accountLatestValues.values()).reduce((sum, value) => sum + value, 0);
-      
-      // Format the date to YYYY-MM-DD for consistent daily grouping
-      const dateKey = entry.recordedAt.toISOString().split('T')[0];
-      
-      // If we already have an entry for this date, update it with the new changes
-      if (portfolioValues.has(dateKey)) {
-        const existingEntry = portfolioValues.get(dateKey)!;
-        existingEntry.value = totalValue;
-        existingEntry.changes.push({
-          assetId: entry.assetId,
-          previousValue,
-          newValue,
-          change
-        });
-      } else {
-        // Otherwise create a new entry for this date
-        portfolioValues.set(dateKey, {
-          value: totalValue,
-          changes: [{
-            assetId: entry.assetId,
-            previousValue,
-            newValue,
-            change
-          }]
-        });
-      }
-    });
-
-    return Array.from(portfolioValues.entries())
-      .map(([timestamp, data]) => ({
-        date: new Date(timestamp),
-        value: data.value,
-        changes: data.changes
-      }))
-      .sort((a, b) => a.date.getTime() - b.date.getTime());
+    return getPortfolioValueHistoryForAssets(assetsWithHistory, query);
   }
 
   async getBrokerAssetProviders(): Promise<BrokerProvider[]> {
     return this.db.query.brokerProviders.findMany();
-  }
-  /**
-   * Utility methods
-   */
-
-  private async getLastAssetValueBeforeDate(startDate: Date, assetIds?: Asset["id"][]): Promise<AssetValue | null> {
-    const lastValueBeforeStart = await this.db.query.assetValues.findFirst({
-      where: assetIds 
-        ? and(lte(assetValues.recordedAt, startDate), inArray(assetValues.assetId, assetIds))
-        : and(lte(assetValues.recordedAt, startDate)),
-      orderBy: [desc(assetValues.recordedAt)],
-    })
-    const startValue: AssetValue | null = lastValueBeforeStart
-    ? {
-      ...lastValueBeforeStart,
-      recordedAt: startDate ?? new Date(),
-    }
-    : null;
-    return startValue;
-  }
-
-  private async addStartValueToAssetValues(startDate: Date, assetValues: AssetValue[]): Promise<AssetValue[]> {
-
-    const c = assetValues.map(assetValue => assetValue.assetId);
-    const ids = new Set(c);
-
-    const startValue = await this.getLastAssetValueBeforeDate(startDate, Array.from(ids));
-
-    const valuesForRange = startValue ? [startValue, ...assetValues] : assetValues;
-
-    return valuesForRange;
-  }
-
-  private async resolveAssetsWithChange<T extends { id: string }>(assets: T[], query: QueryParts): Promise<WithAccountChange<T>[]> {
-
-    const startDate = query?.start
-            ? new Date(query.start as string)
-            : null;
-    const endDate = query?.end
-            ? new Date(query.end as string)
-            : null;
-
-    return assets.reduce(async (acc: Promise<WithAccountChange<T>[]>, asset): Promise<WithAccountChange<T>[]> => {
-      const assets = await acc;
-
-      const assetValuesForRange = await this.getPortfolioAssetValuesForAssetsForDateRange([asset.id], startDate, endDate);
-      const assetHistory = startDate ? await this.addStartValueToAssetValues(startDate, assetValuesForRange) : assetValuesForRange;
-
-      return [...assets, { ...asset, accountChange: calculateAssetsChange(assetHistory) }];
-    }, Promise.resolve([]));
   }
 
   /**
@@ -667,8 +585,8 @@ export class DatabaseAssetService implements IAssetService {
     return processedCount;
   }
 
-  private getNextProcessingDate(lastDate: Date, interval: ContributionInterval): Date {
-    const nextDate = new Date(lastDate);
+  private getNextProcessingDate(lastDate: Date | null, interval: ContributionInterval): Date {
+    const nextDate = lastDate ? new Date(lastDate) : new Date();
     
     switch (interval) {
       case 'weekly':

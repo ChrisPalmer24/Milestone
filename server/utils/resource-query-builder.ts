@@ -223,7 +223,7 @@ export function parseQueryParamsExpress(query: any): QueryParams {
   }
 }
 
-interface QueryParts {
+export interface QueryParts {
   where?: SQL<unknown>;
   orderBy: SQL<unknown>[];
   limit?: number;

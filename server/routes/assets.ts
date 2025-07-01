@@ -5,12 +5,7 @@ import {
   AuthService,
   requireTenantWithUserAccountId,
 } from "server/auth";
-import {
-  brokerProviderAssets,
-  generalAssets,
-  recurringContributions
-} from "@server/db/schema/portfolio-assets";
-import { ResourceQueryBuilder } from "@server/utils/resource-query-builder";
+import { parseQueryParamsExpress } from "@server/utils/resource-query-builder";
 import {
   assetValueInsertSchema,
   assetValueOrphanInsertSchema,
@@ -25,44 +20,6 @@ import { uuidRouteParam } from "@server/utils/uuid";
 const services = ServiceFactory.getInstance();
 const assetService = services.getAssetService();
 
-const brokerProviderAssetsQueryBuilder = new ResourceQueryBuilder({
-  table: brokerProviderAssets,
-  allowedSortFields: [
-    "createdAt",
-    "updatedAt",
-    "name",
-    "providerId",
-    "accountType",
-  ],
-  allowedFilterFields: ["providerId", "accountType"],
-  defaultSort: { field: "createdAt", direction: "desc" },
-  maxLimit: 50,
-});
-
-const recurringContributionsQueryBuilder = new ResourceQueryBuilder({
-  table: recurringContributions,
-  allowedSortFields: [
-    "createdAt",
-    "updatedAt",
-    "amount",
-    "startDate",
-    "lastProcessedDate",
-    "interval",
-    "isActive"
-  ],
-  allowedFilterFields: ["interval", "isActive"],
-  defaultSort: { field: "createdAt", direction: "desc" },
-  maxLimit: 50,
-});
-
-const generalAssetsQueryBuilder = new ResourceQueryBuilder({
-  table: generalAssets,
-  allowedSortFields: ["createdAt", "updatedAt", "name", "assetType"],
-  allowedFilterFields: ["assetType"],
-  defaultSort: { field: "createdAt", direction: "desc" },
-  maxLimit: 50,
-});
-
 export async function registerRoutes(
   router: Router,
   authService: AuthService
@@ -73,26 +30,14 @@ export async function registerRoutes(
     const response = await requireTenantWithUserAccountId(
       req.tenant,
       async (tenant) => {
-        if (req.query.start || req.query.end) {
-          const query = brokerProviderAssetsQueryBuilder.buildQuery(req.query);
-          const assets =
-            await assetService.getBrokerProviderAssetsWithAccountChangeForUser(
-              tenant.userAccountId,
-              {
-                ...query,
-                start: req.query.start,
-                end: req.query.end,
-              }
-            );
-          return assets;
-        } else {
-          const query = brokerProviderAssetsQueryBuilder.buildQuery(req.query);
-          const assets = await assetService.getBrokerProviderAssetsForUser(
+        const queryParams = parseQueryParamsExpress(req.query);
+        console.log("GET broker queryParams", queryParams);
+        const assets =
+          await assetService.getBrokerProviderAssetsWithAccountChangeForUser(
             tenant.userAccountId,
-            query
-          );
-          return assets;
-        }
+            queryParams
+        );
+        return assets;
       }
     );
 
@@ -144,10 +89,10 @@ export async function registerRoutes(
     `/broker/${uuidRouteParam("assetId")}/history`,
     requireUser,
     async (req: AuthRequest, res) => {
-      const query = brokerProviderAssetsQueryBuilder.buildQuery(req.query);
+      const queryParams = parseQueryParamsExpress(req.query);
       const history = await assetService.getBrokerProviderAssetHistory(
         req.params.assetId,
-        query
+        queryParams
       );
       res.json(history);
     }
@@ -184,10 +129,10 @@ export async function registerRoutes(
     `/broker/${uuidRouteParam("assetId")}/contributions`,
     requireUser,
     async (req: AuthRequest, res) => {
-      const query = brokerProviderAssetsQueryBuilder.buildQuery(req.query);
+      const queryParams = parseQueryParamsExpress(req.query);
       const contributions = await assetService.getBrokerProviderAssetContributionHistory(
         req.params.assetId,
-        query
+        queryParams
       );
       res.json(contributions);  
     }
@@ -257,23 +202,27 @@ export async function registerRoutes(
     const response = await requireTenantWithUserAccountId(
       req.tenant,
       async (tenant) => {
+        const queryParams = parseQueryParamsExpress(req.query);
         if (req.query.start || req.query.end) {
-          const query = generalAssetsQueryBuilder.buildQuery(req.query);
+          // await assetService.getGeneralAssetsWithAccountChangeForUser(
+          //   tenant.userAccountId,
+          //   {
+          //     ...query,
+          //     start: req.query.start,
+          //     end: req.query.end,
+          //   }
+          // );
+
           const assets =
             await assetService.getGeneralAssetsWithAccountChangeForUser(
               tenant.userAccountId,
-              {
-                ...query,
-                start: req.query.start,
-                end: req.query.end,
-              }
+              queryParams
             );
           return assets;
         } else {
-          const query = generalAssetsQueryBuilder.buildQuery(req.query);
           const assets = await assetService.getGeneralAssetsForUser(
             tenant.userAccountId,
-            query
+            queryParams
           );
           return assets;
         }
@@ -324,10 +273,10 @@ export async function registerRoutes(
     `/general/${uuidRouteParam("assetId")}/history`,
     requireUser,
     async (req: AuthRequest, res) => {
-      const query = generalAssetsQueryBuilder.buildQuery(req.query);
+      const queryParams = parseQueryParamsExpress(req.query);
       const history = await assetService.getGeneralAssetHistory(
         req.params.assetId,
-        query
+        queryParams
       );
       res.json(history);
     }
@@ -438,10 +387,10 @@ export async function registerRoutes(
     `/broker/${uuidRouteParam("assetId")}/recurring-contributions`,
     requireUser,
     async (req: AuthRequest, res) => {
-      const query = recurringContributionsQueryBuilder.buildQuery(req.query);
+      const queryParams = parseQueryParamsExpress(req.query);
       const recurringContributions = await assetService.getRecurringContributionsForAsset(
         req.params.assetId,
-        query
+        queryParams
       );
       res.json(recurringContributions);
     }

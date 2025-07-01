@@ -17,7 +17,7 @@ import {
   RecurringContributionSelect as DBRecurringContributionSelect,
   ContributionInterval as DBContributionInterval,
  } from "@server/db/schema/index";
-import { ExtractCommonFields, IfConstructorEquals, Orphan, WithAccountChange, WithCurrentBalance, WithInitialBalance } from "./utils";
+import { ExtractCommonFields, IfConstructorEquals, Orphan } from "./utils";
 
 export type AssetType = "general" | "broker";
 
@@ -168,8 +168,26 @@ export type AccountType = DBAccountType
 
 export type BrokerProvider = DBBrokerProvider
 
+export type AssetsChange = {
+  startDate: Date;
+  endDate: Date;
+  startValue: number;
+  value: number;
+  currencyChange: number;
+  percentageChange: number;
+};
 
+export type WithAccountChange<T extends { id: string }> = T & { accountChange: AssetsChange };
+export type WithAssetHistory<T extends { id: string }> = T & { history: AssetValue[] };
 
+//This is used when a dummy asset value is needed for a date range that is before the first asset value
+export type PossibleDummyAssetValue = Omit<AssetValue, "id"> & { id: string | null };
+export type DataRangeQuery = {
+  start: Date | string | null;
+  end: Date | string | null;
+}
 
-
-//.export type GeneralAssetOrphanInsert = IfEquals<ZodGeneralAssetOrphan, DBGeneralAssetInsertOrphan, never>;
+export type AssetWithHistory = {
+  id: string;
+  history: AssetValue[];
+}

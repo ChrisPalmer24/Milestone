@@ -39,14 +39,16 @@ export async function getOpenPositions() {
 
   try {
 
+    console.log("APIKEY", API_KEY);
+
     const resp = await fetch(
       `https://live.trading212.com/api/v0/equity/portfolio`,
       {
         method: 'GET',
         headers: {
           Authorization: `${API_KEY}`,
-          // 'User-Agent': 'Node.js',w
-          // 'Accept': 'application/json'
+          'User-Agent': 'Node.js',
+          'Accept': 'application/json'
         }
       }
     );

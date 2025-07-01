@@ -70,16 +70,4 @@ export type ExtractCommonFields<T, U> = Pick<T, {
 }[keyof T]>;
 
 
-export type AssetsChange = {
-  startDate: Date;
-  endDate: Date;
-  startValue: number;
-  value: number;
-  currencyChange: number;
-  percentageChange: number;
-};
-
-export type WithAccountChange<T extends { id: string }> = T & { accountChange: AssetsChange };
-
-
 
