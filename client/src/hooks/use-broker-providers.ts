@@ -1,4 +1,4 @@
-import { BrokerProvider } from "@/context/PortfolioContext";
+import { BrokerProvider } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
 
