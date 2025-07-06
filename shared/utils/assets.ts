@@ -111,11 +111,8 @@ const defineAssetValuesForRange = (assetValues: AssetValue[], query?: DataRangeQ
 
 
 export const resolveAssetWithChangeForDateRange = <T extends AssetWithHistory>(asset: T, query?: DataRangeQuery): WithAccountChange<T> => {
-  const startDate = resolveDate(query?.start);
-  if(!startDate) {
-    throw new Error("Start date is required");
-  }
-  const endDate = resolveDate(query?.end) ?? new Date();
+  const startDate = resolveDate(query?.start) ?? asset.history.sort((a, b) => a.recordedAt.getTime() - b.recordedAt.getTime())[0].recordedAt;
+  const endDate = resolveDate(query?.end) ?? asset.history.sort((a, b) => b.recordedAt.getTime() - a.recordedAt.getTime())[0].recordedAt;
   const assetValuesForRange = defineAssetValuesForRange(asset.history, {
     start: startDate,
     end: endDate,
@@ -126,11 +123,10 @@ export const resolveAssetWithChangeForDateRange = <T extends AssetWithHistory>(a
 
 export const resolveAssetsWithChange = async <T extends AssetWithHistory>(assets: T[], query?: DataRangeQuery): Promise<WithAccountChange<T>[]> => {
 
-  const startDate = resolveDate(query?.start)
-  if(!startDate) {
-    throw new Error("Start date is required");
-  }
-  const endDate = resolveDate(query?.end) ?? new Date();
+  const flatHistory = assets.flatMap(assets => assets.history)
+
+  const startDate = resolveDate(query?.start) ?? flatHistory.sort((a, b) => a.recordedAt.getTime() - b.recordedAt.getTime())[0].recordedAt;
+  const endDate = resolveDate(query?.end) ?? flatHistory.sort((a, b) => b.recordedAt.getTime() - a.recordedAt.getTime())[0].recordedAt;
 
   return assets.map((asset) => resolveAssetWithChangeForDateRange(asset, {
     start: startDate,

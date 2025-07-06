@@ -8,6 +8,8 @@ import {
   AssetValueSelect as DBAssetValueSelect,
   AssetContributionInsert as DBAssetContributionInsert,
   AssetContributionSelect as DBAssetContribution,
+  BrokerProviderAssetSecuritySelect as DBBrokerProviderAssetSecuritySelect,
+  BrokerProviderAssetSecurityInsert as DBBrokerProviderAssetSecurityInsert,
   // AssetDebitInsert as DBAssetDebitInsert,
   // AssetDebitSelect as DBAssetDebitSelect,
   BrokerProviderAssetAPIKeyConnectionSelect as DBBrokerProviderAssetAPIKeyConnection,
@@ -18,6 +20,7 @@ import {
   ContributionInterval as DBContributionInterval,
  } from "@server/db/schema/index";
 import { ExtractCommonFields, IfConstructorEquals, Orphan } from "./utils";
+import { securityInsertSchema, SecuritySearchResult } from "./securities";
 
 export type AssetType = "general" | "broker";
 
@@ -41,24 +44,37 @@ generalAssetInsertSchema satisfies ZodType<GeneralAssetInsert>;
 export type GeneralAsset = DBGeneralAsset
 export type GeneralAssetWithAccountChange = WithAccountChange<GeneralAsset>
 
+export const brokerProviderAssetSecurityInsertSchema = z.object({
+  security: securityInsertSchema,
+  shareHolding: z.number().transform((val) => typeof val === "string" ? parseFloat(val) : val),
+  gainLoss: z.number().transform((val) => typeof val === "string" ? parseFloat(val) : val),
+  recordedAt: z.coerce.date().optional(),
+})
+
+export type BrokerProviderInsertSecurityItem = z.infer<typeof brokerProviderAssetSecurityInsertSchema>;
+
 export const brokerProviderAssetOrphanInsertSchema = z.object({
   name: z.string(),
   providerId: z.string(),
   accountType: z.string(),
   currentValue: z.number().optional(),
+  securities: z.array(brokerProviderAssetSecurityInsertSchema)
 })
 
 type ZodBrokerProviderAssetOrphan = z.infer<typeof brokerProviderAssetOrphanInsertSchema>;
-export type BrokerProviderAssetOrphanInsert = IfConstructorEquals<ZodBrokerProviderAssetOrphan, Orphan<DBBrokerProviderAssetInsert>, never>;
+export type BrokerProviderAssetOrphanInsert = ZodBrokerProviderAssetOrphan
+//export type BrokerProviderAssetOrphanInsert = IfConstructorEquals<ZodBrokerProviderAssetOrphan, Orphan<DBBrokerProviderAssetInsert>, never>;
 brokerProviderAssetOrphanInsertSchema satisfies ZodType<BrokerProviderAssetOrphanInsert>;
 
 export const brokerProviderAssetInsertSchema = brokerProviderAssetOrphanInsertSchema.extend({
   userAccountId: z.string()
 })
 
-type ZodBrokerProviderAsset = z.infer<typeof brokerProviderAssetInsertSchema>;
-export type BrokerProviderAssetInsert = IfConstructorEquals<ZodBrokerProviderAsset, DBBrokerProviderAssetInsert, never>;
-brokerProviderAssetInsertSchema satisfies ZodType<BrokerProviderAssetInsert>;
+type ZodBrokerProviderAssetInsert = z.infer<typeof brokerProviderAssetInsertSchema>;
+// export type BrokerProviderAssetInsert = IfConstructorEquals<ZodBrokerProviderAsset, DBBrokerProviderAssetInsert, never>;
+// brokerProviderAssetInsertSchema satisfies ZodType<BrokerProviderAssetInsert>;
+export type BrokerProviderAssetInsert = ZodBrokerProviderAssetInsert
+
 
 export type BrokerProviderAsset = DBBrokerProviderAsset
 export type BrokerProviderAssetWithAccountChange = WithAccountChange<BrokerProviderAsset>
@@ -168,6 +184,9 @@ export type AccountType = DBAccountType
 
 export type BrokerProvider = DBBrokerProvider
 
+export type BrokerProviderAssetSecuritySelect = DBBrokerProviderAssetSecuritySelect
+export type BrokerProviderAssetSecurityInsert = DBBrokerProviderAssetSecurityInsert
+
 export type AssetsChange = {
   startDate: Date;
   endDate: Date;
@@ -182,6 +201,7 @@ export type WithAssetHistory<T extends { id: string }> = T & { history: AssetVal
 
 //This is used when a dummy asset value is needed for a date range that is before the first asset value
 export type PossibleDummyAssetValue = Omit<AssetValue, "id"> & { id: string | null };
+
 export type DataRangeQuery = {
   start: Date | string | null;
   end: Date | string | null;

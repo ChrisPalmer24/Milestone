@@ -42,13 +42,13 @@ export function createDatabaseConnection() {
     ? drizzleNodePostgres({
         connection: databaseUrl,
         schema,
-        logger
+        //logger
       })
     : drizzleNeon({
         //connection: databaseUrl?.replace('.us-east-2', '-pooler.us-east-2');,
         connection: databaseUrl,
         schema,
-        logger,
+        //logger,
         ws: ws,
         // poolConfig: {
         //   maxConns: 5,

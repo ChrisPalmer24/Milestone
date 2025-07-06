@@ -20,7 +20,10 @@ import { usePortfolio } from "@/context/PortfolioContext";
 import { useToast } from "@/hooks/use-toast";
 import { getNextMilestone } from "@/lib/utils/milestones";
 import AddAccountDialogue from "@/components/account/AddAccountDialogue";
-import { BrokerProviderAssetOrphanInsert } from "shared/schema";
+import {
+  BrokerProviderAccountInsert,
+  BrokerProviderAssetOrphanInsert,
+} from "shared/schema";
 import { DateRangeProvider, useDateRange } from "@/context/DateRangeContext";
 
 import {
@@ -79,7 +82,7 @@ function Portfolio() {
     portfolioOverview?.value ?? 0
   );
 
-  const onSubmit = async (values: BrokerProviderAssetOrphanInsert) => {
+  const onSubmit = async (values: BrokerProviderAccountInsert) => {
     try {
       setIsAddingAccount(true);
       await addBrokerAsset.mutateAsync(values);

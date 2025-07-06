@@ -1,4 +1,5 @@
 export * from "./portfolio-assets";
+export * from "./securities";
 export * from "./utils";
 export * from "./portfolio-milestone";
 export * from "./portfolio-fire";

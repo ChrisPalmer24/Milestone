@@ -13,7 +13,8 @@ import {
   brokerProviderAssetInsertSchema,
   generalAssetInsertSchema,
   recurringContributionOrphanInsertSchema,
-  RecurringContribution
+  RecurringContribution,
+  brokerProviderAssetSecurityInsertSchema,
 } from "@shared/schema";
 import { uuidRouteParam } from "@server/utils/uuid";
 
@@ -45,9 +46,13 @@ export async function registerRoutes(
   });
 
   router.post("/broker", requireUser, async (req: AuthRequest, res) => {
-    const data = brokerProviderAssetInsertSchema.parse(req.body);
-    const asset = await assetService.createBrokerProviderAsset(data);
-    res.json(asset);
+    try {
+      const data = brokerProviderAssetInsertSchema.parse(req.body);
+      const asset = await assetService.createBrokerProviderAsset(data);
+      res.json(asset);
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "An unknown error occurred" });
+    }
   });
 
   router.get(
@@ -191,6 +196,59 @@ export async function registerRoutes(
         req.params.historyId
       );
       res.json(history);
+    }
+  );
+
+  // Broker Provider Asset Value Items (Individual Holdings) Routes
+  router.get(
+    `/broker/${uuidRouteParam("assetId")}/securities`,
+    requireUser,
+    async (req: AuthRequest, res) => {
+      const queryParams = parseQueryParamsExpress(req.query);
+      const valueItems = await assetService.getBrokerProviderAssetSecurities(
+        req.params.assetId,
+        queryParams
+      );
+      res.json(valueItems);
+    }
+  );
+
+  router.post(
+    `/broker/${uuidRouteParam("assetId")}/securities`,
+    requireUser,
+    async (req: AuthRequest, res) => {
+      const data = brokerProviderAssetSecurityInsertSchema.parse(req.body);
+      const valueItem = await assetService.createBrokerProviderAssetSecurity(
+        req.params.assetId,
+        data
+      );
+      res.json(valueItem);
+    }
+  );
+
+  router.put(
+    `/broker/${uuidRouteParam("assetId")}/securities/${uuidRouteParam("securityId")}`,
+    requireUser,
+    async (req: AuthRequest, res) => {
+      const data = brokerProviderAssetSecurityInsertSchema.parse(req.body);
+      const valueItem = await assetService.updateBrokerProviderAssetSecurity(
+        req.params.assetId,
+        req.params.securityId,
+        data
+      );
+      res.json(valueItem);
+    }
+  );
+
+  router.delete(
+    `/broker/${uuidRouteParam("assetId")}/securities/${uuidRouteParam("securityId")}`,
+    requireUser,
+    async (req: AuthRequest, res) => {
+      const result = await assetService.deleteBrokerProviderAssetSecurity(
+        req.params.assetId,
+        req.params.securityId
+      );
+      res.json({ success: result });
     }
   );
 

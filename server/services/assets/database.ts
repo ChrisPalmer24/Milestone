@@ -1,9 +1,7 @@
-
-
-import { assetContributions, assetValues, brokerProviderAssets, brokerProviders, generalAssets, brokerProviderAssetAPIKeyConnections, recurringContributions } from "server/db/schema";
+import { assetContributions, assetValues, brokerProviderAssets, brokerProviders, generalAssets, brokerProviderAssetAPIKeyConnections, recurringContributions, brokerProvideraAssetSecurities, securities } from "server/db/schema";
 import { Database } from "../../db";
 import { and, between, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
-import { Asset, AssetContribution, AssetContributionInsert, assetContributionInsertSchema, AssetType, AssetValue, AssetValueInsert, assetValueInsertSchema, BrokerProvider, BrokerProviderAsset, BrokerProviderAssetAPIKeyConnection, BrokerProviderAssetInsert, BrokerProviderAssetWithAccountChange, GeneralAsset, GeneralAssetInsert, GeneralAssetWithAccountChange, PortfolioHistoryTimePoint, UserAccount, WithAccountChange, AssetsChange, AssetValueOrphanInsert, AssetContributionOrphanInsert, RecurringContribution, RecurringContributionOrphanInsert, ContributionInterval, WithAssetHistory, DataRangeQuery } from "@shared/schema";
+import { Asset, AssetContribution, assetContributionInsertSchema, AssetType, AssetValue, assetValueInsertSchema, BrokerProvider, BrokerProviderAsset, BrokerProviderAssetAPIKeyConnection, BrokerProviderAssetInsert, BrokerProviderAssetWithAccountChange, GeneralAsset, GeneralAssetInsert, GeneralAssetWithAccountChange, PortfolioHistoryTimePoint, UserAccount, AssetsChange, AssetValueOrphanInsert, AssetContributionOrphanInsert, RecurringContribution, RecurringContributionOrphanInsert, ContributionInterval, WithAssetHistory, SecuritySelect, SecurityInsert, DataRangeQuery, BrokerProviderAssetSecuritySelect, BrokerProviderAssetSecurityInsert, SecuritySearchResult } from "@shared/schema";
 import { IAssetService } from "./types";
 import { NodePgTransaction } from "drizzle-orm/node-postgres";
 import { Schema, TSchema } from "server/db/types/utils";
@@ -48,6 +46,29 @@ const generalAssetsQueryBuilder = new ResourceQueryBuilder({
   allowedFilterFields: ["assetType"],
   defaultSort: { field: "createdAt", direction: "desc" },
   maxLimit: 50,
+});
+
+const securitiesQueryBuilder = new ResourceQueryBuilder({
+  table: securities,
+  allowedSortFields: [
+    "createdAt",
+    "updatedAt", 
+    "symbol",
+    "name",
+    "exchange",
+    "country",
+    "currency",
+    "type"
+  ],
+  allowedFilterFields: [
+    "exchange",
+    "country", 
+    "currency",
+    "type",
+    "symbol"
+  ],
+  defaultSort: { field: "symbol", direction: "asc" },
+  maxLimit: 100,
 });
 
 
@@ -192,6 +213,29 @@ export class DatabaseAssetService implements IAssetService {
         ...data,
         currentValue: data.currentValue ?? 0
       }).returning();
+
+      const securities = data.securities.map((security) => ({
+        ...security,
+        assetId: insertedBrokerProviderAsset.id,
+      }));
+
+      const securitiesToInsert = await Promise.all(securities.map(async (security) => {
+        const persistedSecurity = await this.createOrFindSecurity(security.security);
+        return {
+          securityId: persistedSecurity.id,
+          brokerProviderAssetId: insertedBrokerProviderAsset.id,
+          recordedAt: security.recordedAt ?? new Date(),
+          shareHolding: security.shareHolding,
+          gainLoss: security.gainLoss,
+        };
+      }));
+
+      console.log("securitiesToInsert", securitiesToInsert);
+
+      if(securitiesToInsert.length > 0) {
+        await tx.insert(brokerProvideraAssetSecurities).values(securitiesToInsert);
+      }
+
       await tx.insert(assetValues).values({
         assetId: insertedBrokerProviderAsset.id,
         value: data.currentValue ?? 0,
@@ -210,7 +254,14 @@ export class DatabaseAssetService implements IAssetService {
   }
 
   async deleteBrokerProviderAsset(id: BrokerProviderAsset["id"]): Promise<boolean> {
-    const result = await this.db.delete(brokerProviderAssets).where(eq(brokerProviderAssets.id, id));
+
+    const result = await this.db.transaction(async (tx) => {
+      await tx.delete(brokerProvideraAssetSecurities).where(eq(brokerProvideraAssetSecurities.brokerProviderAssetId, id));
+      await tx.delete(brokerProviderAssetAPIKeyConnections).where(eq(brokerProviderAssetAPIKeyConnections.brokerProviderAssetId, id));
+      await tx.delete(assetValues).where(eq(assetValues.assetId, id));
+      await tx.delete(assetContributions).where(eq(assetContributions.assetId, id));
+      return tx.delete(brokerProviderAssets).where(eq(brokerProviderAssets.id, id));
+    });
     return (result?.rowCount ?? 0) > 0;
   }
 
@@ -603,6 +654,178 @@ export class DatabaseAssetService implements IAssetService {
     }
     
     return nextDate;
+  }
+
+  /**
+   * Securities (Cache management)
+   */
+
+  async getSecurities(query: QueryParams): Promise<SecuritySelect[]> {
+    const { where, orderBy, limit, offset } = securitiesQueryBuilder.buildQuery(query);
+    return this.db.query.securities.findMany({ 
+      where,
+      orderBy,
+      limit,
+      offset
+    });
+  }
+
+  async getSecurity(id: SecuritySelect["id"]): Promise<SecuritySelect> {
+    const security = await this.db.query.securities.findFirst({
+      where: eq(securities.id, id)
+    });
+    if (!security) {
+      throw new Error(`Security with ID ${id} not found`);
+    }
+    return security;
+  }
+
+  async findSecurityMatch(security: SecuritySearchResult): Promise<SecuritySelect | null> {
+    const securityFound = await this.db.query.securities.findFirst({
+      where: and(
+        //TODO identify if we need to add more fields to the match
+        //Should we use ISIN, CUSIP, FIGI, etc.
+        eq(securities.symbol, security.symbol),
+        eq(securities.name, security.name),
+        eq(securities.exchange, security.exchange ?? ""),
+      )
+    });
+    return securityFound || null;
+  }
+
+  async searchCachedSecurities(query: string): Promise<SecuritySelect[]> {
+    const searchTerm = `%${query.toLowerCase()}%`;
+    
+    // Search by symbol (exact match gets priority) and name (partial match)
+    const results = await this.db.query.securities.findMany({
+      where: sql`
+        LOWER(${securities.symbol}) LIKE ${searchTerm} 
+        OR LOWER(${securities.name}) LIKE ${searchTerm}
+        OR LOWER(${securities.isin}) LIKE ${searchTerm}
+      `,
+      orderBy: [
+        // Prioritize exact symbol matches
+        sql`CASE WHEN LOWER(${securities.symbol}) = ${query.toLowerCase()} THEN 0 ELSE 1 END`,
+        // Then symbol starts with
+        sql`CASE WHEN LOWER(${securities.symbol}) LIKE ${query.toLowerCase() + '%'} THEN 0 ELSE 1 END`,
+        // Then by symbol alphabetically
+        securities.symbol
+      ],
+      limit: 20 // Limit cached results to avoid too many
+    });
+    
+    return results;
+  }
+
+  async createOrFindSecurity(data: SecurityInsert): Promise<SecuritySelect> {
+    // First try to find existing security by symbol
+    const existingSecurity = await this.findSecurityMatch(data.symbol);
+    if (existingSecurity) {
+      return existingSecurity;
+    }
+
+    // If not found, create new security
+    const [insertedSecurity] = await this.db.insert(securities).values(data).returning();
+    return insertedSecurity;
+  }
+
+  async updateSecurity(id: SecuritySelect["id"], data: SecurityInsert): Promise<SecuritySelect> {
+    const [updatedSecurity] = await this.db.update(securities)
+      .set({
+        ...data,
+      })
+      .where(eq(securities.id, id))
+      .returning();
+
+    if (!updatedSecurity) {
+      throw new Error(`Security with ID ${id} not found`);
+    }
+    return updatedSecurity;
+  }
+
+  async deleteSecurity(id: SecuritySelect["id"]): Promise<boolean> {
+    const result = await this.db.delete(securities)
+      .where(eq(securities.id, id));
+    return (result?.rowCount ?? 0) > 0;
+  }
+
+  /**
+   * Broker Provider Asset Value Items (Individual Holdings)
+   */
+
+  async getBrokerProviderAssetSecurities(assetId: BrokerProviderAsset["id"], query: QueryParams): Promise<BrokerProviderAssetSecuritySelect[]> {
+    const { where, orderBy, limit, offset } = brokerProviderAssetsQueryBuilder.buildQuery(query);
+    return this.db.query.brokerProvideraAssetSecurities.findMany({ 
+      with: { security: true },
+      where: and(eq(brokerProvideraAssetSecurities.brokerProviderAssetId, assetId), where), 
+      orderBy: orderBy || [desc(brokerProvideraAssetSecurities.recordedAt)], 
+      limit, 
+      offset 
+    });
+  }
+
+  async createBrokerProviderAssetSecurity(assetId: BrokerProviderAsset["id"], data: BrokerProviderAssetSecurityInsert): Promise<BrokerProviderAssetSecuritySelect> {
+    // Make sure the asset exists
+    const asset = await this.getBrokerProviderAsset(assetId);
+    if (!asset) {
+      throw new Error(`Broker provider asset with ID ${assetId} not found`);
+    }
+
+    // Make sure the security exists
+    const security = await this.getSecurity(data.securityId);
+    if (!security) {
+      throw new Error(`Security with ID ${data.securityId} not found`);
+    }
+
+    const [insertedValueItem] = await this.db.insert(brokerProvideraAssetSecurities).values({
+      ...data,
+      brokerProviderAssetId: assetId,
+    }).returning();
+
+    return insertedValueItem;
+  }
+
+  async updateBrokerProviderAssetSecurity(assetId: BrokerProviderAsset["id"], valueItemId: BrokerProviderAssetSecuritySelect["id"], data: BrokerProviderAssetSecurityInsert): Promise<BrokerProviderAssetSecuritySelect> {
+    // Make sure the value item exists and belongs to the asset
+    const existingValueItem = await this.db.query.brokerProvideraAssetSecurities.findFirst({
+      where: and(
+        eq(brokerProvideraAssetSecurities.id, valueItemId),
+        eq(brokerProvideraAssetSecurities.brokerProviderAssetId, assetId)
+      )
+    });
+
+    if (!existingValueItem) {
+      throw new Error(`Broker provider asset value item with ID ${valueItemId} not found for asset ${assetId}`);
+    }
+
+    const [updatedValueItem] = await this.db.update(brokerProvideraAssetSecurities)
+      .set({
+        ...data,
+        updatedAt: new Date()
+      })
+      .where(eq(brokerProvideraAssetSecurities.id, valueItemId))
+      .returning();
+
+    return updatedValueItem;
+  }
+
+  async deleteBrokerProviderAssetSecurity(assetId: BrokerProviderAsset["id"], securityId: BrokerProviderAssetSecuritySelect["id"]): Promise<boolean> {
+    // Make sure the value item exists and belongs to the asset
+    const existingValueItem = await this.db.query.brokerProvideraAssetSecurities.findFirst({
+      where: and(
+        eq(brokerProvideraAssetSecurities.id, securityId),
+        eq(brokerProvideraAssetSecurities.brokerProviderAssetId, assetId)
+      )
+    });
+
+    if (!existingValueItem) {
+      throw new Error(`Broker provider asset security with ID ${securityId} not found for asset ${assetId}`);
+    }
+
+    const result = await this.db.delete(brokerProvideraAssetSecurities)
+      .where(eq(brokerProvideraAssetSecurities.id, securityId));
+
+    return (result?.rowCount ?? 0) > 0;
   }
 }
 

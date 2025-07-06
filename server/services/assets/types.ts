@@ -1,4 +1,4 @@
-import { AssetContributionInsert, AssetValueInsert, AssetValue, BrokerProviderAsset, BrokerProviderAssetInsert, GeneralAsset, GeneralAssetInsert, UserAccount, AssetContribution, PortfolioHistoryTimePoint, BrokerProviderAssetAPIKeyConnection, BrokerProvider, BrokerProviderAssetWithAccountChange, GeneralAssetWithAccountChange, AssetsChange, AssetValueOrphanInsert, AssetContributionOrphanInsert, RecurringContribution, RecurringContributionOrphanInsert, DataRangeQuery } from "@shared/schema";
+import { AssetContributionInsert, AssetValueInsert, AssetValue, BrokerProviderAsset, BrokerProviderAssetInsert, GeneralAsset, GeneralAssetInsert, UserAccount, AssetContribution, PortfolioHistoryTimePoint, BrokerProviderAssetAPIKeyConnection, BrokerProvider, BrokerProviderAssetWithAccountChange, GeneralAssetWithAccountChange, AssetsChange, AssetValueOrphanInsert, AssetContributionOrphanInsert, RecurringContribution, RecurringContributionOrphanInsert, DataRangeQuery, SecuritySelect, SecurityInsert, BrokerProviderAssetSecuritySelect, BrokerProviderAssetSecurityInsert, SecuritySearchResult } from "@shared/schema";
 import { QueryParams } from "@server/utils/resource-query-builder";
 
 export interface IAssetService {
@@ -47,4 +47,19 @@ export interface IAssetService {
   updateRecurringContribution(assetId: BrokerProviderAsset["id"], contributionId: RecurringContribution["id"], data: RecurringContributionOrphanInsert): Promise<RecurringContribution>;
   deleteRecurringContribution(assetId: BrokerProviderAsset["id"], contributionId: RecurringContribution["id"]): Promise<boolean>;
   processRecurringContributions(): Promise<number>; // Returns number of processed contributions
+
+  // Securities (Cache management)
+  getSecurities(query: QueryParams): Promise<SecuritySelect[]>;
+  getSecurity(id: SecuritySelect["id"]): Promise<SecuritySelect>;
+  findSecurityMatch(security: SecuritySearchResult): Promise<SecuritySelect | null>;
+  searchCachedSecurities(query: string): Promise<SecuritySelect[]>;
+  createOrFindSecurity(data: SecurityInsert): Promise<SecuritySelect>;
+  updateSecurity(id: SecuritySelect["id"], data: SecurityInsert): Promise<SecuritySelect>;
+  deleteSecurity(id: SecuritySelect["id"]): Promise<boolean>;
+
+  // Broker Provider Asset Value Items (Individual Holdings)
+  getBrokerProviderAssetSecurities(assetId: BrokerProviderAsset["id"], query: QueryParams): Promise<BrokerProviderAssetSecuritySelect[]>;
+  createBrokerProviderAssetSecurity(assetId: BrokerProviderAsset["id"], data: BrokerProviderAssetSecurityInsert): Promise<BrokerProviderAssetSecuritySelect>;
+  updateBrokerProviderAssetSecurity(assetId: BrokerProviderAsset["id"], securityId: BrokerProviderAssetSecuritySelect["id"], data: BrokerProviderAssetSecurityInsert): Promise<BrokerProviderAssetSecuritySelect>;
+  deleteBrokerProviderAssetSecurity(assetId: BrokerProviderAsset["id"], securityId: BrokerProviderAssetSecuritySelect["id"]): Promise<boolean>;
 }

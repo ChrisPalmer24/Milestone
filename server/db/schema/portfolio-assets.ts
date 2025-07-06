@@ -4,6 +4,7 @@ import { InferInsertModelBasic, timestampColumns, slugify } from "./utils";
 import { relations, InferSelectModel, sql } from "drizzle-orm";
 import { IncludeRelation } from "../types/utils";
 import { InferResultType } from "../types/utils";
+import { securities } from "./securities";
 export const accountType = ['ISA', 'CISA', 'SIPP', 'LISA', 'GIA'] as const;
 export const accountTypeEnum = pgEnum('account_type', accountType);
 export const contributionInterval = ['weekly', 'biweekly', 'monthly', 'quarterly', 'yearly'] as const;
@@ -101,6 +102,16 @@ export const brokerProviderAssets = pgTable("broker_provider_assets", {
   check("asset_type_check", sql`${t.assetType} = 'broker'`)
 ]);
 
+export const brokerProvideraAssetSecurities = pgTable("broker_provider_asset_securities", {
+  id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+  brokerProviderAssetId: uuid("broker_provider_asset_id").notNull().references(() => brokerProviderAssets.id),
+  securityId: uuid("security_id").notNull().references(() => securities.id),
+  shareHolding: real("share_holding").notNull(),
+  gainLoss: real("gain_loss").notNull(),
+  recordedAt: timestamp("recorded_at").notNull(),
+  ...timestampColumns()
+});
+
 export const brokerProviderAssetAPIKeyConnections = pgTable("broker_provider_asset_api_key_connections", {
   id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
   brokerProviderAssetId: uuid("broker_provider_asset_id").notNull().references(() => brokerProviderAssets.id),
@@ -115,6 +126,22 @@ export const brokerProviderAssetsRelations = relations(brokerProviderAssets, ({ 
   }),
   apiKeyConnections: one(brokerProviderAssetAPIKeyConnections),
   recurringContributions: many(recurringContributions),
+  securities: many(brokerProvideraAssetSecurities),
+}));
+
+export const securitiesRelations = relations(securities, ({ many }) => ({
+  brokerProviderAssetSecurities: many(brokerProvideraAssetSecurities),
+}));
+
+export const brokerProvideraAssetSecuritiesRelations = relations(brokerProvideraAssetSecurities, ({ one }) => ({
+  brokerProviderAsset: one(brokerProviderAssets, {
+    fields: [brokerProvideraAssetSecurities.brokerProviderAssetId],
+    references: [brokerProviderAssets.id],
+  }),
+  security: one(securities, {
+    fields: [brokerProvideraAssetSecurities.securityId],
+    references: [securities.id],
+  }),
 }));
 
 export const recurringContributionsRelations = relations(recurringContributions, ({ one }) => ({
@@ -129,6 +156,9 @@ export type BrokerProviderAssetInsert = InferInsertModelBasic<typeof brokerProvi
 
 export type BrokerProviderAssetAPIKeyConnectionSelect = InferSelectModel<typeof brokerProviderAssetAPIKeyConnections>;
 export type BrokerProviderAssetAPIKeyConnectionInsert = InferInsertModelBasic<typeof brokerProviderAssetAPIKeyConnections>;
+
+export type BrokerProviderAssetSecuritySelect = InferSelectModel<typeof brokerProvideraAssetSecurities>;
+export type BrokerProviderAssetSecurityInsert = InferInsertModelBasic<typeof brokerProvideraAssetSecurities>;
 
 export type BrokerProviderAssetWith<W extends IncludeRelation<"brokerProviderAssets"> | undefined = undefined>  = InferResultType<"brokerProviderAssets", W>
 

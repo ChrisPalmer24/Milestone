@@ -18,7 +18,7 @@ import {
   FireSettings,
   SessionUser,
   BrokerProviderAsset,
-  BrokerProviderAssetInsert,
+  //BrokerProviderAssetInsert,
   BrokerProviderAssetOrphanInsert,
   AssetsChange,
   AssetValue,
@@ -231,6 +231,10 @@ export const usePortfolio = (startDate?: Date, endDate?: Date) => {
       apiRequest<BrokerProviderAsset>("POST", "/api/assets/broker", {
         ...newAsset,
         userAccountId: user?.account.id,
+        securities: newAsset.securities.map((security) => ({
+          ...security,
+          recordedAt: security.recordedAt ?? new Date(),
+        })),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: brokerAssetsQueryKey });
@@ -240,6 +244,7 @@ export const usePortfolio = (startDate?: Date, endDate?: Date) => {
       });
     },
     onError: (error) => {
+      console.error("Error adding broker asset", error);
       toast({
         title: "Error adding broker asset",
         description:
