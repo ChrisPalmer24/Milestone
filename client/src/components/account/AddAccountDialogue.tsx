@@ -54,13 +54,6 @@ const AddAccountDialogue: React.FC<AddAccountDialogueProps> = ({
         </Button>
       </DialogTrigger>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Add Investment Account</DialogTitle>
-          <DialogDescription>
-            Enter the details of your investment account below.
-          </DialogDescription>
-        </DialogHeader>
-
         <AccountCreate
           onSubmit={onSubmit}
           onCancel={() => onOpenChange(false)}

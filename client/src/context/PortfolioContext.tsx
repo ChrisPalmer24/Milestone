@@ -44,7 +44,7 @@ export type PortfolioContextType = {
   portfolioOverview: AssetsChange;
 };
 
-type BrokerProviderAssetUpdate = BrokerProviderAssetInsert & {
+type BrokerProviderAssetUpdate = BrokerProviderAssetOrphanInsert & {
   id: BrokerProviderAsset["id"];
 };
 

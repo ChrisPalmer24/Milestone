@@ -45,6 +45,7 @@ export type GeneralAsset = DBGeneralAsset
 export type GeneralAssetWithAccountChange = WithAccountChange<GeneralAsset>
 
 export const brokerProviderAssetSecurityInsertSchema = z.object({
+  tempId: z.string(),
   security: securityInsertSchema,
   shareHolding: z.number().transform((val) => typeof val === "string" ? parseFloat(val) : val),
   gainLoss: z.number().transform((val) => typeof val === "string" ? parseFloat(val) : val),
@@ -58,7 +59,20 @@ export const brokerProviderAssetOrphanInsertSchema = z.object({
   providerId: z.string(),
   accountType: z.string(),
   currentValue: z.number().optional(),
-  securities: z.array(brokerProviderAssetSecurityInsertSchema)
+  securities: z.array(brokerProviderAssetSecurityInsertSchema),
+  contributions: z.object({
+    process: z.enum(['automatic', 'manual']),
+    amount: z.number(),
+    date: z.coerce.date(),
+    securityDistribution: z.array(z.object({
+      securityTempId: z.string(),
+      securityName: z.string(),
+      commitment: z.number(),
+    })),
+    notificationPeriod: z.enum(['daily', 'weekly', 'monthly', 'quarterly', 'yearly']),
+    notificationEmail: z.boolean(),
+    notificationPush: z.boolean(),
+  }),
 })
 
 type ZodBrokerProviderAssetOrphan = z.infer<typeof brokerProviderAssetOrphanInsertSchema>;
