@@ -35,6 +35,9 @@ export async function registerRoutes(
     `/${uuidRouteParam("securityId")}`,
     requireUser,
     async (req: AuthRequest, res) => {
+      if(!req.params.securityId) {
+        return res.status(400).json({ error: "Security ID is required" });
+      }
       const security = await assetService.getSecurity(req.params.securityId);
       res.json(security);
     }
@@ -50,6 +53,9 @@ export async function registerRoutes(
     `/${uuidRouteParam("securityId")}`,
     requireUser,
     async (req: AuthRequest, res) => {
+      if(!req.params.securityId) {
+        return res.status(400).json({ error: "Security ID is required" });
+      }
       const data = securityInsertSchema.parse(req.body);
       const security = await assetService.updateSecurity(
         req.params.securityId,
@@ -63,6 +69,9 @@ export async function registerRoutes(
     `/${uuidRouteParam("securityId")}`,
     requireUser,
     async (req: AuthRequest, res) => {
+      if(!req.params.securityId) {
+        return res.status(400).json({ error: "Security ID is required" });
+      }
       const result = await assetService.deleteSecurity(req.params.securityId);
       res.json({ success: result });
     }
