@@ -1,4 +1,4 @@
-import { query, response, Router } from "express";
+import { Router } from "express";
 import { ServiceFactory } from "../services/factory";
 import {
   AuthRequest,
@@ -13,8 +13,6 @@ import {
   brokerProviderAssetInsertSchema,
   generalAssetInsertSchema,
   recurringContributionOrphanInsertSchema,
-  RecurringContribution,
-  brokerProviderAssetSecurityInsertSchema,
 } from "@shared/schema";
 import { uuidRouteParam } from "@server/utils/uuid";
 
@@ -59,6 +57,9 @@ export async function registerRoutes(
     `/broker/${uuidRouteParam("assetId")}`,
     requireUser,
     async (req: AuthRequest, res) => {
+      if(!req.params.assetId) {
+        return res.status(400).json({ error: "Asset ID is required" });
+      }
       const asset = await assetService.getBrokerProviderAsset(
         req.params.assetId
       );
@@ -70,6 +71,9 @@ export async function registerRoutes(
     `/broker/${uuidRouteParam("assetId")}`,
     requireUser,
     async (req: AuthRequest, res) => {
+      if(!req.params.assetId) {
+        return res.status(400).json({ error: "Asset ID is required" });
+      }
       const data = brokerProviderAssetInsertSchema.parse(req.body);
       const asset = await assetService.updateBrokerProviderAsset(
         req.params.assetId,
@@ -83,6 +87,9 @@ export async function registerRoutes(
     `/broker/${uuidRouteParam("assetId")}`,
     requireUser,
     async (req: AuthRequest, res) => {
+      if(!req.params.assetId) {
+        return res.status(400).json({ error: "Asset ID is required" });
+      }
       const asset = await assetService.deleteBrokerProviderAsset(
         req.params.assetId
       );
@@ -94,6 +101,9 @@ export async function registerRoutes(
     `/broker/${uuidRouteParam("assetId")}/history`,
     requireUser,
     async (req: AuthRequest, res) => {
+      if(!req.params.assetId) {
+        return res.status(400).json({ error: "Asset ID is required" });
+      }
       const queryParams = parseQueryParamsExpress(req.query);
       const history = await assetService.getBrokerProviderAssetHistory(
         req.params.assetId,
@@ -107,6 +117,9 @@ export async function registerRoutes(
     `/broker/${uuidRouteParam("assetId")}/history`,
     requireUser,
     async (req: AuthRequest, res) => {
+      if(!req.params.assetId) {
+        return res.status(400).json({ error: "Asset ID is required" });
+      }
       const data = assetValueOrphanInsertSchema.parse(req.body);
       const history = await assetService.createBrokerProviderAssetValueHistory(
         req.params.assetId,
@@ -121,6 +134,9 @@ export async function registerRoutes(
     `/broker/${uuidRouteParam("assetId")}/contributions`,
     requireUser,
     async (req: AuthRequest, res) => {
+      if(!req.params.assetId) {
+        return res.status(400).json({ error: "Asset ID is required" });
+      }
       const data = assetContributionOrphanInsertSchema.parse(req.body);
       const contribution = await assetService.createBrokerProviderAssetContributionHistory(
         req.params.assetId,
@@ -134,6 +150,9 @@ export async function registerRoutes(
     `/broker/${uuidRouteParam("assetId")}/contributions`,
     requireUser,
     async (req: AuthRequest, res) => {
+      if(!req.params.assetId) {
+        return res.status(400).json({ error: "Asset ID is required" });
+      }
       const queryParams = parseQueryParamsExpress(req.query);
       const contributions = await assetService.getBrokerProviderAssetContributionHistory(
         req.params.assetId,
@@ -147,6 +166,12 @@ export async function registerRoutes(
     `/broker/${uuidRouteParam("assetId")}/contributions/${uuidRouteParam("contributionId")}`,
     requireUser,
     async (req: AuthRequest, res) => {
+      if(!req.params.assetId) {
+        return res.status(400).json({ error: "Asset ID is required" });
+      }
+      if(!req.params.contributionId) {
+        return res.status(400).json({ error: "Contribution ID is required" });
+      }
       const data = assetContributionOrphanInsertSchema.parse(req.body);
       const contribution = await assetService.updateBrokerProviderAssetContributionHistory(
         req.params.assetId,
@@ -161,6 +186,12 @@ export async function registerRoutes(
     `/broker/${uuidRouteParam("assetId")}/contributions/${uuidRouteParam("contributionId")}`,
     requireUser,
     async (req: AuthRequest, res) => {
+      if(!req.params.assetId) {
+        return res.status(400).json({ error: "Asset ID is required" });
+      }
+      if(!req.params.contributionId) {
+        return res.status(400).json({ error: "Contribution ID is required" });
+      }
       const result = await assetService.deleteBrokerProviderAssetContributionHistory(
         req.params.assetId,
         req.params.contributionId
@@ -175,6 +206,12 @@ export async function registerRoutes(
     )}`,
     requireUser,
     async (req: AuthRequest, res) => {
+      if(!req.params.assetId) {
+        return res.status(400).json({ error: "Asset ID is required" });
+      }
+      if(!req.params.historyId) {
+        return res.status(400).json({ error: "History ID is required" });
+      }
       const data = assetValueOrphanInsertSchema.parse(req.body);
       const history = await assetService.updateBrokerProviderAssetValueHistory(
         req.params.assetId,
@@ -191,6 +228,12 @@ export async function registerRoutes(
     )}`,
     requireUser,
     async (req: AuthRequest, res) => {
+      if(!req.params.assetId) {
+        return res.status(400).json({ error: "Asset ID is required" });
+      }
+      if(!req.params.historyId) {
+        return res.status(400).json({ error: "History ID is required" });
+      }
       const history = await assetService.deleteBrokerProviderAssetValueHistory(
         req.params.assetId,
         req.params.historyId
@@ -204,6 +247,9 @@ export async function registerRoutes(
     `/broker/${uuidRouteParam("assetId")}/securities`,
     requireUser,
     async (req: AuthRequest, res) => {
+      if(!req.params.assetId) {
+        return res.status(400).json({ error: "Asset ID is required" });
+      }
       const queryParams = parseQueryParamsExpress(req.query);
       const valueItems = await assetService.getBrokerProviderAssetSecurities(
         req.params.assetId,
@@ -213,37 +259,52 @@ export async function registerRoutes(
     }
   );
 
-  router.post(
-    `/broker/${uuidRouteParam("assetId")}/securities`,
-    requireUser,
-    async (req: AuthRequest, res) => {
-      const data = brokerProviderAssetSecurityInsertSchema.parse(req.body);
-      const valueItem = await assetService.createBrokerProviderAssetSecurity(
-        req.params.assetId,
-        data
-      );
-      res.json(valueItem);
-    }
-  );
+  // router.post(
+  //   `/broker/${uuidRouteParam("assetId")}/securities`,
+  //   requireUser,
+  //   async (req: AuthRequest, res) => {
+  //     if(!req.params.assetId) {
+  //       return res.status(400).json({ error: "Asset ID is required" });
+  //     }
+  //     const data = brokerProviderAssetSecurityInsertSchema.parse(req.body);
+  //     const valueItem = await assetService.createBrokerProviderAssetSecurity(
+  //       req.params.assetId,
+  //       data
+  //     );
+  //     res.json(valueItem);
+  //   }
+  // );
 
-  router.put(
-    `/broker/${uuidRouteParam("assetId")}/securities/${uuidRouteParam("securityId")}`,
-    requireUser,
-    async (req: AuthRequest, res) => {
-      const data = brokerProviderAssetSecurityInsertSchema.parse(req.body);
-      const valueItem = await assetService.updateBrokerProviderAssetSecurity(
-        req.params.assetId,
-        req.params.securityId,
-        data
-      );
-      res.json(valueItem);
-    }
-  );
+  // router.put(
+  //   `/broker/${uuidRouteParam("assetId")}/securities/${uuidRouteParam("securityId")}`,
+  //   requireUser,
+  //   async (req: AuthRequest, res) => {
+  //     if(!req.params.assetId) {
+  //       return res.status(400).json({ error: "Asset ID is required" });
+  //     }
+  //     if(!req.params.securityId) {
+  //       return res.status(400).json({ error: "Security ID is required" });
+  //     }
+  //     const data = brokerProviderAssetSecurityInsertSchema.parse(req.body);
+  //     const valueItem = await assetService.updateBrokerProviderAssetSecurity(
+  //       req.params.assetId,
+  //       req.params.securityId,
+  //       data
+  //     );
+  //     res.json(valueItem);
+  //   }
+  // );
 
   router.delete(
     `/broker/${uuidRouteParam("assetId")}/securities/${uuidRouteParam("securityId")}`,
     requireUser,
     async (req: AuthRequest, res) => {
+      if(!req.params.assetId) {
+        return res.status(400).json({ error: "Asset ID is required" });
+      }
+      if(!req.params.securityId) {
+        return res.status(400).json({ error: "Security ID is required" });
+      }
       const result = await assetService.deleteBrokerProviderAssetSecurity(
         req.params.assetId,
         req.params.securityId
@@ -300,6 +361,9 @@ export async function registerRoutes(
     `/general/${uuidRouteParam("assetId")}`,
     requireUser,
     async (req: AuthRequest, res) => {
+      if(!req.params.assetId) {
+        return res.status(400).json({ error: "Asset ID is required" });
+      }
       const asset = await assetService.getGeneralAsset(req.params.assetId);
       res.json(asset);
     }
@@ -309,6 +373,9 @@ export async function registerRoutes(
     `/general/${uuidRouteParam("assetId")}`,
     requireUser,
     async (req: AuthRequest, res) => {
+      if(!req.params.assetId) {
+        return res.status(400).json({ error: "Asset ID is required" });
+      }
       const data = generalAssetInsertSchema.parse(req.body);
       const asset = await assetService.updateGeneralAsset(
         req.params.assetId,
@@ -322,6 +389,9 @@ export async function registerRoutes(
     `/general/${uuidRouteParam("assetId")}`,
     requireUser,
     async (req: AuthRequest, res) => {
+      if(!req.params.assetId) {
+        return res.status(400).json({ error: "Asset ID is required" });
+      }
       const asset = await assetService.deleteGeneralAsset(req.params.assetId);
       res.json(asset);
     }
@@ -331,6 +401,9 @@ export async function registerRoutes(
     `/general/${uuidRouteParam("assetId")}/history`,
     requireUser,
     async (req: AuthRequest, res) => {
+      if(!req.params.assetId) {
+        return res.status(400).json({ error: "Asset ID is required" });
+      }
       const queryParams = parseQueryParamsExpress(req.query);
       const history = await assetService.getGeneralAssetHistory(
         req.params.assetId,
@@ -344,6 +417,9 @@ export async function registerRoutes(
     `/general/${uuidRouteParam("assetId")}/history`,
     requireUser,
     async (req: AuthRequest, res) => {
+      if(!req.params.assetId) {
+        return res.status(400).json({ error: "Asset ID is required" });
+      }
       const data = assetValueInsertSchema.parse(req.body);
       const history = await assetService.createGeneralAssetValueHistory(
         req.params.assetId,
@@ -359,6 +435,12 @@ export async function registerRoutes(
     )}`,
     requireUser,
     async (req: AuthRequest, res) => {
+      if(!req.params.assetId) {
+        return res.status(400).json({ error: "Asset ID is required" });
+      }
+      if(!req.params.historyId) {
+        return res.status(400).json({ error: "History ID is required" });
+      }
       const data = assetValueInsertSchema.parse(req.body);
       const history = await assetService.updateGeneralAssetValueHistory(
         req.params.assetId,
@@ -375,6 +457,12 @@ export async function registerRoutes(
     )}`,
     requireUser,
     async (req: AuthRequest, res) => {
+      if(!req.params.assetId) {
+        return res.status(400).json({ error: "Asset ID is required" });
+      }
+      if(!req.params.historyId) {
+        return res.status(400).json({ error: "History ID is required" });
+      }
       const history = await assetService.deleteGeneralAssetValueHistory(
         req.params.assetId,
         req.params.historyId
@@ -396,16 +484,12 @@ export async function registerRoutes(
     const response = await requireTenantWithUserAccountId(
       req.tenant,
       async (tenant) => {
-        const startDate = req.query?.start
-          ? new Date(req.query.start as string)
-          : null;
-        const endDate = req.query?.end
-            ? new Date(req.query.end as string)
-            : null;
           const value = await assetService.getPortfolioOverviewForUserForDateRange(
             tenant.userAccountId,
-            startDate,
-            endDate
+            {
+              start: req.query?.start ? new Date(req.query.start as string) : null,
+              end: req.query?.end ? new Date(req.query.end as string) : null,
+            }
           );
         return value;
       }
@@ -421,17 +505,13 @@ export async function registerRoutes(
       const response = await requireTenantWithUserAccountId(
         req.tenant,
         async (tenant) => {
-          const startDate = req.query?.start
-            ? new Date(req.query.start as string)
-            : null;
-          const endDate = req.query?.end
-            ? new Date(req.query.end as string)
-            : null;
           const history =
             await assetService.getPortfolioValueHistoryForUserForDateRange(
               tenant.userAccountId,
-              startDate,
-              endDate
+              {
+                start: req.query?.start ? new Date(req.query.start as string) : null,
+                end: req.query?.end ? new Date(req.query.end as string) : null,
+              }
             );
           return history;
         }
@@ -445,6 +525,9 @@ export async function registerRoutes(
     `/broker/${uuidRouteParam("assetId")}/recurring-contributions`,
     requireUser,
     async (req: AuthRequest, res) => {
+      if(!req.params.assetId) {
+        return res.status(400).json({ error: "Asset ID is required" });
+      }
       const queryParams = parseQueryParamsExpress(req.query);
       const recurringContributions = await assetService.getRecurringContributionsForAsset(
         req.params.assetId,
@@ -458,6 +541,9 @@ export async function registerRoutes(
     `/broker/${uuidRouteParam("assetId")}/recurring-contributions`,
     requireUser,
     async (req: AuthRequest, res) => {
+      if(!req.params.assetId) {
+        return res.status(400).json({ error: "Asset ID is required" });
+      }
       const data = recurringContributionOrphanInsertSchema.parse(req.body);
       const recurringContribution = await assetService.createRecurringContribution(
         req.params.assetId,
@@ -471,6 +557,12 @@ export async function registerRoutes(
     `/broker/${uuidRouteParam("assetId")}/recurring-contributions/${uuidRouteParam("contributionId")}`,
     requireUser,
     async (req: AuthRequest, res) => {
+      if(!req.params.assetId) {
+        return res.status(400).json({ error: "Asset ID is required" });
+      }
+      if(!req.params.contributionId) {
+        return res.status(400).json({ error: "Contribution ID is required" });
+      }
       const data = recurringContributionOrphanInsertSchema.parse(req.body);
       const recurringContribution = await assetService.updateRecurringContribution(
         req.params.assetId,
@@ -485,6 +577,12 @@ export async function registerRoutes(
     `/broker/${uuidRouteParam("assetId")}/recurring-contributions/${uuidRouteParam("contributionId")}`,
     requireUser,
     async (req: AuthRequest, res) => {
+      if(!req.params.assetId) {
+        return res.status(400).json({ error: "Asset ID is required" });
+      }
+      if(!req.params.contributionId) {
+        return res.status(400).json({ error: "Contribution ID is required" });
+      }
       const result = await assetService.deleteRecurringContribution(
         req.params.assetId,
         req.params.contributionId
