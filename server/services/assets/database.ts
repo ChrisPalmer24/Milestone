@@ -474,7 +474,10 @@ export class DatabaseAssetService implements IAssetService {
     return assets;
   }
 
-  private async getPortfolioAssetValuesForAssetsForDateRange(assetIds: Asset["id"][], startDate?: Date | null, endDate?: Date | null): Promise<AssetValue[]> {
+  private async getPortfolioAssetValuesForAssetsForDateRange(assetIds: Asset["id"][], query?: DataRangeQuery): Promise<AssetValue[]> {
+
+    const startDate = resolveDate(query?.start)
+    const endDate = resolveDate(query?.end)
 
     const dateQueries = startDate && endDate ? [between(assetValues.recordedAt, startDate, endDate)]
       : startDate ? [gte(assetValues.recordedAt, startDate)]
@@ -498,12 +501,12 @@ export class DatabaseAssetService implements IAssetService {
     return assetValuesToCalculate;
   }
 
-  async getPortfolioOverviewForUserForDateRange(userAccountId: UserAccount["id"], startDate?: Date | null, endDate?: Date | null): Promise<AssetsChange> {
+  async getPortfolioOverviewForUserForDateRange(userAccountId: UserAccount["id"], query?: DataRangeQuery): Promise<AssetsChange> {
 
     const assetsToCalculate = await this.getCombinedAssetsForUser(userAccountId);
 
     const assetsWithHistory = await Promise.all(assetsToCalculate.map(async (asset) => {
-      const assetValues = await this.getPortfolioAssetValuesForAssetsForDateRange([asset.id] /*Need to add query */);
+      const assetValues = await this.getPortfolioAssetValuesForAssetsForDateRange([asset.id], query);
       return { ...asset, history: assetValues };
     }));
 
@@ -514,7 +517,7 @@ export class DatabaseAssetService implements IAssetService {
 
     const assetsToCalculate = await this.getCombinedAssetsForUser(userAccountId);
     const assetsWithHistory = await Promise.all(assetsToCalculate.map(async (asset) => {
-      const assetValues = await this.getPortfolioAssetValuesForAssetsForDateRange([asset.id] /*Need to add query */);
+      const assetValues = await this.getPortfolioAssetValuesForAssetsForDateRange([asset.id], query);
       return { ...asset, history: assetValues };
     }));
 

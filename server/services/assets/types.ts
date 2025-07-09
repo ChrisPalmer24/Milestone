@@ -35,7 +35,7 @@ export interface IAssetService {
   deleteGeneralAssetValueHistory(assetId: GeneralAsset["id"], assetValueId: AssetValue["id"]): Promise<boolean>;
   deleteGeneralAssetContributionHistory(assetId: GeneralAsset["id"], assetContributionId: AssetContribution["id"]): Promise<boolean>;
 
-  getPortfolioOverviewForUserForDateRange(userAccountId: UserAccount["id"], startDate?: Date | null, endDate?: Date | null): Promise<AssetsChange>;
+  getPortfolioOverviewForUserForDateRange(userAccountId: UserAccount["id"], query?: DataRangeQuery): Promise<AssetsChange>;
 
   getPortfolioValueHistoryForUserForDateRange(userAccountId: UserAccount["id"], query?: DataRangeQuery): Promise<PortfolioHistoryTimePoint[]>;
 

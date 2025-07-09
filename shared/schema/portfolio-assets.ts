@@ -202,8 +202,8 @@ export type BrokerProviderAssetSecuritySelect = DBBrokerProviderAssetSecuritySel
 export type BrokerProviderAssetSecurityInsert = DBBrokerProviderAssetSecurityInsert
 
 export type AssetsChange = {
-  startDate: Date;
-  endDate: Date;
+  startDate: Date | null;
+  endDate: Date | null;
   startValue: number;
   value: number;
   currencyChange: number;
@@ -224,4 +224,21 @@ export type DataRangeQuery = {
 export type AssetWithHistory = {
   id: string;
   history: AssetValue[];
+}
+
+//We have pluralised Iterators because later the asset
+//may contain more than one field that requires iteration for streaming
+export type AssetWithHistoryIterators = {
+  id: string;
+  history: Iterator<AssetValue>;
+}
+
+export type AssetWithHistoryAsyncIterators = {
+  id: string;
+  history: AsyncIterator<AssetValue>;
+}
+
+export type AssetWithHistoryGenerators = {
+  id: string;
+  history: Generator<AssetValue>;
 }

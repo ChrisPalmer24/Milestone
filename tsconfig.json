@@ -1,13 +1,15 @@
 {
   "include": ["client/src/**/*", "shared/**/*", "server/**/*", "tools/**/*"],
-  "exclude": ["node_modules", "build", "dist", "**/*.test.ts"],
+  "exclude": ["node_modules", "build", "dist"],
   "compilerOptions": {
     "incremental": true,
+    "noUncheckedIndexedAccess": true,
     "tsBuildInfoFile": "./node_modules/typescript/tsbuildinfo",
     "noEmit": true,
     "module": "ESNext",
     "strict": true,
-    "lib": ["esnext", "dom", "dom.iterable"],
+    "target": "es2015",
+    "lib": ["dom", "es2015"],
     "jsx": "preserve",
     "esModuleInterop": true,
     "skipLibCheck": true,
