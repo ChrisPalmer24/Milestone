@@ -21,7 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getNextMilestone } from "@/lib/utils/milestones";
 import AddAccountDialogue from "@/components/account/AddAccountDialogue";
 import {
-  BrokerProviderAccountInsert,
+  BrokerProviderAssetInsert,
   BrokerProviderAssetOrphanInsert,
 } from "shared/schema";
 import { DateRangeProvider, useDateRange } from "@/context/DateRangeContext";
@@ -82,7 +82,7 @@ function Portfolio() {
     portfolioOverview?.value ?? 0
   );
 
-  const onSubmit = async (values: BrokerProviderAccountInsert) => {
+  const onSubmit = async (values: BrokerProviderAssetOrphanInsert) => {
     try {
       setIsAddingAccount(true);
       await addBrokerAsset.mutateAsync(values);
@@ -104,9 +104,6 @@ function Portfolio() {
       setIsAddingAccount(false);
     }
   };
-
-  console.log("portfolioOverview", portfolioOverview);
-  console.log("brokerAssets", brokerAssets);
 
   return (
     <div className="portfolio-screen max-w-5xl mx-auto px-4 pb-20">
@@ -267,7 +264,12 @@ function Portfolio() {
                         />
                         <div>
                           <div className="mb-2">
-                            <h2 className="text-lg ">{asset.name}</h2>
+                            <h2 className="text-xs text-gray-500  ">
+                              {asset.id}
+                            </h2>
+                          </div>
+                          <div className="mb-2">
+                            <h2 className="text-sm ">{asset.name}</h2>
                           </div>
                           <h3 className="font-medium">
                             {getBrokerSlugFromName(providerName)}
