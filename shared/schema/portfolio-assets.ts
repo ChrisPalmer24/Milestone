@@ -20,7 +20,7 @@ import {
   ContributionInterval as DBContributionInterval,
  } from "@server/db/schema/index";
 import { ExtractCommonFields, IfConstructorEquals, Orphan } from "./utils";
-import { securityInsertSchema, SecuritySearchResult } from "./securities";
+import { securityInsertSchema, SecuritySearchResult, SecuritySelect } from "./securities";
 
 export type AssetType = "general" | "broker";
 
@@ -201,17 +201,34 @@ export type BrokerProvider = DBBrokerProvider
 export type BrokerProviderAssetSecuritySelect = DBBrokerProviderAssetSecuritySelect
 export type BrokerProviderAssetSecurityInsert = DBBrokerProviderAssetSecurityInsert
 
-export type AssetsChange = {
+
+export type CalculatedValue = {
+  value: number;
+  currentChange: number;
+  currentChangePercentage: number;
+ };
+
+export type AssetsChange = CalculatedValue & {
   startDate: Date | null;
   endDate: Date | null;
   startValue: number;
   value: number;
-  currencyChange: number;
-  percentageChange: number;
 };
+
+export type WithCalculatedValue<T extends { id: string }> = T & { calculatedValue: CalculatedValue };
 
 export type WithAccountChange<T extends { id: string }> = T & { accountChange: AssetsChange };
 export type WithAssetHistory<T extends { id: string }> = T & { history: AssetValue[] };
+
+export type WithSecurity<T extends { id: string }> = T & { security: SecuritySelect };
+
+export type WithSecurities<T extends { id: string }> = T & { securities: WithSecurity<BrokerProviderAssetSecuritySelect>[] };
+
+export type WithResolvedSecurities<T extends { id: string }> = T & { securities: ResolvedSecurity[] };
+
+export type ResolvedSecurity = WithCalculatedValue<WithSecurity<BrokerProviderAssetSecuritySelect>>;
+
+
 
 //This is used when a dummy asset value is needed for a date range that is before the first asset value
 export type PossibleDummyAssetValue = Omit<AssetValue, "id"> & { id: string | null };
@@ -226,19 +243,53 @@ export type AssetWithHistory = {
   history: AssetValue[];
 }
 
+export type AssetHistoryPoint = {
+  id: string;
+  type: "value" | "transaction";
+  value: number;
+  recordedAt: Date;
+}
+
+export type SecurityHistoryPoint = {
+  id: string;
+  quantity: number;
+  value: number;
+  recordedAt: Date;
+}
+
 //We have pluralised Iterators because later the asset
 //may contain more than one field that requires iteration for streaming
 export type AssetWithHistoryIterators = {
   id: string;
-  history: Iterator<AssetValue>;
+  history: Iterator<AssetHistoryPoint>;
 }
 
 export type AssetWithHistoryAsyncIterators = {
   id: string;
-  history: AsyncIterator<AssetValue>;
+  history: AsyncIterator<AssetHistoryPoint>;
 }
 
 export type AssetWithHistoryGenerators = {
   id: string;
+  history: Generator<AssetHistoryPoint>;
+}
+
+//We have pluralised Iterators because later the asset
+//may contain more than one field that requires iteration for streaming
+export type AssetWithValueHistoryIterators = {
+  id: string;
+  history: Iterator<AssetValue>;
+}
+
+export type AssetWithValueHistoryAsyncIterators = {
+  id: string;
+  history: AsyncIterator<AssetValue>;
+}
+
+export type AssetWithValueHistoryGenerators = {
+  id: string;
   history: Generator<AssetValue>;
 }
+
+
+
