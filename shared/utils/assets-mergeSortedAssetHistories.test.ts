@@ -1,12 +1,65 @@
 import { describe, it, expect } from "vitest";
 import { mergeSortedAssetHistories } from "./assets";
-import { AssetValue, AssetWithHistoryAsyncIterators } from "@shared/schema";
+import { AssetValue, AssetWithValueHistoryAsyncIterators } from "@shared/schema";
 import { arrayToAsyncIterator } from "./async";
 import { generateMockAssetHistory } from "./assets-test-helpers";
 
 describe("mergeSortedAssetHistories", () => {
+
+  it.only("yields all values from a single asset in order", async () => {
+
+    const asset1 = {
+      id: "a1",
+      history: arrayToAsyncIterator([
+        {
+          id: "v1",
+          assetId: "a1",
+          value: 10,
+          recordedAt: new Date("2024-01-01T00:00:00Z"),
+          createdAt: new Date("2024-01-01T00:00:00Z"),
+          updatedAt: new Date("2024-01-01T00:00:00Z"),
+        },
+        {
+          id: "v1",
+          assetId: "a1",
+          value: 10,
+          recordedAt: new Date("2024-01-01T00:00:00Z"),
+          createdAt: new Date("2024-01-01T00:00:00Z"),
+          updatedAt: new Date("2024-01-01T00:00:00Z"),
+        },
+      ]),
+    };
+
+    const asset2 = {
+      id: "a1",
+      history: arrayToAsyncIterator([
+        {
+          id: "v1",
+          assetId: "a1",
+          value: 10,
+          recordedAt: new Date("2024-01-01T00:00:00Z"),
+          createdAt: new Date("2024-01-01T00:00:00Z"),
+          updatedAt: new Date("2024-01-01T00:00:00Z"),
+        },
+        {
+          id: "v1",
+          assetId: "a1",
+          value: 10,
+          recordedAt: new Date("2024-01-01T00:00:00Z"),
+          createdAt: new Date("2024-01-01T00:00:00Z"),
+          updatedAt: new Date("2024-01-01T00:00:00Z"),
+        },
+      ]),
+    };
+
+    const result: AssetValue[] = [];
+    for await (const v of mergeSortedAssetHistories([asset1, asset2])) {
+      result.push(v);
+    }
+    expect(result).toHaveLength(4);
+  });
   it("yields all values from a single asset in order", async () => {
-    const asset: AssetWithHistoryAsyncIterators = {
+    const asset: AssetWithValueHistoryAsyncIterators = {
       id: "a1",
       history: arrayToAsyncIterator(
         generateMockAssetHistory({
@@ -32,7 +85,7 @@ describe("mergeSortedAssetHistories", () => {
   });
 
   it("merges two assets with interleaved dates", async () => {
-    const asset1: AssetWithHistoryAsyncIterators = {
+    const asset1: AssetWithValueHistoryAsyncIterators = {
       id: "a1",
       history: arrayToAsyncIterator(
         generateMockAssetHistory({
@@ -44,7 +97,7 @@ describe("mergeSortedAssetHistories", () => {
         }).history
       ),
     };
-    const asset2: AssetWithHistoryAsyncIterators = {
+    const asset2: AssetWithValueHistoryAsyncIterators = {
       id: "a2",
       history: arrayToAsyncIterator(
         generateMockAssetHistory({
@@ -66,7 +119,7 @@ describe("mergeSortedAssetHistories", () => {
   });
 
   it("handles empty asset histories", async () => {
-    const asset: AssetWithHistoryAsyncIterators = {
+    const asset: AssetWithValueHistoryAsyncIterators = {
       id: "a1",
       history: arrayToAsyncIterator([]),
     };
@@ -79,7 +132,7 @@ describe("mergeSortedAssetHistories", () => {
 
   it("handles one asset with sparse dates and another with dense dates", async () => {
     // Asset 1: Sparse (big date gaps)
-    const assetSparse: AssetWithHistoryAsyncIterators = {
+    const assetSparse: AssetWithValueHistoryAsyncIterators = {
       id: "sparse",
       history: arrayToAsyncIterator(
         generateMockAssetHistory({
@@ -92,7 +145,7 @@ describe("mergeSortedAssetHistories", () => {
       ),
     };
     // Asset 2: Dense (many close dates)
-    const assetDense: AssetWithHistoryAsyncIterators = {
+    const assetDense: AssetWithValueHistoryAsyncIterators = {
       id: "dense",
       history: arrayToAsyncIterator(
         generateMockAssetHistory({

@@ -1,7 +1,7 @@
 import { assetContributions, assetValues, brokerProviderAssets, brokerProviders, generalAssets, brokerProviderAssetAPIKeyConnections, recurringContributions, brokerProvideraAssetSecurities, securities } from "server/db/schema";
 import { Database } from "../../db";
 import { and, between, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
-import { Asset, AssetContribution, assetContributionInsertSchema, AssetType, AssetValue, assetValueInsertSchema, BrokerProvider, BrokerProviderAsset, BrokerProviderAssetAPIKeyConnection, BrokerProviderAssetInsert, BrokerProviderAssetWithAccountChange, GeneralAsset, GeneralAssetInsert, GeneralAssetWithAccountChange, PortfolioHistoryTimePoint, UserAccount, AssetsChange, AssetValueOrphanInsert, AssetContributionOrphanInsert, RecurringContribution, RecurringContributionOrphanInsert, ContributionInterval, WithAssetHistory, SecuritySelect, SecurityInsert, DataRangeQuery, BrokerProviderAssetSecuritySelect, BrokerProviderAssetSecurityInsert, SecuritySearchResult } from "@shared/schema";
+import { Asset, AssetContribution, assetContributionInsertSchema, AssetType, AssetValue, assetValueInsertSchema, BrokerProvider, BrokerProviderAsset, BrokerProviderAssetAPIKeyConnection, BrokerProviderAssetInsert, BrokerProviderAssetWithAccountChange, GeneralAsset, GeneralAssetInsert, GeneralAssetWithAccountChange, PortfolioHistoryTimePoint, UserAccount, AssetsChange, AssetValueOrphanInsert, AssetContributionOrphanInsert, RecurringContribution, RecurringContributionOrphanInsert, ContributionInterval, WithAssetHistory, SecuritySelect, SecurityInsert, DataRangeQuery, BrokerProviderAssetSecuritySelect, BrokerProviderAssetSecurityInsert, SecuritySearchResult, AssetWithHistory } from "@shared/schema";
 import { IAssetService } from "./types";
 import { NodePgTransaction } from "drizzle-orm/node-postgres";
 import { Schema, TSchema } from "server/db/types/utils";
@@ -516,11 +516,11 @@ export class DatabaseAssetService implements IAssetService {
   async getPortfolioValueHistoryForUserForDateRange(userAccountId: UserAccount["id"], query?: DataRangeQuery): Promise<PortfolioHistoryTimePoint[]> {
 
     const assetsToCalculate = await this.getCombinedAssetsForUser(userAccountId);
-    const assetsWithHistory = await Promise.all(assetsToCalculate.map(async (asset) => {
+    const assetsWithHistory = await Promise.all(assetsToCalculate.map(async (asset): Promise<AssetWithHistory> => {
       const assetValues = await this.getPortfolioAssetValuesForAssetsForDateRange([asset.id], query);
-      return { ...asset, history: assetValues };
-    }));
-
+      return { ...asset, history: assetValues.sort((a, b) => a.recordedAt.getTime() - b.recordedAt.getTime()) };``
+    }))
+    
     return getPortfolioValueHistoryForAssets(assetsWithHistory, query);
   }
 

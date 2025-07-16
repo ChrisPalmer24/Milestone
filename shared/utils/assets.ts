@@ -1,4 +1,4 @@
-import { Asset, AssetsChange, AssetValue, AssetWithHistory, AssetWithHistoryAsyncIterators, AssetWithHistoryIterators, DataRangeQuery, PortfolioHistoryTimePoint, PossibleDummyAssetValue, WithAccountChange } from "@shared/schema";
+import { Asset, AssetsChange, AssetValue, AssetWithHistory, AssetWithValueHistoryAsyncIterators, AssetWithValueHistoryIterators, DataRangeQuery, PortfolioHistoryTimePoint, PossibleDummyAssetValue, WithAccountChange } from "@shared/schema";
 import { start } from "node:repl";
 import { arrayToAsyncIterator } from "./async";
 
@@ -198,6 +198,10 @@ export function streamAssetValuesForDateRange(query?: DataRangeQuery) {
   //Do not delete this comment it is for reference to allow flexibility later
   // return async function* (assetValues: AsyncGenerator<PossibleDummyAssetValue, void, unknown> | AsyncIterator<PossibleDummyAssetValue>): AsyncGenerator<PossibleDummyAssetValue> {
   return async function* (assetValues: AsyncIterator<PossibleDummyAssetValue>): AsyncGenerator<PossibleDummyAssetValue> {
+
+
+    console.log("streamAssetValuesForDateRange query FFFF :", query);
+
     const queryStartDate = resolveDate(query?.start);
     const queryEndDate = resolveDate(query?.end);
 
@@ -209,6 +213,9 @@ export function streamAssetValuesForDateRange(query?: DataRangeQuery) {
     let next = await assetValues.next();
     while (!next.done) {
       const value = next.value;
+
+      console.log("streamAssetValuesForDateRange value :", value);
+
       // Track last value before start
       if (queryStartDate && value.recordedAt < queryStartDate) {
         lastBeforeStart = value;
@@ -251,6 +258,7 @@ export function streamAssetValuesForDateRange(query?: DataRangeQuery) {
       // If after end, yield synthetic end and finish
       if (queryEndDate && value.recordedAt > queryEndDate) {
         if (!yieldedEnd) {
+          console.log("getPortfolioValueHistoryForAssets yieldedEnd :", yieldedEnd);
           yield {
             ...((lastValue ?? value)),
             assetId: "SYNTH",
@@ -337,7 +345,7 @@ export function streamAssetValuesForDateRange(query?: DataRangeQuery) {
  * @param assets Iterable of AssetWithHistory (each history must be sorted by recordedAt)
  * @yields AssetValue objects in strict global order by recordedAt (and assetId for tie-breaks)
  */
-export async function* mergeSortedAssetHistories(assets: Iterable<AssetWithHistoryAsyncIterators>): AsyncGenerator<AssetValue> {
+export async function* mergeSortedAssetHistories(assets: Iterable<AssetWithValueHistoryAsyncIterators>): AsyncGenerator<AssetValue> {
   const iterators: AsyncIterator<AssetValue>[] = [];
   const buffer: Array<IteratorResult<AssetValue> | undefined> = [];
 
@@ -424,6 +432,8 @@ export const resolveAssetsWithChange = <T extends AssetWithHistory>(assets: T[],
  * @returns Array of PortfolioHistoryTimePoint objects, sorted by date
  */
 export const getPortfolioValueHistoryForAssets = async <T extends AssetWithHistory>(assets: Iterable<T>, query?: DataRangeQuery): Promise<PortfolioHistoryTimePoint[]> => {
+
+  console.log("getPortfolioValueHistoryForAssets assets :", JSON.stringify(assets, null, 2));
   
   // Create a map to track the latest known value for each account
   const accountLatestValues = new Map<string, number>();
@@ -447,15 +457,24 @@ export const getPortfolioValueHistoryForAssets = async <T extends AssetWithHisto
   const stream = streamAssetValuesForDateRange(query)(mergeSortedAssetHistories(assetsWithHistoryAsyncIterators));
 
   for await (const entry of stream) {
+
+    console.log("getPortfolioValueHistoryForAssets entry :", entry);
+
     const previousValue = accountLatestValues.get(entry.assetId) || 0;
     const newValue = Number(entry.value);
     const change = newValue - previousValue;
+
+    console.log("getPortfolioValueHistoryForAssets previousValue :", previousValue);
+    console.log("getPortfolioValueHistoryForAssets newValue :", newValue);
+    console.log("getPortfolioValueHistoryForAssets change :", change);
 
     // Update the latest known value for this account
     accountLatestValues.set(entry.assetId, newValue);
     
     // Calculate total portfolio value at this point in time
     const totalValue = Array.from(accountLatestValues.values()).reduce((sum, value) => sum + value, 0);
+
+    console.log("getPortfolioValueHistoryForAssets totalValue :", totalValue);
     
     // Format the date to YYYY-MM-DD for consistent daily grouping
     const dateKey = entry.recordedAt.toISOString().split('T')[0];
@@ -464,6 +483,7 @@ export const getPortfolioValueHistoryForAssets = async <T extends AssetWithHisto
 
     // If we already have an entry for this date, update it with the new changes
     if (portfolioValues.has(dateKey)) {
+      console.log("getPortfolioValueHistoryForAssets dateKey exists :", dateKey);
       const existingEntry = portfolioValues.get(dateKey)!;
       existingEntry.value = totalValue;
       existingEntry.changes.push({
@@ -473,6 +493,7 @@ export const getPortfolioValueHistoryForAssets = async <T extends AssetWithHisto
         change
       });
     } else {
+      console.log("getPortfolioValueHistoryForAssets dateKey does not exist :", dateKey);
       // Otherwise create a new entry for this date
       portfolioValues.set(dateKey, {  
         value: totalValue,
