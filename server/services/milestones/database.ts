@@ -1,10 +1,9 @@
 import { eq } from "drizzle-orm";
 import { InsertMilestone, milestones } from "@server/db/schema/portfolio-milestone";
-import { Milestone, MilestoneInsert, CoreUser, UserAccount } from "@shared/schema";
-import { IMilestoneService } from "./types";
+import { Milestone, MilestoneInsert, UserAccount } from "@shared/schema";
 import { type Database } from "../../db/index";
 
-export class DatabaseMilestoneService implements IMilestoneService {
+export class DatabaseMilestoneService {
   private db: Database;
 
   constructor(db: Database) {

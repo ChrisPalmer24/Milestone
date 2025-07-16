@@ -1,12 +1,11 @@
 import { assetContributions, assetValues, brokerProviderAssets, brokerProviders, generalAssets, brokerProviderAssetAPIKeyConnections, recurringContributions, brokerProvideraAssetSecurities, securities } from "server/db/schema";
 import { Database } from "../../db";
 import { and, between, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
-import { Asset, AssetContribution, assetContributionInsertSchema, AssetType, AssetValue, assetValueInsertSchema, BrokerProvider, BrokerProviderAsset, BrokerProviderAssetAPIKeyConnection, BrokerProviderAssetInsert, BrokerProviderAssetWithAccountChange, GeneralAsset, GeneralAssetInsert, GeneralAssetWithAccountChange, PortfolioHistoryTimePoint, UserAccount, AssetsChange, AssetValueOrphanInsert, AssetContributionOrphanInsert, RecurringContribution, RecurringContributionOrphanInsert, ContributionInterval, WithAssetHistory, SecuritySelect, SecurityInsert, DataRangeQuery, BrokerProviderAssetSecuritySelect, BrokerProviderAssetSecurityInsert, SecuritySearchResult, AssetWithHistory } from "@shared/schema";
-import { IAssetService } from "./types";
+import { Asset, AssetContribution, assetContributionInsertSchema, AssetType, AssetValue, assetValueInsertSchema, BrokerProvider, BrokerProviderAsset, BrokerProviderAssetAPIKeyConnection, BrokerProviderAssetInsert, BrokerProviderAssetWithAccountChange, GeneralAsset, GeneralAssetInsert, GeneralAssetWithAccountChange, PortfolioHistoryTimePoint, UserAccount, AssetsChange, AssetValueOrphanInsert, AssetContributionOrphanInsert, RecurringContribution, RecurringContributionOrphanInsert, ContributionInterval, WithAssetHistory, SecuritySelect, SecurityInsert, DataRangeQuery, BrokerProviderAssetSecuritySelect, BrokerProviderAssetSecurityInsert, SecuritySearchResult, AssetWithHistory, WithResolvedSecurities } from "@shared/schema";
 import { NodePgTransaction } from "drizzle-orm/node-postgres";
 import { Schema, TSchema } from "server/db/types/utils";
 import { QueryParams, QueryParts, ResourceQueryBuilder } from "@server/utils/resource-query-builder";
-import { getPortfolioValueHistoryForAssets, resolveAssetsWithChange, resolveAssetWithChangeForDateRange, resolveDate, calculateAssetsChange, getPortfolioOverviewForAssets } from "@shared/utils/assets";
+import { resolveAssetsWithChange, resolveAssetWithChangeForDateRange, resolveDate, getPortfolioOverviewForAssets } from "@shared/utils/assets";
 
 type Transaction = NodePgTransaction<Schema, TSchema>;
 
@@ -72,7 +71,7 @@ const securitiesQueryBuilder = new ResourceQueryBuilder({
 });
 
 
-export class DatabaseAssetService implements IAssetService {
+export class DatabaseAssetService {
   constructor(private db: Database) {}
 
 
@@ -115,42 +114,16 @@ export class DatabaseAssetService implements IAssetService {
     });
   }
 
-  /**
-   * Broker Provider Assets
-   */
-
-  // private async getLatestAssetValuesForAssets(assetIds: string[]): Promise<AssetValue[]> {
-  //   const result = await this.db.execute(sql`
-  //     SELECT DISTINCT ON (${assetValues.assetId}) 
-  //       id,
-  //       value,
-  //       recordedAt,
-  //       assetId,
-  //       createdAt,
-  //       updatedAt
-  //     FROM ${assetValues}
-  //     WHERE ${inArray(assetValues.assetId, assetIds)}
-  //     ORDER BY ${assetValues.assetId}, ${assetValues.recordedAt} DESC
-  //   `);
-
-  //   return result.rows.map(row => ({
-  //     id: row.id as string,
-  //     value: Number(row.value),
-  //     recordedAt: new Date(row.recorded_at as string),
-  //     assetId: row.asset_id as string,
-  //     createdAt: row.created_at ? new Date(row.created_at as string) : null,
-  //     updatedAt: row.updated_at ? new Date(row.updated_at as string) : null,
-  //   }));
-  // }
-
   async getBrokerProviderAssetsForUser(userId: UserAccount["id"], query: QueryParams): Promise<BrokerProviderAsset[]> {
 
     const { where, orderBy, limit, offset } = brokerProviderAssetsQueryBuilder.buildQuery(query);
-    const brokerAssets = await this.db.query.brokerProviderAssets.findMany({ with: { provider: true }, where: and(eq(brokerProviderAssets.userAccountId, userId), where), orderBy, limit, offset });
+    const brokerAssets = await this.db.query.brokerProviderAssets.findMany(
+      { with: { provider: true },
+      where: and(eq(brokerProviderAssets.userAccountId, userId), where), orderBy, limit, offset });
     return brokerAssets;
   }
 
-  async getBrokerProviderAssetsWithAccountChangeForUser(userId: UserAccount["id"], query: QueryParams): Promise<BrokerProviderAssetWithAccountChange[]> {
+  async getBrokerProviderAssetsWithAccountValueChangeForUser(userId: UserAccount["id"], query: QueryParams): Promise<BrokerProviderAssetWithAccountChange[]> {
     console.log("getBrokerProviderAssetsWithAccountChangeForUser", query);
     const brokerAssets = await this.getBrokerProviderAssetsForUser(userId, query);
     const assetsWithHistory = await Promise.all(brokerAssets.map(async (asset) => {
@@ -160,16 +133,29 @@ export class DatabaseAssetService implements IAssetService {
     return resolveAssetsWithChange(assetsWithHistory);
   }
 
-  async getBrokerProviderAsset(id: BrokerProviderAsset["id"]): Promise<BrokerProviderAsset> {
+  async getBrokerProviderAsset(id: BrokerProviderAsset["id"]): Promise<WithResolvedSecurities<BrokerProviderAsset>> {
 
-    const brokerProviderAsset = await this.db.query.brokerProviderAssets.findFirst({ where: eq(brokerProviderAssets.id, id) });
+    const brokerProviderAsset = await this.db.query.brokerProviderAssets.findFirst(
+      { with: { securities: { with: { security: true } } },
+      where: eq(brokerProviderAssets.id, id) });
     if (!brokerProviderAsset) {
       throw new Error("Broker provider asset not found");
     }
-    return brokerProviderAsset;
+    //return brokerProviderAsset;
+    return {
+      ...brokerProviderAsset,
+      securities: brokerProviderAsset.securities.map((security) => ({
+        ...security,
+        calculatedValue: {
+          value: 0,
+          currentChange: 0,
+          currentChangePercentage: 0,
+        }
+      }))
+    }
   }
 
-  async getBrokerProviderAssetWithHistory(id: BrokerProviderAsset["id"]): Promise<WithAssetHistory<BrokerProviderAsset>> {
+  async getBrokerProviderAssetWithValueHistory(id: BrokerProviderAsset["id"]): Promise<WithAssetHistory<BrokerProviderAsset>> {
     const brokerAssetWithHistory = await this.db.transaction(async (tx) => {
       const brokerAsset = await tx.query.brokerProviderAssets.findFirst({ where: eq(brokerProviderAssets.id, id) });
       if (!brokerAsset) {
@@ -181,7 +167,7 @@ export class DatabaseAssetService implements IAssetService {
     return brokerAssetWithHistory;
   }
 
-  async getBrokerProviderAssetWithAccountChangeForUser(id: BrokerProviderAsset["id"]): Promise<BrokerProviderAssetWithAccountChange> {
+  async getBrokerProviderAssetWithAccountValueChangeForUser(id: BrokerProviderAsset["id"]): Promise<BrokerProviderAssetWithAccountChange> {
 
     const brokerAsset = await this.db.query.brokerProviderAssets.findFirst({ with: { provider: true }, where: eq(brokerProviderAssets.id, id) });
     if (!brokerAsset) {
@@ -197,7 +183,7 @@ export class DatabaseAssetService implements IAssetService {
   }
   
 
-  async getBrokerProviderAssetHistory(id: BrokerProviderAsset["id"], query: QueryParams): Promise<AssetValue[]> {
+  async getBrokerProviderAssetValueHistory(id: BrokerProviderAsset["id"], query: QueryParams): Promise<AssetValue[]> {
     const { where, orderBy, limit, offset } = brokerProviderAssetsQueryBuilder.buildQuery(query);
     return this.db.query.assetValues.findMany({ where: and(eq(assetValues.assetId, id), where), orderBy, limit, offset });
   }
@@ -265,7 +251,7 @@ export class DatabaseAssetService implements IAssetService {
     return (result?.rowCount ?? 0) > 0;
   }
 
-  async getBrokerProviderAssetsHistoryForUser(userId: UserAccount["id"], query: QueryParams): Promise<BrokerProviderAsset[]> {
+  async getBrokerProviderAssetsValueHistoryForUser(userId: UserAccount["id"], query: QueryParams): Promise<BrokerProviderAsset[]> {
     const { where, orderBy, limit, offset } = brokerProviderAssetsQueryBuilder.buildQuery(query);
     return this.db.query.brokerProviderAssets.findMany({ with: { provider: true }, where: and(eq(brokerProviderAssets.userAccountId, userId), where), orderBy, limit, offset });
   }
@@ -329,7 +315,7 @@ export class DatabaseAssetService implements IAssetService {
 
     if(existingAPIKeyConnection) {
       const [updatedAPIKeyConnection] = await this.db.update(brokerProviderAssetAPIKeyConnections).set({ apiKey }).where(eq(brokerProviderAssetAPIKeyConnections.id, existingAPIKeyConnection.id)).returning();
-      return updatedAPIKeyConnection;
+      return updatedAPIKeyConnection; 
     } else {
       const [insertedAPIKeyConnection] = await this.db.insert(brokerProviderAssetAPIKeyConnections).values({ brokerProviderAssetId: id, apiKey }).returning();
       return insertedAPIKeyConnection;

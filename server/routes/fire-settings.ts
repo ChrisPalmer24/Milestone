@@ -1,12 +1,11 @@
 import { Router } from "express";
 import { z } from "zod";
-import { ServiceFactory } from "../services/factory";
 import { fireSettingsInsertSchema } from "@shared/schema";
 import { AuthRequest, AuthService } from "../auth";
+import { db } from "@server/db";
+import { DatabaseFireSettingsService } from "@server/services/fire-settings/database";
 
-const router = Router();
-const services = ServiceFactory.getInstance();
-const fireSettingsService = services.getFireSettingsService();
+const fireSettingsService = new DatabaseFireSettingsService(db);
 
 export async function registerRoutes(
   router: Router,

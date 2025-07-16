@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { ServiceFactory } from "../services/factory";
 import {
   AuthRequest,
   AuthService,
@@ -16,8 +15,10 @@ import {
 } from "@shared/schema";
 import { uuidRouteParam } from "@server/utils/uuid";
 
-const services = ServiceFactory.getInstance();
-const assetService = services.getAssetService();
+import { db } from "@server/db";
+import { DatabaseAssetService } from "@server/services/assets/database";
+
+const assetService = new DatabaseAssetService(db);
 
 export async function registerRoutes(
   router: Router,
@@ -32,7 +33,7 @@ export async function registerRoutes(
         const queryParams = parseQueryParamsExpress(req.query);
         console.log("GET broker queryParams", queryParams);
         const assets =
-          await assetService.getBrokerProviderAssetsWithAccountChangeForUser(
+          await assetService.getBrokerProviderAssetsWithAccountValueChangeForUser(
             tenant.userAccountId,
             queryParams
         );
@@ -105,7 +106,7 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Asset ID is required" });
       }
       const queryParams = parseQueryParamsExpress(req.query);
-      const history = await assetService.getBrokerProviderAssetHistory(
+      const history = await assetService.getBrokerProviderAssetValueHistory(
         req.params.assetId,
         queryParams
       );
@@ -254,6 +255,24 @@ export async function registerRoutes(
       const valueItems = await assetService.getBrokerProviderAssetSecurities(
         req.params.assetId,
         queryParams
+      );
+      res.json(valueItems);
+    }
+  );
+
+  router.get(
+    `/broker/${uuidRouteParam("assetId")}/securities/${uuidRouteParam("securityId")}`,
+    requireUser,
+    async (req: AuthRequest, res) => {
+      if(!req.params.assetId) {
+        return res.status(400).json({ error: "Asset ID is required" });
+      }
+      if(!req.params.securityId) {
+        return res.status(400).json({ error: "Security ID is required" });
+      }
+      const valueItems = await assetService.getBrokerProviderAssetSecurity(
+        req.params.assetId,
+        req.params.securityId
       );
       res.json(valueItems);
     }

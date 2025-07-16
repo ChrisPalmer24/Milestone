@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { ServiceFactory } from "../services/factory";
 import {
   AuthRequest,
   AuthService,
@@ -14,9 +13,10 @@ import {
 } from "@shared/schema";
 import { uuidRouteParam } from "@server/utils/uuid";
 import { combineSecurityResults } from "@server/utils/securities";
+import { db } from "@server/db";
+import { DatabaseAssetService } from "@server/services/assets/database";
 
-const services = ServiceFactory.getInstance();
-const assetService = services.getAssetService();
+const assetService = new DatabaseAssetService(db);
 
 export async function registerRoutes(
   router: Router,

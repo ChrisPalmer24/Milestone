@@ -1,12 +1,11 @@
 import { eq, and } from "drizzle-orm";
 import { coreUsers, userAccounts, userProfiles, passwordResets, passwordChangeHistory, InsertUserAccount, InsertUserProfile } from "@server/db/schema/user-account";
 import { CoreUser, UserAccount, UserProfile, InsertCoreUser, UserAccountInsert, UserProfileInsert, RegisterInput, SessionUser } from "@shared/schema/user-account";
-import { IUserService } from "./types";
 import { db, type Database } from "../../db/index";
 import { createId } from "@paralleldrive/cuid2";
 import { hash, compare } from "bcryptjs";
 
-export class DatabaseUserService implements IUserService {
+export class DatabaseUserService {
   private db: Database;
 
   constructor(db: Database) {

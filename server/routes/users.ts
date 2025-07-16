@@ -1,15 +1,15 @@
 import { Router } from "express";
 import { z } from "zod";
-import { ServiceFactory } from "../services/factory";
 import {
   coreUserInsertSchema,
   userAccountInsertSchema,
   userProfileInsertSchema,
 } from "@shared/schema";
 import { AuthRequest, AuthService, requireTenant, Tenant } from "../auth";
+import { db } from "@server/db";
+import { DatabaseUserService } from "@server/services/users/database";
 
-const services = ServiceFactory.getInstance();
-const userService = services.getUserService();
+const userService = new DatabaseUserService(db);
 
 export async function registerRoutes(
   router: Router,

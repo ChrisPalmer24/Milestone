@@ -1,10 +1,9 @@
 import { eq } from "drizzle-orm";
 import { fireSettings, InsertFireSettings } from "@server/db/schema/portfolio-fire";
 import { FireSettings, FireSettingsInsert, UserAccount } from "@shared/schema";
-import { IFireSettingsService } from "./types";
 import { type Database } from "../../db/index";
 
-export class DatabaseFireSettingsService implements IFireSettingsService {
+export class DatabaseFireSettingsService {
   private db: Database;
 
   constructor(db: Database) {

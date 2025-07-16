@@ -1,11 +1,11 @@
 import { Router } from "express";
 import { z } from "zod";
-import { ServiceFactory } from "../services/factory";
 import { milestoneInsertSchema } from "@shared/schema";
 import { AuthRequest, AuthService } from "../auth";
+import { db } from "@server/db";
+import { DatabaseMilestoneService } from "@server/services/milestones/database";
 
-const services = ServiceFactory.getInstance();
-const milestoneService = services.getMilestoneService();
+const milestoneService = new DatabaseMilestoneService(db);
 
 export async function registerRoutes(
   router: Router,

@@ -1,6 +1,5 @@
-import { NextFunction, Router } from "express";
+import { Router } from "express";
 import { z } from "zod";
-import { db } from "../db";
 import { userAccounts } from "../db/schema/user-account";
 import {
   loginSchema,
@@ -10,11 +9,11 @@ import {
 import { eq } from "drizzle-orm";
 import { compare } from "bcrypt";
 import { AUTH_COOKIE_NAMES } from "../constants/auth";
-import { ServiceFactory } from "../services/factory";
-import { AuthMiddlewareExpress, AuthRequest, AuthService, requireTenant } from "../../server/auth";
+import { AuthRequest, AuthService, requireTenant } from "../../server/auth";
+import { db } from "@server/db";
+import { DatabaseUserService } from "@server/services/users/database";
 
-const services = ServiceFactory.getInstance();
-const userService = services.getUserService();
+const userService = new DatabaseUserService(db);
 
 export async function registerRoutes(
   router: Router, 
