@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "wouter";
+import { useParams, useRouter } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -44,17 +44,12 @@ import { usePortfolio } from "@/context/PortfolioContext";
 import {
   AssetValue,
   AssetContribution,
-  BrokerProviderAsset,
   RecurringContribution,
+  ResolvedSecurity,
 } from "shared/schema";
-import {
-  getBrokerAccountTypeFullName,
-  getBrokerName,
-  getBrokerSlugFromName,
-} from "@/lib/broker";
 import { useBrokerProviders } from "@/hooks/use-broker-providers";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import BrokerLogoBoxed from "@/components/logo/BrokerLogoBoxed";
+import { navigate } from "wouter/use-browser-location";
 
 // Form schema for history entry
 const historySchema = z.object({
@@ -90,9 +85,12 @@ const recurringContributionSchema = z.object({
   isActive: z.boolean().default(true),
 });
 
-export default function AccountPage() {
+export default function AssetSecurityPage() {
   const params = useParams();
-  const assetId: BrokerProviderAsset["id"] | undefined = params?.id;
+
+  console.log("params", params);
+  const assetId: string | undefined = params?.id;
+  const nestedId: string | undefined = params?.nestedId;
 
   const {
     addBrokerAssetValue,
@@ -191,14 +189,14 @@ export default function AccountPage() {
     isLoading: isAssetLoading,
     isError: isAssetError,
     error: assetError,
-  } = useQuery<BrokerProviderAsset>({
+  } = useQuery<ResolvedSecurity>({
     queryKey: ["broker-asset", assetId],
     queryFn: () =>
-      apiRequest<BrokerProviderAsset>("GET", `/api/assets/broker/${assetId}`),
+      apiRequest<ResolvedSecurity>(
+        "GET",
+        `/api/assets/broker/${assetId}/securities/${nestedId}`
+      ),
   });
-
-  console.log("assetError", assetError);
-  console.log("asset", asset);
 
   const { data: history, isLoading: isHistoryLoading } = useQuery<AssetValue[]>(
     {
@@ -430,6 +428,13 @@ export default function AccountPage() {
     }
   };
 
+  const handleSecurityClick = (item: { id: string }) => {
+    navigate(`/asset/broker/${assetId}/security/${item.id}`);
+  };
+
+  console.log("asset security", asset);
+  console.log("Asset loading", isAssetLoading);
+
   if (isAssetLoading || isHistoryLoading || isContributionsLoading) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-8">
@@ -470,7 +475,8 @@ export default function AccountPage() {
     );
   }
 
-  const brokerName = getBrokerName(asset.providerId, providers ?? []);
+  // A asset secuirty would not have a broker name
+  //const brokerName = getBrokerName(asset.providerId, providers ?? []);
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
@@ -479,18 +485,12 @@ export default function AccountPage() {
           {/* Account Header */}
           <div className="flex flex-col items-start mb-6">
             <div className="flex items-center gap-2">
-              <BrokerLogoBoxed
-                broker={getBrokerSlugFromName(brokerName)}
-                size="md"
-              />
               <div>
                 <div className="mb-2">
-                  <h1 className="text-xl ">{asset.name}</h1>
+                  <h1 className="text-xl ">
+                    {asset.security?.name ?? "Unknown Security"}
+                  </h1>
                 </div>
-                <h1 className="text-xl font-semibold">{brokerName}</h1>
-                <span className="text-sm text-gray-600">
-                  {getBrokerAccountTypeFullName(asset.accountType)}
-                </span>
               </div>
             </div>
           </div>
@@ -499,7 +499,7 @@ export default function AccountPage() {
           <div className="mb-6">
             <h2 className="text-lg font-medium mb-2">Current Value</h2>
             <p className="text-2xl font-bold">
-              £{Number(asset.currentValue).toLocaleString()}
+              £{Number(asset.calculatedValue?.value ?? 0).toLocaleString()}
             </p>
           </div>
 
@@ -515,7 +515,7 @@ export default function AccountPage() {
                 Account Values
               </TabsTrigger>
               <TabsTrigger value="contributions" className="flex-1">
-                Contributions
+                Transactions  
               </TabsTrigger>
             </TabsList>
 

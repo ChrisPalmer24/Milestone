@@ -14,7 +14,8 @@ import Fire from "@/pages/fire";
 import Profile from "@/pages/profile";
 import Settings from "@/pages/settings";
 import ApiConnections from "@/pages/api-connections";
-import BrokerAsset from "@/pages/broker-asset";
+import AssetPage from "@/pages/asset";
+import NestedAssetPage from "@/pages/asset-security";
 import Record from "@/pages/record";
 import { LoginPage } from "@/pages/LoginPage";
 import { RegisterPage } from "@/pages/RegisterPage";
@@ -101,10 +102,27 @@ function Router() {
             </ProtectedRoute>
           )}
         </Route>
-        <Route path="/asset/broker/:id">
+
+        {/* Maybe later when more abstractesd use dynamic routes
+        <Route path="/asset/broker/*">
           {() => (
             <ProtectedRoute>
               <RouteWithLayout component={BrokerAsset} />
+            </ProtectedRoute>
+          )}
+        </Route>
+        */}
+        <Route path="/asset/broker/:id">
+          {() => (
+            <ProtectedRoute>
+              <RouteWithLayout component={AssetPage} />
+            </ProtectedRoute>
+          )}
+        </Route>
+        <Route path="/asset/broker/:id/item/:nestedId">
+          {() => (
+            <ProtectedRoute>
+              <RouteWithLayout component={NestedAssetPage} />
             </ProtectedRoute>
           )}
         </Route>
