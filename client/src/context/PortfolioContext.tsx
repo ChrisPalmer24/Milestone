@@ -430,7 +430,7 @@ export const usePortfolio = (startDate?: Date, endDate?: Date) => {
 
   // Asset contribution mutations
   const addBrokerAssetContribution = useMutation<
-    AssetContributionInsert,
+    AssetContribution,
     Error,
     AssetContributionInsert
   >({
