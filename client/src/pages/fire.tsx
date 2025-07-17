@@ -11,7 +11,7 @@ import {
   calculateYearsToTarget,
   calculateContributionImpact,
 } from "@/lib/utils/finance";
-import FireChart from "@/components/ui/charts/FireChart";
+import FireChart from "@/components/charts/FireChart";
 import { useToast } from "@/hooks/use-toast";
 import { FireSettingsInsert } from "shared/schema";
 
@@ -80,12 +80,14 @@ export default function Fire() {
         withdrawalRate: Number(fireSettings.safeWithdrawalRate),
         monthlyInvestment: Number(fireSettings.monthlyInvestment),
         targetRetirementAge: Number(fireSettings.targetRetirementAge),
-        adjustInflation: fireSettings.adjustInflation !== undefined 
-          ? Boolean(fireSettings.adjustInflation) 
-          : true,
-        statePensionAge: fireSettings.statePensionAge !== undefined
-          ? Number(fireSettings.statePensionAge)
-          : defaultSettings.statePensionAge,
+        adjustInflation:
+          fireSettings.adjustInflation !== undefined
+            ? Boolean(fireSettings.adjustInflation)
+            : true,
+        statePensionAge:
+          fireSettings.statePensionAge !== undefined
+            ? Number(fireSettings.statePensionAge)
+            : defaultSettings.statePensionAge,
       });
     }
   }, [fireSettings, defaultSettings.statePensionAge]);
@@ -191,8 +193,11 @@ export default function Fire() {
   };
 
   // Handle input changes
-  const handleInputChange = (field: keyof typeof formState, value: string | boolean) => {
-    if (typeof value === 'boolean') {
+  const handleInputChange = (
+    field: keyof typeof formState,
+    value: string | boolean
+  ) => {
+    if (typeof value === "boolean") {
       setFormState((prev) => ({
         ...prev,
         [field]: value,
@@ -303,33 +308,39 @@ export default function Fire() {
                   />
                 </div>
               </div>
-              
+
               <div>
                 <Label className="block text-sm font-medium text-gray-700 mb-2">
                   UK State Pension Age
                 </Label>
                 <div className="flex flex-col space-y-1">
-                  <ToggleGroup 
-                    type="single" 
+                  <ToggleGroup
+                    type="single"
                     variant="outline"
                     value={formState.statePensionAge.toString()}
                     onValueChange={(value) => {
-                      if (value) { // prevent deselection
+                      if (value) {
+                        // prevent deselection
                         handleInputChange("statePensionAge", value);
                       }
                     }}
                   >
                     <ToggleGroupItem value="66" className="flex-1 text-center">
                       66
-                      <span className="block text-xs text-gray-500">Born before April 6, 1960</span>
+                      <span className="block text-xs text-gray-500">
+                        Born before April 6, 1960
+                      </span>
                     </ToggleGroupItem>
                     <ToggleGroupItem value="67" className="flex-1 text-center">
                       67
-                      <span className="block text-xs text-gray-500">Born after April 6, 1960</span>
+                      <span className="block text-xs text-gray-500">
+                        Born after April 6, 1960
+                      </span>
                     </ToggleGroupItem>
                   </ToggleGroup>
                   <p className="text-xs text-gray-500 italic mt-1">
-                    The UK State Pension age is used in retirement planning calculations
+                    The UK State Pension age is used in retirement planning
+                    calculations
                   </p>
                 </div>
               </div>
@@ -406,7 +417,7 @@ export default function Fire() {
           {/* FIRE Settings */}
           <div className="bg-gray-50 rounded-lg p-4 mb-6">
             <h3 className="font-medium mb-3">Your FIRE Settings</h3>
-            
+
             <div className="mb-4">
               <Label
                 htmlFor="annual-income"
@@ -483,50 +494,59 @@ export default function Fire() {
                 }
               />
             </div>
-            
+
             <div className="mb-4">
               <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="adjust-inflation" 
+                <Checkbox
+                  id="adjust-inflation"
                   checked={formState.adjustInflation}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     handleInputChange("adjustInflation", checked === true)
                   }
                 />
-                <Label 
-                  htmlFor="adjust-inflation" 
+                <Label
+                  htmlFor="adjust-inflation"
                   className="text-sm cursor-pointer"
                 >
-                  Adjust for inflation <span className="italic font-normal text-gray-500">(average 2.8% over the past 30 years)</span>
+                  Adjust for inflation{" "}
+                  <span className="italic font-normal text-gray-500">
+                    (average 2.8% over the past 30 years)
+                  </span>
                 </Label>
               </div>
-              
+
               <div className="mt-4">
                 <Label className="block text-sm font-medium text-gray-700 mb-2">
                   UK State Pension Age
                 </Label>
                 <div className="flex flex-col space-y-1">
-                  <ToggleGroup 
-                    type="single" 
+                  <ToggleGroup
+                    type="single"
                     variant="outline"
                     value={formState.statePensionAge.toString()}
                     onValueChange={(value) => {
-                      if (value) { // prevent deselection
+                      if (value) {
+                        // prevent deselection
                         handleInputChange("statePensionAge", value);
                       }
                     }}
                   >
                     <ToggleGroupItem value="66" className="flex-1 text-center">
                       66
-                      <span className="block text-xs text-gray-500">Born before April 6, 1960</span>
+                      <span className="block text-xs text-gray-500">
+                        Born before April 6, 1960
+                      </span>
                     </ToggleGroupItem>
                     <ToggleGroupItem value="67" className="flex-1 text-center">
                       67
-                      <span className="block text-xs text-gray-500">Born after April 6, 1960</span>
+                      <span className="block text-xs text-gray-500">
+                        Born after April 6, 1960
+                      </span>
                     </ToggleGroupItem>
                   </ToggleGroup>
                   <p className="text-xs text-gray-500 italic">
-                    The UK State Pension age is used in retirement planning calculations
+                    The UK State Pension age is used in retirement planning
+                    calculations
                   </p>
                 </div>
               </div>
@@ -539,7 +559,7 @@ export default function Fire() {
               Save Settings
             </Button>
           </div>
-          
+
           {/* Adjust Investment */}
           <div className="bg-gray-50 rounded-lg p-4">
             <h3 className="font-medium mb-3">Adjust Your Investment</h3>

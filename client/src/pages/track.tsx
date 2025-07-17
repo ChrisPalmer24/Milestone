@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { calculateOnTrackStatus } from "@/lib/utils/finance";
-import TrackChart from "@/components/ui/charts/TrackChart";
+import TrackChart from "@/components/charts/TrackChart";
 
 export default function Track() {
   const { portfolioOverview, fireSettings, updateFireSettings, isLoading } =

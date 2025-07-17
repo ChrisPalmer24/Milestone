@@ -11,7 +11,7 @@ import {
 import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
-import { PortfolioHistoryTimePoint } from "shared/schema";
+import { AssetHistoryTimePoint } from "shared/schema";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { useDateRange } from "@/context/DateRangeContext";
 import {
@@ -21,18 +21,13 @@ import {
 import { Check } from "lucide-react";
 import { getDateUrlParams } from "@/lib/date";
 
-type ChartData = Omit<PortfolioHistoryTimePoint, "date"> & {
+type ChartData = Omit<AssetHistoryTimePoint, "date"> & {
   date: string;
   milestone?: number;
   achievedMilestone?: {
     name: string;
     targetValue: number;
   };
-};
-
-// Helper to format currency values
-const formatCurrency = (value: number) => {
-  return `£${value.toLocaleString()}`;
 };
 
 // Helper to combine data points for the same date
@@ -62,18 +57,18 @@ const combineDataPoints = (data: ChartData[]): ChartData[] => {
   });
 };
 
-type PortfolioChartProps = {
+type AssetHistoryChartProps = {
+  url: string;
   showMilestones?: boolean;
-  nextMilestone?: number;
   className?: string;
 };
 
-export default function PortfolioChart({
+export default function AssetHistoryChart({
+  url,
   showMilestones = true,
-  nextMilestone,
   className,
-}: PortfolioChartProps) {
-  const { dateRange, setDateRange } = useDateRange();
+}: AssetHistoryChartProps) {
+  const { dateRange } = useDateRange();
   const [chartVisible, setChartVisible] = useState(true);
   const [showMilestonesLocal, setShowMilestonesLocal] = useState(true);
   const [selectedPoint, setSelectedPoint] = useState<ChartData | null>(null);
@@ -108,16 +103,11 @@ export default function PortfolioChart({
   }, [dateRange]);
 
   // Fetch portfolio history data
-  const { data: historyData, isLoading } = useQuery<
-    PortfolioHistoryTimePoint[]
-  >({
-    queryKey: ["/api/assets/portfolio-value/history", startDate, endDate],
+  const { data: historyData, isLoading } = useQuery<AssetHistoryTimePoint[]>({
+    queryKey: [url, startDate, endDate],
     queryFn: async () => {
       const response = await fetch(
-        `/api/assets/portfolio-value/history?${getDateUrlParams(
-          startDate,
-          endDate
-        )}`
+        `${url}?${getDateUrlParams(startDate, endDate)}`
       );
       if (!response.ok) {
         throw new Error("Failed to fetch portfolio history");
@@ -192,11 +182,10 @@ export default function PortfolioChart({
         className
       )}
     >
-      <div className="px-[5px] py-1 md:p-4">
+      <div className="">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">Portfolio Overview</h2>
           <div className="flex space-x-3">
-            <div className="flex items-center">
+            {/* <div className="flex items-center">
               <span className="text-sm text-neutral-700 mr-2">Chart</span>
               <div className="relative inline-block w-10 mr-2 align-middle select-none">
                 <input
@@ -218,8 +207,8 @@ export default function PortfolioChart({
                   ></span>
                 </label>
               </div>
-            </div>
-            {chartVisible && (
+            </div> */}
+            {/* {chartVisible && (
               <div className="flex items-center">
                 <span className="text-sm text-neutral-700 mr-2">
                   Milestones
@@ -247,7 +236,7 @@ export default function PortfolioChart({
                   </label>
                 </div>
               </div>
-            )}
+            )} */}
           </div>
         </div>
 
@@ -317,7 +306,7 @@ export default function PortfolioChart({
                     }}
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
-                        const data = payload[0].payload as ChartData;
+                        const data = payload[0]?.payload as ChartData;
                         return (
                           <div className="bg-gray-100 border-none rounded-lg p-2 shadow-sm">
                             <p className="font-medium text-gray-900">
