@@ -181,7 +181,7 @@ export type PotfolioValue = {
   totalChangePercentage: number;
 }
 
-export type PortfolioHistoryTimePoint = {
+export type AssetHistoryTimePoint = {
   date: Date;
   value: number;
   changes: {
@@ -191,6 +191,11 @@ export type PortfolioHistoryTimePoint = {
     change: number;
   }[];
 }
+
+/**
+ * @deprecated Use AssetHistoryTimePoint instead
+ */
+export type PortfolioHistoryTimePoint = AssetHistoryTimePoint
 
 export type BrokerProviderAssetAPIKeyConnection = DBBrokerProviderAssetAPIKeyConnection
 
