@@ -1,4 +1,4 @@
-import { SecurityInfoService, IntradayOptions } from "../types"
+import { SecurityInfoService, IntradayOptions, SecurityIdentifier } from "../types"
 import { findSecurities } from "./search"
 import { getSecurityHistoryForDateRange, getSecurityHistoryForDate, getIntradaySecurityHistoryForDate } from "./history"
 
@@ -21,7 +21,7 @@ export const factory = (): SecurityInfoService => ({
   },
 
   canGetIntradaySecurityHistoryForDate: true,
-  getIntradaySecurityHistoryForDate: async (symbol: string, date: Date, options?: IntradayOptions) => {
-    return getIntradaySecurityHistoryForDate(symbol, date, options);
+  getIntradaySecurityHistoryForDate: async (identifier: SecurityIdentifier, date: Date, options?: IntradayOptions) => {
+    return getIntradaySecurityHistoryForDate(identifier, date, options);
   },
 })

@@ -1,4 +1,4 @@
-import { SecurityHistory, IntradayOptions } from "../types"
+import { SecurityHistory, IntradayOptions, SecurityIdentifier } from "../types"
 import { validateApiKey, validateApiKeyOptional } from "../../../utils/api-key-validation"
 import { makeApiRequest } from "../../../utils/http-client"
 import { validateAndExtractDateRange, validateAndExtractDateString } from "../../../utils/date-validation"
@@ -6,6 +6,7 @@ import { withErrorHandling } from "../../../utils/error-handling"
 import { buildAlphaVantageUrl } from "../utils/provider-url-builders"
 import { validateAlphaVantageResponse, validateAlphaVantageTimeSeries } from "../utils/provider-response-validation"
 import { mapAlphaVantageToSecurityHistory } from "../utils/security-history-mapper"
+import { normalizeAlphaVantageSymbolForIntraday } from "../utils/exchange-suffix-mapper"
 
 export type AlphaVantageHistoryResponse = {
   "Meta Data"?: {
@@ -44,6 +45,7 @@ export const getSecurityHistoryForDateRange = async (
       symbol,
       outputsize: "full",
       apikey: apiKey,
+      datatype: "json",
     })
 
     const data: AlphaVantageHistoryResponse = await makeApiRequest(url, "Alpha Vantage")
@@ -80,9 +82,11 @@ export const getSecurityHistoryForDate = async (
       symbol,
       outputsize: "compact",
       apikey: apiKey,
+      datatype: "json",
     })
 
     const data: AlphaVantageHistoryResponse = await makeApiRequest(url, "Alpha Vantage")
+    console.log("data", data)
     validateAlphaVantageResponse(data)
 
     const timeSeries = validateAlphaVantageTimeSeries(data, "Alpha Vantage API")
@@ -104,11 +108,11 @@ export const getSecurityHistoryForDate = async (
 
 /**
  * Get intraday security history for a specific date
- * @param symbol - The security symbol
+ * @param identifier - The security identifier with symbol and optional exchange
  * @param date - The date to get intraday data for
  * @returns Promise resolving to array of intraday SecurityHistory objects
  */
-export const getIntradaySecurityHistoryForDate = async (symbol: string, date: Date, options?: IntradayOptions): Promise<SecurityHistory[]> => {
+export const getIntradaySecurityHistoryForDate = async (identifier: SecurityIdentifier, date: Date, options?: IntradayOptions): Promise<SecurityHistory[]> => {
   return withErrorHandling(async () => {
     const apiKey = validateApiKeyOptional('ALPHA_VANTAGE_API_KEY', 'Alpha Vantage')
     if (!apiKey) {
@@ -121,9 +125,12 @@ export const getIntradaySecurityHistoryForDate = async (symbol: string, date: Da
     // Default to 15min if not specified
     const interval = options?.interval || '15min'
     
+    // Normalize the symbol for Alpha Vantage API calls
+    const normalizedSymbol = normalizeAlphaVantageSymbolForIntraday(identifier.symbol)
+    
     const params = {
       function: 'TIME_SERIES_INTRADAY',
-      symbol: symbol.toUpperCase(),
+      symbol: normalizedSymbol.toUpperCase(),
       interval: interval,
       apikey: apiKey,
       outputsize: 'compact' // Always use compact for efficiency
@@ -152,12 +159,12 @@ export const getIntradaySecurityHistoryForDate = async (symbol: string, date: Da
       const timestampDate = timestamp.split(' ')[0] // Extract date part
       
       if (timestampDate === targetDateStr) {
-        const history = mapAlphaVantageToSecurityHistory(values, timestamp, symbol)
+        const history = mapAlphaVantageToSecurityHistory(values, timestamp, identifier.symbol)
         intradayHistory.push(history)
       }
     })
 
     // Sort by timestamp (oldest first) and return only data for the requested day
     return intradayHistory.sort((a, b) => a.date.getTime() - b.date.getTime())
-  }, `Error getting intraday history for ${symbol} on ${date instanceof Date && !isNaN(date.getTime()) ? date.toISOString().split('T')[0] : 'invalid-date'}`, [])
+  }, `Error getting intraday history for ${identifier.symbol} on ${date instanceof Date && !isNaN(date.getTime()) ? date.toISOString().split('T')[0] : 'invalid-date'}`, [])
 } 

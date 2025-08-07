@@ -1,4 +1,5 @@
 import { SecuritySearchResult } from "@shared/schema";
+import { getSecurityHistoryLiveForDateRange } from "./eodhd/history";
 
 export type SecurityHistory = {
   symbol: string;
@@ -15,6 +16,11 @@ export interface IntradayOptions {
   interval?: IntradayInterval;
 }
 
+export interface SecurityIdentifier {
+  symbol: string;
+  exchange?: string;
+}
+
 export type SecurityInfoService = {
   name: string;
   identifier: string;
@@ -23,16 +29,22 @@ export type SecurityInfoService = {
 
   canGetSecurityHistoryForDateRange: boolean;
   /** Gets the price history for a given symbol and date range  */
-  getSecurityHistoryForDateRange: (symbol: string, startDate: Date, endDate: Date) => Promise<SecurityHistory[]>;
+  getSecurityHistoryForDateRange: (identifier: SecurityIdentifier, startDate: Date, endDate: Date) => Promise<SecurityHistory[]>;
 
+  canGetSecurityHistoryLiveForDateRange: boolean;
+  getSecurityHistoryLiveForDateRange: (
+    identifier: SecurityIdentifier, 
+    startDate: Date, 
+    endDate: Date
+  ) => Promise<SecurityHistory[]>
   
   canGetSecurityHistoryForDate: boolean;
   /** Gets the price history for a given symbol and date */
-  getSecurityHistoryForDate: (symbol: string, date: Date) => Promise<SecurityHistory>;
+  getSecurityHistoryForDate: (identifier: SecurityIdentifier, date: Date) => Promise<SecurityHistory>;
 
   canGetIntradaySecurityHistoryForDate: boolean;
   /** Gets the intraday price history for a given symbol and date */
-  getIntradaySecurityHistoryForDate: (symbol: string, date: Date, options?: IntradayOptions) => Promise<SecurityHistory[]>;
+  getIntradaySecurityHistoryForDate: (identifier: SecurityIdentifier, date: Date, options?: IntradayOptions) => Promise<SecurityHistory[]>;
 
   // canGetSecurityInfoBySymbol: boolean;
   // getSecurityInfoBySymbol: (symbol: string) => Promise<SecurityInfo>;

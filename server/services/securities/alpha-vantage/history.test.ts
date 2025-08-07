@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { getSecurityHistoryForDateRange, getSecurityHistoryForDate, getIntradaySecurityHistoryForDate } from './history'
+import { SecurityIdentifier } from '../types'
 
 // Mock fetch globally
 global.fetch = vi.fn()
@@ -320,7 +321,7 @@ describe('Alpha Vantage History', () => {
 
   describe('getIntradaySecurityHistoryForDate', () => {
     it('should return empty array when API key is not provided', async () => {
-      const result = await getIntradaySecurityHistoryForDate('AAPL', new Date('2024-01-15'))
+      const result = await getIntradaySecurityHistoryForDate({ symbol: 'AAPL' }, new Date('2024-01-15'))
       expect(result).toEqual([])
     })
 
@@ -358,7 +359,7 @@ describe('Alpha Vantage History', () => {
         json: async () => mockResponse
       })
 
-      const result = await getIntradaySecurityHistoryForDate('AAPL', new Date('2024-01-15'))
+      const result = await getIntradaySecurityHistoryForDate({ symbol: 'AAPL' }, new Date('2024-01-15'))
 
       expect(fetch).toHaveBeenCalledWith(
         'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=AAPL&interval=15min&apikey=test-api-key&outputsize=compact',
@@ -422,7 +423,7 @@ describe('Alpha Vantage History', () => {
         json: async () => mockResponse
       })
 
-      const result = await getIntradaySecurityHistoryForDate('AAPL', new Date('2024-01-15'))
+      const result = await getIntradaySecurityHistoryForDate({ symbol: 'AAPL' }, new Date('2024-01-15'))
 
       expect(result).toHaveLength(1)
       expect(result[0]?.date).toEqual(new Date('2024-01-15T14:30:00.000Z')) // 09:30 US/Eastern = 14:30 UTC
@@ -437,7 +438,7 @@ describe('Alpha Vantage History', () => {
         statusText: 'Too Many Requests'
       })
 
-      const result = await getIntradaySecurityHistoryForDate('AAPL', new Date('2024-01-15'))
+      const result = await getIntradaySecurityHistoryForDate({ symbol: 'AAPL' }, new Date('2024-01-15'))
 
       expect(result).toEqual([])
     })
@@ -447,7 +448,7 @@ describe('Alpha Vantage History', () => {
 
       ;(fetch as any).mockRejectedValueOnce(new Error('Network error'))
 
-      const result = await getIntradaySecurityHistoryForDate('AAPL', new Date('2024-01-15'))
+      const result = await getIntradaySecurityHistoryForDate({ symbol: 'AAPL' }, new Date('2024-01-15'))
 
       expect(result).toEqual([])
     })
@@ -455,7 +456,7 @@ describe('Alpha Vantage History', () => {
     it('should handle invalid date gracefully', async () => {
       process.env.ALPHA_VANTAGE_API_KEY = 'test-api-key'
 
-      const result = await getIntradaySecurityHistoryForDate('AAPL', new Date('invalid-date'))
+      const result = await getIntradaySecurityHistoryForDate({ symbol: 'AAPL' }, new Date('invalid-date'))
 
       expect(result).toEqual([])
     })
@@ -487,7 +488,7 @@ describe('Alpha Vantage History', () => {
         json: async () => mockResponse
       })
 
-      const result = await getIntradaySecurityHistoryForDate('AAPL', new Date('2024-01-15'), { interval: '15min' })
+      const result = await getIntradaySecurityHistoryForDate({ symbol: 'AAPL' }, new Date('2024-01-15'), { interval: '15min' })
 
       expect(fetch).toHaveBeenCalledWith(
         'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=AAPL&interval=15min&apikey=test-api-key&outputsize=compact',

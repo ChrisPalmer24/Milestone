@@ -299,23 +299,47 @@ getIntradaySecurityHistoryForDate(
 
 ### Alpha Vantage Exchange Suffix Mapping
 
-Based on our "APPL" search test, we discovered the following exchange suffix patterns:
+Based on our comprehensive symbol search tests, we discovered the following exchange suffix patterns:
 
-| Alpha Vantage Suffix | Exchange/Market | Example Symbol | Currency |
-|---------------------|-----------------|----------------|----------|
-| (no suffix) | US (primary) | `AAPL` | USD |
-| `.SAO` | Brazil/Sao Paolo | `AAPL34.SAO` | BRL |
-| `.DEX` | XETRA | `APC.DEX` | EUR |
-| `.TRT` | Toronto | `AAPL.TRT` | CAD |
-| `.BSE` | India/Bombay | `500014.BSE` | INR |
-| `.FRK` | Frankfurt | `48T.FRK` | EUR |
-| `.SHH` | Shanghai | `603020.SHH` | CNY |
+| Alpha Vantage Suffix | Exchange/Market | Example Symbol | Currency | Notes |
+|---------------------|-----------------|----------------|----------|-------|
+| (no suffix) | US (primary) | `AAPL` | USD | US primary market |
+| `.LON` | London Stock Exchange | `VWRL.LON` | GBP | London listings |
+| `.AMS` | Amsterdam Stock Exchange | `VWRL.AMS` | EUR | Euronext Amsterdam |
+| `.PAR` | Paris Stock Exchange | `ABCA.PAR` | EUR | Euronext Paris |
+| `.SHZ` | Shenzhen Stock Exchange | `301510.SHZ` | CNY | Shenzhen Stock Exchange |
+| `.SAO` | Brazil/Sao Paolo | `AAPL34.SAO` | BRL | Brazilian Stock Exchange |
+| `.DEX` | XETRA | `APC.DEX` | EUR | Deutsche Börse XETRA |
+| `.TRT` | Toronto | `AAPL.TRT` | CAD | Toronto Stock Exchange |
+| `.BSE` | India/Bombay | `500014.BSE` | INR | Bombay Stock Exchange |
+| `.FRK` | Frankfurt | `48T.FRK` | EUR | Frankfurt Stock Exchange |
+| `.SHH` | Shanghai | `603020.SHH` | CNY | Shanghai Stock Exchange |
 
 **Implementation Notes:**
-- US symbols typically have no suffix (e.g., `AAPL`, `MSFT`)
+- US symbols have no suffix (e.g., `AAPL`, `MSFT`)
 - International symbols include exchange suffixes
-- Some symbols may have additional identifiers (e.g., `AAPL34.SAO` vs `AAPL.SAO`)
-- Need to handle edge cases like `BRK.A` (Berkshire Hathaway Class A)
+- Alpha Vantage search API does NOT include US class shares (BRK.A, BAC.PR, etc.)
+- **Critical**: No suffix = US market (this is reliable for Alpha Vantage search results)
+
+### Key Discovery: Alpha Vantage Search API Behavior
+
+Our testing revealed that:
+1. **International symbols always have exchange suffixes** (e.g., `.LON`, `.SAO`, `.DEX`)
+2. **US class shares and preferred shares are NOT included** in Alpha Vantage search results
+3. **US class shares use hyphens, not dots** (e.g., `BRK-A`, `BRK-B`, not `BRK.A`, `BRK.B`)
+
+### Critical Issue: Distinguishing Exchange Suffixes from Symbol Names
+
+**The Problem**: When a symbol has a dot character (like `ABC.C1`), we need to determine if the characters after the dot are:
+1. **Part of the symbol name** (e.g., `ABC.C1` is a US stock where `.C1` is part of the symbol)
+2. **An exchange suffix** (e.g., `ABC.C1` is an international stock where `.C1` is an exchange code)
+
+**Our Approach**: 
+1. **Symbols without dots** (like `AAPL`) → Assume US market ✅
+2. **Symbols with known exchange suffixes** (like `VWRL.LON`) → Identify the exchange ✅
+3. **Symbols with unknown suffixes** (like `ABC.C1`) → Return `undefined` - we cannot distinguish between US symbol with dot vs unknown exchange ❌
+
+**Current Status**: We can identify known exchange suffixes, but we cannot definitively determine if an unknown suffix (like `.C1`) is part of a US symbol name or an unrecognized exchange code.
 
 ### Backward Compatibility Consideration
 

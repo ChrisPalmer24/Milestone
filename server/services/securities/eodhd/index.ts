@@ -1,6 +1,9 @@
 import { findSecurities as findSecuritiesOriginal } from "./search";
-import { getSecurityHistoryForDateRange as getSecurityHistoryForDateRangeOriginal, getSecurityHistoryForDate as getSecurityHistoryForDateOriginal, getIntradaySecurityHistoryForDate as getIntradaySecurityHistoryForDateOriginal } from "./history";
-import { SecurityInfoService, IntradayOptions } from "../types";
+import { getSecurityHistoryForDateRange as getSecurityHistoryForDateRangeOriginal,
+  getSecurityHistoryForDate as getSecurityHistoryForDateOriginal,
+  getIntradaySecurityHistoryForDate as getIntradaySecurityHistoryForDateOriginal,
+  getSecurityHistoryLiveForDateRange as getSecurityHistoryLiveForDateRangeOriginal } from "./history";
+import { SecurityInfoService, IntradayOptions, SecurityIdentifier } from "../types";
 import { SecuritySearchResult } from "@shared/schema"
 
 
@@ -27,6 +30,7 @@ const normalizeSecurityInfo = (security: EODHDSecurity): SecuritySearchResult =>
   cusip: undefined,
   figi: undefined,
   fromCache: false,
+  sourceIdentifier: "eodhd",
 });   
 
 export const factory = (): SecurityInfoService => ({
@@ -39,18 +43,23 @@ export const factory = (): SecurityInfoService => ({
   },
 
   canGetSecurityHistoryForDateRange: true,
-  getSecurityHistoryForDateRange: async (symbol: string, startDate: Date, endDate: Date) => {
-    return getSecurityHistoryForDateRangeOriginal(symbol, startDate, endDate);
+  getSecurityHistoryForDateRange: async (identifier: SecurityIdentifier, startDate: Date, endDate: Date) => {
+    return getSecurityHistoryForDateRangeOriginal(identifier, startDate, endDate);
+  },
+
+  canGetSecurityHistoryLiveForDateRange: true,
+  getSecurityHistoryLiveForDateRange: async (identifier: SecurityIdentifier, startDate: Date, endDate: Date) => {
+    return getSecurityHistoryLiveForDateRangeOriginal(identifier, startDate, endDate);
   },
 
   canGetSecurityHistoryForDate: true,
-  getSecurityHistoryForDate: async (symbol: string, date: Date) => {
-    return getSecurityHistoryForDateOriginal(symbol, date);
+  getSecurityHistoryForDate: async (identifier: SecurityIdentifier, date: Date) => {
+    return getSecurityHistoryForDateOriginal(identifier, date);
   },
 
   canGetIntradaySecurityHistoryForDate: true,
-  getIntradaySecurityHistoryForDate: async (symbol: string, date: Date, options?: IntradayOptions) => {
-    return getIntradaySecurityHistoryForDateOriginal(symbol, date, options);
+  getIntradaySecurityHistoryForDate: async (identifier: SecurityIdentifier, date: Date, options?: IntradayOptions) => {
+    return getIntradaySecurityHistoryForDateOriginal(identifier, date, options);
   },
 
   // canGetSecurityInfoBySymbol: true,

@@ -1,4 +1,4 @@
-import { SecurityHistory, IntradayOptions } from "../types"
+import { SecurityHistory, IntradayOptions, SecurityIdentifier } from "../types"
 import { validateApiKey, validateApiKeyOptional } from "../../../utils/api-key-validation"
 import { makeApiRequest } from "../../../utils/http-client"
 import { validateAndExtractDateRange, validateAndExtractDateString } from "../../../utils/date-validation"
@@ -28,7 +28,7 @@ export type EODHDIntradayResponse = {
 }
 
 export const getSecurityHistoryForDateRange = async (
-  symbol: string, 
+  identifier: SecurityIdentifier, 
   startDate: Date, 
   endDate: Date
 ): Promise<SecurityHistory[]> => {
@@ -39,56 +39,87 @@ export const getSecurityHistoryForDateRange = async (
 
   try {
     const { startDateStr, endDateStr } = validateAndExtractDateRange(startDate, endDate)
-    const url = buildEodhdEodUrl(symbol, apiKey, startDateStr, endDateStr)
+    const url = buildEodhdEodUrl(identifier, apiKey, startDateStr, endDateStr)
     
     const data: EODHDHistoryResponse[] = await makeApiRequest(url, "EODHD")
     const arrayData = validateArrayResponse(data, "EODHD API") as EODHDHistoryResponse[]
 
-    return arrayData.map((item): SecurityHistory => mapEodhdToSecurityHistory(item, symbol))
+    return arrayData.map((item): SecurityHistory => mapEodhdToSecurityHistory(item, identifier.symbol))
 
   } catch (error) {
-    console.error(`Error fetching EODHD history for ${symbol}:`, error)
+    console.error(`Error fetching EODHD history for ${identifier.symbol}:`, error)
+    return []
+  }
+}
+
+export const getSecurityHistoryLiveForDateRange = async (
+  identifier: SecurityIdentifier, 
+  startDate: Date, 
+  endDate: Date
+): Promise<SecurityHistory[]> => {
+  const apiKey = validateApiKeyOptional("EODHD_API_KEY", "EODHD")
+  if (!apiKey) {
+    return []
+  }
+
+  try {
+    const { startDateStr, endDateStr } = validateAndExtractDateRange(startDate, endDate)
+    //const url = buildEodhdEodUrl(identifier, apiKey, startDateStr, endDateStr)
+
+    const url = `https://eodhd.com/api/real-time/${identifier.symbol}.${identifier.exchange}?api_token=${apiKey}&fmt=json`
+    
+    const data: EODHDHistoryResponse[] = await makeApiRequest(url, "EODHD")
+
+
+    console.log("DATA", data)
+
+    const arrayData = validateArrayResponse(data, "EODHD API") as EODHDHistoryResponse[]
+
+    return arrayData.map((item): SecurityHistory => mapEodhdToSecurityHistory(item, identifier.symbol))
+
+  } catch (error) {
+    console.error(`Error fetching EODHD history for ${identifier.symbol}:`, error)
     return []
   }
 }
 
 export const getSecurityHistoryForDate = async (
-  symbol: string, 
+  identifier: SecurityIdentifier, 
   date: Date
 ): Promise<SecurityHistory> => {
   const apiKey = validateApiKey("EODHD_API_KEY", "EODHD")
 
   try {
     const dateStr = validateAndExtractDateString(date)
-    const url = buildEodhdEodUrl(symbol, apiKey, dateStr, dateStr)
+    const url = buildEodhdEodUrl(identifier, apiKey, dateStr, dateStr)
     
     const data: EODHDHistoryResponse[] = await makeApiRequest(url, "EODHD")
     const arrayData = validateArrayResponse(data, "EODHD API") as EODHDHistoryResponse[]
 
     if (arrayData.length === 0) {
-      throw new Error(`No history data found for ${symbol} on ${dateStr}`)
+      throw new Error(`No history data found for ${identifier.symbol} on ${dateStr}`)
     }
 
     const item = arrayData[0]
     if (!item) {
-      throw new Error(`No history data found for ${symbol} on ${dateStr}`)
+      throw new Error(`No history data found for ${identifier.symbol} on ${dateStr}`)
     }
 
-    return mapEodhdToSecurityHistory(item, symbol)
+    return mapEodhdToSecurityHistory(item, identifier.symbol)
 
   } catch (error) {
-    console.error(`Error fetching EODHD history for ${symbol}:`, error)
+    console.error(`Error fetching EODHD history for ${identifier.symbol}:`, error)
     throw error
   }
 } 
 
 /**
  * Get intraday security history for a specific date
- * @param symbol - The security symbol
+ * @param identifier - The security identifier with symbol and optional exchange
  * @param date - The date to get intraday data for
  * @returns Promise resolving to array of intraday SecurityHistory objects
  */
-export const getIntradaySecurityHistoryForDate = async (symbol: string, date: Date, options?: IntradayOptions): Promise<SecurityHistory[]> => {
+export const getIntradaySecurityHistoryForDate = async (identifier: SecurityIdentifier, date: Date, options?: IntradayOptions): Promise<SecurityHistory[]> => {
   return withErrorHandling(async () => {
     const apiKey = validateApiKeyOptional('EODHD_API_KEY', 'EODHD')
     if (!apiKey) {
@@ -108,7 +139,10 @@ export const getIntradaySecurityHistoryForDate = async (symbol: string, date: Da
     
     // Build the intraday URL with specified interval (default to 15m if not specified)
     const interval = options?.interval?.replace('min', 'm') || '15m'
-    const url = `https://eodhd.com/api/intraday/${symbol}.US?api_token=${apiKey}&interval=${interval}&from=${fromTimestamp}&to=${toTimestamp}&fmt=json`
+    
+    // Use the exchange from the identifier, defaulting to US if not provided
+    const exchange = identifier.exchange || 'US'
+    const url = `https://eodhd.com/api/intraday/${identifier.symbol}.${exchange}?api_token=${apiKey}&interval=${interval}&from=${fromTimestamp}&to=${toTimestamp}&fmt=json`
     
     const data: EODHDIntradayResponse[] = await makeApiRequest(url, 'EODHD')
     const arrayData = validateArrayResponse(data, 'EODHD Intraday API') as EODHDIntradayResponse[]
@@ -118,8 +152,8 @@ export const getIntradaySecurityHistoryForDate = async (symbol: string, date: Da
     }
 
     // Map the intraday data to SecurityHistory format
-    return arrayData.map((item): SecurityHistory => mapEodhdIntradayToSecurityHistory(item, symbol))
-  }, `Error getting intraday history for ${symbol} on ${date instanceof Date && !isNaN(date.getTime()) ? date.toISOString().split('T')[0] : 'invalid-date'}`, [])
+    return arrayData.map((item): SecurityHistory => mapEodhdIntradayToSecurityHistory(item, identifier.symbol))
+  }, `Error getting intraday history for ${identifier.symbol} on ${date instanceof Date && !isNaN(date.getTime()) ? date.toISOString().split('T')[0] : 'invalid-date'}`, [])
 }
 
 /**

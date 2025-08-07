@@ -4,6 +4,7 @@ import { makeApiRequest } from "../../../utils/http-client"
 import { withErrorHandling } from "../../../utils/error-handling"
 import { buildAlphaVantageUrl } from "../utils/provider-url-builders"
 import { validateAlphaVantageResponse } from "../utils/provider-response-validation"
+import { extractExchangeFromAlphaVantageSymbol } from "../utils/exchange-suffix-mapper"
 
 export type AlphaVantageSearchResult = {
   "1. symbol": string;
@@ -45,18 +46,24 @@ export const findSecurities = async (securityIdentifiers: string[]): Promise<Sec
 
         // Process search results
         if (data.bestMatches && Array.isArray(data.bestMatches)) {
-          return data.bestMatches.map((match): SecuritySearchResult => ({
-            symbol: match["1. symbol"],
-            name: match["2. name"],
-            type: match["3. type"],
-            country: match["4. region"],
-            currency: match["8. currency"],
-            exchange: undefined, // Alpha Vantage doesn't provide exchange in search results
-            isin: undefined,
-            cusip: undefined,
-            figi: undefined,
-            fromCache: false,
-          }))
+          return data.bestMatches.map((match): SecuritySearchResult => {
+            const symbol = match["1. symbol"];
+            const exchangeInfo = extractExchangeFromAlphaVantageSymbol(symbol);
+            
+            return {
+              symbol: symbol,
+              name: match["2. name"],
+              type: match["3. type"],
+              country: match["4. region"],
+              currency: match["8. currency"],
+              exchange: exchangeInfo.exchange, // Extract exchange from symbol suffix
+              isin: undefined,
+              cusip: undefined,
+              figi: undefined,
+              fromCache: false,
+              sourceIdentifier: "alpha-vantage",
+            };
+          });
         }
         return []
       },

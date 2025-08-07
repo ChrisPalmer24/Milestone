@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { getSecurityHistoryForDateRange, getSecurityHistoryForDate, getIntradaySecurityHistoryForDate } from './history'
+import { SecurityIdentifier } from '../types'
 
 // Mock fetch globally
 global.fetch = vi.fn()
@@ -199,7 +200,7 @@ describe('EODHD History', () => {
 
   describe('getIntradaySecurityHistoryForDate', () => {
     it('should return empty array when API key is not provided', async () => {
-      const result = await getIntradaySecurityHistoryForDate('AAPL', new Date('2024-01-15'))
+      const result = await getIntradaySecurityHistoryForDate({ symbol: 'AAPL' }, new Date('2024-01-15'))
       expect(result).toEqual([])
     })
 
@@ -232,7 +233,7 @@ describe('EODHD History', () => {
         json: async () => mockResponse
       })
 
-      const result = await getIntradaySecurityHistoryForDate('AAPL', new Date('2024-01-15'))
+      const result = await getIntradaySecurityHistoryForDate({ symbol: 'AAPL' }, new Date('2024-01-15'))
 
       // Check that the URL is constructed correctly with Unix timestamps
       expect(fetch).toHaveBeenCalledWith(
@@ -272,7 +273,7 @@ describe('EODHD History', () => {
         statusText: 'Unauthorized'
       })
 
-      const result = await getIntradaySecurityHistoryForDate('AAPL', new Date('2024-01-15'))
+      const result = await getIntradaySecurityHistoryForDate({ symbol: 'AAPL' }, new Date('2024-01-15'))
 
       expect(result).toEqual([])
     })
@@ -282,7 +283,7 @@ describe('EODHD History', () => {
 
       ;(fetch as any).mockRejectedValueOnce(new Error('Network error'))
 
-      const result = await getIntradaySecurityHistoryForDate('AAPL', new Date('2024-01-15'))
+      const result = await getIntradaySecurityHistoryForDate({ symbol: 'AAPL' }, new Date('2024-01-15'))
 
       expect(result).toEqual([])
     })
@@ -295,7 +296,7 @@ describe('EODHD History', () => {
         json: async () => []
       })
 
-      const result = await getIntradaySecurityHistoryForDate('AAPL', new Date('2024-01-15'))
+      const result = await getIntradaySecurityHistoryForDate({ symbol: 'AAPL' }, new Date('2024-01-15'))
 
       expect(result).toEqual([])
     })
@@ -303,7 +304,7 @@ describe('EODHD History', () => {
     it('should handle invalid date gracefully', async () => {
       process.env.EODHD_API_KEY = 'test-api-key'
 
-      const result = await getIntradaySecurityHistoryForDate('AAPL', new Date('invalid-date'))
+      const result = await getIntradaySecurityHistoryForDate({ symbol: 'AAPL' }, new Date('invalid-date'))
 
       expect(result).toEqual([])
     })
@@ -328,7 +329,7 @@ describe('EODHD History', () => {
         json: async () => mockResponse
       })
 
-      const result = await getIntradaySecurityHistoryForDate('AAPL', new Date('2024-01-15'), { interval: '15min' })
+      const result = await getIntradaySecurityHistoryForDate({ symbol: 'AAPL' }, new Date('2024-01-15'), { interval: '15min' })
 
       expect(fetch).toHaveBeenCalledWith(
         expect.stringMatching(/https:\/\/eodhd\.com\/api\/intraday\/AAPL\.US\?api_token=test-api-key&interval=15m&from=\d+&to=\d+&fmt=json/),

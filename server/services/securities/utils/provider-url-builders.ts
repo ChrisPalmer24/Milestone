@@ -1,13 +1,4 @@
-/**
- * Builds an EODHD API URL with query parameters
- * @param endpoint The API endpoint (e.g., "search", "eod")
- * @param params Query parameters as key-value pairs
- * @returns The complete EODHD API URL
- */
-export const buildEodhdUrl = (endpoint: string, params: Record<string, string>): string => {
-  const queryString = new URLSearchParams(params).toString()
-  return `https://eodhd.com/api/${endpoint}?${queryString}`
-}
+import { SecurityIdentifier } from "../types"
 
 /**
  * Builds an EODHD EOD URL with symbol in the path
@@ -17,8 +8,8 @@ export const buildEodhdUrl = (endpoint: string, params: Record<string, string>):
  * @param toDate The end date
  * @returns The complete EODHD EOD URL
  */
-export const buildEodhdEodUrl = (symbol: string, apiToken: string, fromDate: string, toDate: string): string => {
-  return `https://eodhd.com/api/eod/${symbol}?api_token=${apiToken}&from=${fromDate}&to=${toDate}&fmt=json`
+export const buildEodhdEodUrl = (identifier: SecurityIdentifier, apiToken: string, fromDate: string, toDate: string): string => {
+  return `https://eodhd.com/api/eod/${identifier.symbol}.${identifier.exchange}?api_token=${apiToken}&from=${fromDate}&to=${toDate}&fmt=json`
 }
 
 /**

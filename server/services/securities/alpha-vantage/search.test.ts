@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { findSecurities } from './search'
+import { extractExchangeFromAlphaVantageSymbol } from '../utils/exchange-suffix-mapper'
 
 // Mock fetch globally
 global.fetch = vi.fn()
@@ -53,20 +54,21 @@ describe('Alpha Vantage findSecurities', () => {
       }
     )
 
-    expect(result).toEqual([
-      {
-        symbol: "AAPL",
-        name: "Apple Inc",
-        type: "Equity",
-        country: "United States",
-        currency: "USD",
-        exchange: undefined,
-        isin: undefined,
-        cusip: undefined,
-        figi: undefined,
-        fromCache: false,
-      }
-    ])
+            expect(result).toEqual([
+          {
+            symbol: "AAPL",
+            name: "Apple Inc",
+            type: "Equity",
+            country: "United States",
+            currency: "USD",
+            exchange: "US",
+            isin: undefined,
+            cusip: undefined,
+            figi: undefined,
+            fromCache: false,
+            sourceIdentifier: "alpha-vantage",
+          }
+        ])
   })
 
   it('should handle API errors gracefully', async () => {
@@ -178,5 +180,38 @@ describe('Alpha Vantage findSecurities', () => {
     expect(result).toHaveLength(2)
     expect(result[0].symbol).toBe('AAPL')
     expect(result[1].symbol).toBe('GOOGL')
+  })
+})
+
+describe('Exchange Suffix Logic', () => {
+  it('should correctly identify US symbols without dots', () => {
+    expect(extractExchangeFromAlphaVantageSymbol('AAPL').exchange).toBe('US')
+    expect(extractExchangeFromAlphaVantageSymbol('MSFT').exchange).toBe('US')
+    expect(extractExchangeFromAlphaVantageSymbol('GOOGL').exchange).toBe('US')
+  })
+
+  it('should correctly identify London Stock Exchange symbols', () => {
+    expect(extractExchangeFromAlphaVantageSymbol('VWRL.LON').exchange).toBe('LSE')
+    expect(extractExchangeFromAlphaVantageSymbol('AAPL.LON').exchange).toBe('LSE')
+  })
+
+  it('should correctly identify Amsterdam Stock Exchange symbols', () => {
+    expect(extractExchangeFromAlphaVantageSymbol('VWRL.AMS').exchange).toBe('AMS')
+  })
+
+  it('should correctly identify Alpha Vantage international exchanges', () => {
+    expect(extractExchangeFromAlphaVantageSymbol('AAPL34.SAO').exchange).toBe('SAO')
+    expect(extractExchangeFromAlphaVantageSymbol('APC.DEX').exchange).toBe('DEX')
+    expect(extractExchangeFromAlphaVantageSymbol('AAPL.TRT').exchange).toBe('TRT')
+    expect(extractExchangeFromAlphaVantageSymbol('500014.BSE').exchange).toBe('BSE')
+    expect(extractExchangeFromAlphaVantageSymbol('48T.FRK').exchange).toBe('FRK')
+    expect(extractExchangeFromAlphaVantageSymbol('603020.SHH').exchange).toBe('SHH')
+    expect(extractExchangeFromAlphaVantageSymbol('ABCA.PAR').exchange).toBe('PAR')
+    expect(extractExchangeFromAlphaVantageSymbol('301510.SHZ').exchange).toBe('SHZ')
+  })
+
+  it('should return undefined for unknown exchange suffixes', () => {
+    expect(extractExchangeFromAlphaVantageSymbol('STOCK.XYZ').exchange).toBeUndefined()
+    expect(extractExchangeFromAlphaVantageSymbol('UNKNOWN.ABC').exchange).toBeUndefined()
   })
 }) 

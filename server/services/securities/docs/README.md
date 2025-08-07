@@ -48,6 +48,21 @@ This directory contains important documentation for the Securities Service, incl
 - When mapping exchange information from search results
 - When implementing international securities support
 
+### [Daily Price History Caching Strategy](price-history-caching-strategy.md)
+**Purpose**: Documents the design and implementation strategy for caching daily price history data to reduce API load and improve performance.
+
+**Key Topics**:
+- Database schema design for daily price history storage
+- Cache-first approach with API fallback strategy
+- Performance considerations and indexing strategy
+- Implementation phases and integration points
+
+**When to Read**: 
+- When implementing price history caching functionality
+- When optimizing API usage and performance
+- When designing database schema for financial data
+- When planning cache warming and management strategies
+
 ## Documentation Standards
 
 All documentation in this directory should:

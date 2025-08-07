@@ -4,7 +4,7 @@ import { SecuritySearchResult } from "@shared/schema"
 import { combineSecurityResults } from "@server/utils/securities"
 import { searchCachedSecurities, getCachedSecurities, createOrFindCachedSecurity, updateCachedSecurity, deleteCachedSecurity, getCachedSecurity } from "./cache"
 import { Database } from "@server/db"
-import { SecurityHistory, IntradayOptions } from "./types"
+import { SecurityHistory, IntradayOptions, SecurityIdentifier } from "./types"
 
 const eodhd = eodhdFactory()
 const alphaVantage = alphaVantageFactory()
@@ -274,9 +274,14 @@ const findSecurities = async (securityIdentifiers: string[]): Promise<SecuritySe
   }
 }
 
-const getSecurityHistoryForDateRange = async (securityId: string, startDate: Date, endDate: Date): Promise<SecurityHistory[]> => {
+const getSecurityHistoryForDateRange = async (identifier: SecurityIdentifier, startDate: Date, endDate: Date): Promise<SecurityHistory[]> => {
+
+  const service = servicesWithHistory.find(service => service.identifier === "eodhd")
+  const history = await service?.getSecurityHistoryForDateRange(identifier, startDate, endDate)
+  return history || []
+
   for await ( const service of servicesWithHistory) {
-    const history = await service.getSecurityHistoryForDateRange(securityId, startDate, endDate)
+    const history = await service.getSecurityHistoryForDateRange(identifier, startDate, endDate)
     if (history.length > 0) {
       return history
     }
@@ -284,9 +289,29 @@ const getSecurityHistoryForDateRange = async (securityId: string, startDate: Dat
   return []
 }
 
-const getSecurityHistoryForDate = async (securityId: string, date: Date): Promise<SecurityHistory | null> => {
+const getSecurityHistoryLiveForDateRange = async (identifier: SecurityIdentifier, startDate: Date, endDate: Date): Promise<SecurityHistory[]> => {
+
+  const service = servicesWithHistory.find(service => service.identifier === "eodhd")
+  const history = await service?.getSecurityHistoryLiveForDateRange(identifier, startDate, endDate)
+  return history || []
+
   for await ( const service of servicesWithHistory) {
-    const history = await service.getSecurityHistoryForDate(securityId, date)
+    const history = await service.getSecurityHistoryForDateRange(identifier, startDate, endDate)
+    if (history.length > 0) {
+      return history
+    }
+  }
+  return []
+}
+
+const getSecurityHistoryForDate = async (identifier: SecurityIdentifier, date: Date): Promise<SecurityHistory | null> => {
+
+  const service = servicesWithHistory.find(service => service.identifier === "eodhd")
+  const history = await service?.getSecurityHistoryForDate(identifier, date)
+  return history || null
+
+  for await ( const service of servicesWithHistory) {
+    const history = await service.getSecurityHistoryForDate(identifier, date)
     if (history) {
       return history
     }
@@ -294,19 +319,26 @@ const getSecurityHistoryForDate = async (securityId: string, date: Date): Promis
   return null
 } 
 
-const getIntradaySecurityHistoryForDate = async (securityId: string, date: Date, options?: IntradayOptions): Promise<SecurityHistory[]> => {
-  for await ( const service of servicesWithIntraday) {
-    const history = await service.getIntradaySecurityHistoryForDate(securityId, date, options)
-    if (history && history.length > 0) {
-      return history
-    }
-  }
-  return []
+const getIntradaySecurityHistoryForDate = async (identifier: SecurityIdentifier, date: Date, options?: IntradayOptions): Promise<SecurityHistory[]> => {
+
+  const service = servicesWithIntraday.find(service => service.identifier === "alpha-vantage")
+  const history = await service?.getIntradaySecurityHistoryForDate(identifier, date, options)
+  return history || []
+  
+  // for await ( const service of servicesWithIntraday) {
+  //   console.log("service", service.identifier)
+  //   const history = await service.getIntradaySecurityHistoryForDate(identifier, date, options)
+  //   console.log("history", history.length)
+  //   if (history && history.length > 0) {
+  //     return history
+  //   }
+  // }
+  // return []
 }
 
-const getCalculatedSecurityHistoryForDateRange = async (securityId: string, holdings: number, startDate: Date, endDate: Date): Promise<SecurityHistory[]> => {
+const getCalculatedSecurityHistoryForDateRange = async (identifier: SecurityIdentifier, holdings: number, startDate: Date, endDate: Date): Promise<SecurityHistory[]> => {
 
-  const history = await getSecurityHistoryForDateRange(securityId, startDate, endDate)
+  const history = await getSecurityHistoryForDateRange(identifier, startDate, endDate)
     .then(history => {
       return history.map(h => ({
         ...h,
@@ -336,6 +368,7 @@ export const factory = () => {
     clearSearchHistory,
     getSearchStatistics,
     getSecurityHistoryForDateRange,
+    getSecurityHistoryLiveForDateRange,
     getSecurityHistoryForDate,
     getIntradaySecurityHistoryForDate,
     getCalculatedSecurityHistoryForDateRange
